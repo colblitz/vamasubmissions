@@ -10,7 +10,12 @@ echo ""
 
 # Prompt for configuration
 read -p "Enter your domain (e.g., mysite.com): " DOMAIN
-read -p "Enter your GitHub repository URL: " REPO_URL
+
+# Default repository URL
+REPO_URL="git@github.com:colblitz/vamasubmissions.git"
+read -p "Enter your GitHub repository URL [$REPO_URL]: " REPO_INPUT
+REPO_URL="${REPO_INPUT:-$REPO_URL}"
+
 read -p "Enter Patreon Client ID: " PATREON_CLIENT_ID
 read -sp "Enter Patreon Client Secret: " PATREON_CLIENT_SECRET
 echo ""
@@ -74,7 +79,7 @@ EOF
 chmod 600 .env
 
 echo "[3/8] Installing Python dependencies..."
-python3.11 -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt

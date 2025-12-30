@@ -20,7 +20,7 @@ Complete these steps **BEFORE** running the deployment scripts.
 
 ### 2.2 Create Linode
 - [ ] Click "Create" → "Linode"
-- [ ] **Distribution:** Ubuntu 22.04 LTS
+- [ ] **Distribution:** Ubuntu 24.04 LTS
 - [ ] **Region:** Choose closest to your users
 - [ ] **Plan:** Nanode 1GB ($5/month) - sufficient for small-medium traffic
 - [ ] **Label:** `patreon-submissions` (or your choice)
@@ -38,32 +38,63 @@ Complete these steps **BEFORE** running the deployment scripts.
 
 ---
 
-## ☑️ 3. Configure DNS (Namecheap)
+## ☑️ 3. Configure DNS (Namecheap → Linode)
 
-### 3.1 Get Your Server IP
-Your Linode IP from step 2.3: `_________________`
+### 3.1 Get Linode Nameservers
+Linode's nameservers are:
+- `ns1.linode.com`
+- `ns2.linode.com`
+- `ns3.linode.com`
+- `ns4.linode.com`
+- `ns5.linode.com`
 
-### 3.2 Add DNS Records
+### 3.2 Point Namecheap to Linode Nameservers
 - [ ] Log into Namecheap
 - [ ] Go to **Domain List** → **Manage** (for your domain)
-- [ ] Click **Advanced DNS** tab
-- [ ] Add these records:
+- [ ] Find **Nameservers** section
+- [ ] Select **Custom DNS**
+- [ ] Add Linode nameservers:
+  - `ns1.linode.com`
+  - `ns2.linode.com`
+  - `ns3.linode.com`
+  - `ns4.linode.com`
+  - `ns5.linode.com`
+- [ ] Click **Save** (green checkmark)
 
-| Type | Host | Value | TTL |
-|------|------|-------|-----|
-| A Record | @ | `YOUR_LINODE_IP` | Automatic |
-| A Record | www | `YOUR_LINODE_IP` | Automatic |
-| CNAME | api | `yourdomain.com` | Automatic |
+### 3.3 Configure DNS in Linode
+- [ ] Log into Linode Cloud Manager
+- [ ] Go to **Domains** (left sidebar)
+- [ ] Click **Create Domain**
+- [ ] **Domain:** `yourdomain.com`
+- [ ] **SOA Email:** `your-email@example.com`
+- [ ] Click **Create Domain**
+
+### 3.4 Add DNS Records in Linode
+Your Linode IP from step 2.3: `_________________`
+
+Add these records:
+
+| Type | Hostname | IP Address / Target | TTL |
+|------|----------|---------------------|-----|
+| A | (blank) | `YOUR_LINODE_IP` | Default |
+| A | www | `YOUR_LINODE_IP` | Default |
+| A | api | `YOUR_LINODE_IP` | Default |
 
 **Example:**
 - If your domain is `mysite.com` and IP is `123.45.67.89`:
-  - A Record: `@` → `123.45.67.89`
-  - A Record: `www` → `123.45.67.89`
-  - CNAME: `api` → `mysite.com`
+  - A Record: blank → `123.45.67.89` (creates mysite.com)
+  - A Record: `www` → `123.45.67.89` (creates www.mysite.com)
+  - A Record: `api` → `123.45.67.89` (creates api.mysite.com)
 
-- [ ] Click "Save All Changes"
+- [ ] Click **Save** for each record
 
-**Note:** DNS propagation takes 5-30 minutes. You can run scripts 1-4 while waiting.
+**Note:** DNS propagation takes 15-30 minutes. You can run scripts 1-4 while waiting.
+
+**Why use Linode nameservers?**
+- Faster DNS resolution (same datacenter)
+- Easier management (everything in one place)
+- Better integration with Linode services
+- Free DNS hosting
 
 ---
 
@@ -181,12 +212,12 @@ git commit -m "Initial commit"
 
 # Create GitHub repo at https://github.com/new
 # Then push:
-git remote add origin https://github.com/YOUR_USERNAME/vamasubmissions.git
-git branch -M main
-git push -u origin main
+git remote add origin git@github.com:colblitz/vamasubmissions.git
+git branch -M master
+git push -u origin master
 ```
 
-- [ ] GitHub repository URL: `_________________`
+- [ ] GitHub repository URL: `git@github.com:colblitz/vamasubmissions.git`
 
 ---
 
@@ -213,7 +244,7 @@ You can now proceed with the deployment scripts:
 
 2. **Download and run the first script:**
    ```bash
-   wget https://raw.githubusercontent.com/YOUR_USERNAME/vamasubmissions/main/deployment-scripts/01-initial-server-setup.sh
+   wget https://raw.githubusercontent.com/colblitz/vamasubmissions/master/deployment-scripts/01-initial-server-setup.sh
    bash 01-initial-server-setup.sh
    ```
 

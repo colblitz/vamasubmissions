@@ -74,8 +74,8 @@ fi
 # Install basic dependencies
 echo "[6/9] Installing Python, PostgreSQL, Nginx, Git..."
 apt install -y \
-    python3.11 \
-    python3.11-venv \
+    python3 \
+    python3-venv \
     python3-pip \
     postgresql \
     postgresql-contrib \
