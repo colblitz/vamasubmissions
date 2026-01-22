@@ -677,10 +677,8 @@ async def publish_post(
             detail="Post must have at least one character and series before publishing",
         )
 
-    # Auto-generate tags
-    from app.services.post_service import generate_tags
-
-    post.tags = generate_tags(post)
+    # Tags are optional - can be empty or set by admin
+    # No auto-generation for now
 
     # Change status to published
     post.status = "published"
@@ -727,10 +725,8 @@ async def bulk_publish_posts(
             failed.append({"id": post_id, "reason": "Missing characters/series"})
             continue
 
-        # Auto-generate tags
-        from app.services.post_service import generate_tags
-
-        post.tags = generate_tags(post)
+        # Tags are optional - can be empty or set by admin
+        # No auto-generation for now
 
         # Change status to published
         post.status = "published"
