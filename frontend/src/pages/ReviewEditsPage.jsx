@@ -7,6 +7,16 @@ export default function ReviewEditsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("pending"); // 'pending' or 'history'
+  
+  // Banner messages
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  
+  // Confirmation states
+  const [approveConfirm, setApproveConfirm] = useState(null);
+  const [rejectConfirm, setRejectConfirm] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [undoConfirm, setUndoConfirm] = useState(null);
 
   // Fetch pending edits
   const fetchPending = async () => {
@@ -40,44 +50,98 @@ export default function ReviewEditsPage() {
     }
   };
 
-  // Approve edit
-  const handleApprove = async (editId) => {
-    if (!confirm("Approve this edit? This will update the post.")) return;
+  // Show approve confirmation
+  const handleApproveClick = (editId) => {
+    setApproveConfirm(editId);
+    setSuccessMessage("");
+    setErrorMessage("");
+  };
+
+  // Confirm approve
+  const confirmApprove = async () => {
+    const editId = approveConfirm;
+    setApproveConfirm(null);
+    setSuccessMessage("");
+    setErrorMessage("");
 
     try {
       await api.post(`/api/edits/${editId}/approve`);
       fetchPending();
-      alert("Edit approved and applied!");
+      setSuccessMessage("Edit approved and applied!");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to approve edit");
+      setErrorMessage(err.response?.data?.detail || "Failed to approve edit");
+      setTimeout(() => setErrorMessage(""), 5000);
     }
   };
 
-  // Reject edit
-  const handleReject = async (editId) => {
-    const reason = prompt("Reason for rejection (optional):");
-    if (reason === null) return; // User cancelled
+  // Cancel approve
+  const cancelApprove = () => {
+    setApproveConfirm(null);
+  };
+
+  // Show reject confirmation
+  const handleRejectClick = (editId) => {
+    setRejectConfirm(editId);
+    setRejectReason("");
+    setSuccessMessage("");
+    setErrorMessage("");
+  };
+
+  // Confirm reject
+  const confirmReject = async () => {
+    const editId = rejectConfirm;
+    const reason = rejectReason;
+    setRejectConfirm(null);
+    setRejectReason("");
+    setSuccessMessage("");
+    setErrorMessage("");
 
     try {
-      await api.post(`/api/edits/${editId}/reject`, { reason });
+      await api.post(`/api/edits/${editId}/reject`, { reason: reason || undefined });
       fetchPending();
-      alert("Edit rejected");
+      setSuccessMessage("Edit rejected");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to reject edit");
+      setErrorMessage(err.response?.data?.detail || "Failed to reject edit");
+      setTimeout(() => setErrorMessage(""), 5000);
     }
   };
 
-  // Undo edit
-  const handleUndo = async (historyId) => {
-    if (!confirm("Undo this edit? This will revert the post to its previous state.")) return;
+  // Cancel reject
+  const cancelReject = () => {
+    setRejectConfirm(null);
+    setRejectReason("");
+  };
+
+  // Show undo confirmation
+  const handleUndoClick = (historyId) => {
+    setUndoConfirm(historyId);
+    setSuccessMessage("");
+    setErrorMessage("");
+  };
+
+  // Confirm undo
+  const confirmUndo = async () => {
+    const historyId = undoConfirm;
+    setUndoConfirm(null);
+    setSuccessMessage("");
+    setErrorMessage("");
 
     try {
       await api.post(`/api/edits/history/${historyId}/undo`);
       fetchHistory();
-      alert("Edit undone successfully!");
+      setSuccessMessage("Edit undone successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to undo edit");
+      setErrorMessage(err.response?.data?.detail || "Failed to undo edit");
+      setTimeout(() => setErrorMessage(""), 5000);
     }
+  };
+
+  // Cancel undo
+  const cancelUndo = () => {
+    setUndoConfirm(null);
   };
 
   useEffect(() => {
@@ -138,10 +202,23 @@ export default function ReviewEditsPage() {
         </button>
       </div>
 
-      {/* Error */}
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Error Messages */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
           {error}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          {errorMessage}
         </div>
       )}
 
@@ -210,13 +287,13 @@ export default function ReviewEditsPage() {
                     {/* Actions */}
                     <div className="flex gap-2 flex-shrink-0">
                       <button
-                        onClick={() => handleApprove(edit.id)}
+                        onClick={() => handleApproveClick(edit.id)}
                         className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                       >
                         Approve
                       </button>
                       <button
-                        onClick={() => handleReject(edit.id)}
+                        onClick={() => handleRejectClick(edit.id)}
                         className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700"
                       >
                         Reject
@@ -283,7 +360,7 @@ export default function ReviewEditsPage() {
 
                     {/* Actions */}
                     <button
-                      onClick={() => handleUndo(item.id)}
+                      onClick={() => handleUndoClick(item.id)}
                       className="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 flex-shrink-0"
                     >
                       Undo
@@ -293,6 +370,80 @@ export default function ReviewEditsPage() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Approve Confirmation Banner */}
+      {approveConfirm && (
+        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
+          <p className="text-gray-900 font-medium mb-3">
+            Approve this edit? This will update the post.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={confirmApprove}
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Approve
+            </button>
+            <button
+              onClick={cancelApprove}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Confirmation Banner */}
+      {rejectConfirm && (
+        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
+          <p className="text-gray-900 font-medium mb-2">Reject this edit?</p>
+          <input
+            type="text"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Reason for rejection (optional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded mb-3 text-gray-900 placeholder-gray-400"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={confirmReject}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Reject
+            </button>
+            <button
+              onClick={cancelReject}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Undo Confirmation Banner */}
+      {undoConfirm && (
+        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
+          <p className="text-gray-900 font-medium mb-3">
+            Undo this edit? This will revert the post to its previous state.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={confirmUndo}
+              className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+            >
+              Undo
+            </button>
+            <button
+              onClick={cancelUndo}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>

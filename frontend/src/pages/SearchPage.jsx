@@ -18,6 +18,7 @@ export default function SearchPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [editSuccess, setEditSuccess] = useState("");
+  const [editError, setEditError] = useState("");
 
   // Separate input states for each field
   const [newCharacter, setNewCharacter] = useState("");
@@ -39,7 +40,13 @@ export default function SearchPage() {
 
   // Fetch autocomplete suggestions
   const fetchAutocomplete = async (type, query) => {
-    if (!query || query.length < 2) return;
+    if (!query || query.length < 2) {
+      // Clear suggestions when query is too short
+      if (type === "characters") setCharacterSuggestions([]);
+      if (type === "series") setSeriesSuggestions([]);
+      if (type === "tags") setTagSuggestions([]);
+      return;
+    }
 
     try {
       const response = await api.get(`/api/posts/autocomplete/${type}`, {
@@ -47,6 +54,7 @@ export default function SearchPage() {
       });
 
       // Backend returns a plain array, not { suggestions: [...] }
+      // Use empty array to show "no results" vs null to hide dropdown
       if (type === "characters") setCharacterSuggestions(response.data || []);
       if (type === "series") setSeriesSuggestions(response.data || []);
       if (type === "tags") setTagSuggestions(response.data || []);
@@ -223,6 +231,9 @@ export default function SearchPage() {
 
   // Submit edit suggestion (add or remove)
   const submitEdit = async (fieldName, action, value) => {
+    setEditError("");
+    setEditSuccess("");
+    
     try {
       await api.post("/api/edits/suggest", {
         post_id: selectedPost.id,
@@ -236,7 +247,8 @@ export default function SearchPage() {
       );
       setTimeout(() => setEditSuccess(""), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to submit edit suggestion");
+      setEditError(err.response?.data?.detail || "Failed to submit edit suggestion");
+      setTimeout(() => setEditError(""), 5000);
     }
   };
 
@@ -250,9 +262,7 @@ export default function SearchPage() {
 
   // Handle removing an item
   const handleRemove = (fieldType, value) => {
-    if (confirm(`Suggest removing "${value}" from ${fieldType}?`)) {
-      submitEdit(fieldType, "DELETE", value);
-    }
+    submitEdit(fieldType, "DELETE", value);
   };
 
   return (
@@ -273,17 +283,21 @@ export default function SearchPage() {
                 placeholder="Type to search characters..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               />
-              {characterSuggestions.length > 0 && (
+              {characterInput.length >= 2 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {characterSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => addFilter("characters", suggestion)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                  {characterSuggestions.length > 0 ? (
+                    characterSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => addFilter("characters", suggestion)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                      >
+                        {suggestion}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500 text-sm">No characters found</div>
+                  )}
                 </div>
               )}
             </div>
@@ -316,17 +330,21 @@ export default function SearchPage() {
                 placeholder="Type to search series..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               />
-              {seriesSuggestions.length > 0 && (
+              {seriesInput.length >= 2 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {seriesSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => addFilter("series", suggestion)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                  {seriesSuggestions.length > 0 ? (
+                    seriesSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => addFilter("series", suggestion)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                      >
+                        {suggestion}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500 text-sm">No series found</div>
+                  )}
                 </div>
               )}
             </div>
@@ -359,17 +377,21 @@ export default function SearchPage() {
                 placeholder="Type to search tags..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               />
-              {tagSuggestions.length > 0 && (
+              {tagInput.length >= 2 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {tagSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => addFilter("tags", suggestion)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                  {tagSuggestions.length > 0 ? (
+                    tagSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => addFilter("tags", suggestion)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                      >
+                        {suggestion}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500 text-sm">No tags found</div>
+                  )}
                 </div>
               )}
             </div>

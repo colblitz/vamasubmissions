@@ -18,6 +18,9 @@ export default function CommunityRequestsPage() {
     timestamp: "", // Date when user wants this fulfilled
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // Store request ID to delete
 
   // Autocomplete state
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
@@ -194,17 +197,34 @@ export default function CommunityRequestsPage() {
     }
   };
 
-  // Delete request
-  const handleDelete = async (requestId) => {
-    if (!confirm("Are you sure you want to delete this request?")) return;
+  // Delete request - show confirmation first
+  const handleDeleteClick = (requestId) => {
+    setDeleteConfirm(requestId);
+    setDeleteError("");
+    setDeleteSuccess(false);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    const requestId = deleteConfirm;
+    setDeleteConfirm(null);
+    setDeleteError("");
+    setDeleteSuccess(false);
 
     try {
       await api.delete(`/api/requests/${requestId}`);
       fetchMyRequests();
-      alert("Request deleted");
+      setDeleteSuccess(true);
+      setTimeout(() => setDeleteSuccess(false), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to delete request");
+      setDeleteError(err.response?.data?.detail || "Failed to delete request");
+      setTimeout(() => setDeleteError(""), 5000);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
   };
 
   useEffect(() => {
@@ -216,17 +236,29 @@ export default function CommunityRequestsPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Community Requests</h1>
 
-      {/* Success Message */}
+      {/* Success Messages */}
       {submitSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
           Request submitted successfully!
         </div>
       )}
 
-      {/* Error */}
+      {deleteSuccess && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+          Request deleted successfully!
+        </div>
+      )}
+
+      {/* Error Messages */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
           {error}
+        </div>
+      )}
+
+      {deleteError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          {deleteError}
         </div>
       )}
 
@@ -408,7 +440,7 @@ export default function CommunityRequestsPage() {
 
                   {request.status === "pending" && (
                     <button
-                      onClick={() => handleDelete(request.id)}
+                      onClick={() => handleDeleteClick(request.id)}
                       className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
                     >
                       Delete
@@ -467,6 +499,29 @@ export default function CommunityRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Banner */}
+      {deleteConfirm && (
+        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
+          <p className="text-gray-900 font-medium mb-3">
+            Are you sure you want to delete this request?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={confirmDelete}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Delete
+            </button>
+            <button
+              onClick={cancelDelete}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
