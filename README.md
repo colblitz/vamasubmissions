@@ -1,31 +1,28 @@
-# Patreon Character Submission Site
+# VAMA Community Post Search & Request Tracker
 
-A web application for managing character commission requests from Patreon supporters, with tiered access and queue management.
+A community-driven web application for VAMA's Patreon subscribers to search existing posts, track community requests, and collaboratively improve post metadata.
 
-## Features
+## Phase 1: Community Features (Current)
 
-- **Patreon OAuth Integration** - Authenticate users and verify tier membership
-- **Tiered Credit System**
-  - Tier 1 (Free): 1 pending request at a time
-  - Tier 2: 1 credit/month, 2 credits max
-  - Tier 3: 2 credits/month, 4 credits max
-  - Tier 4: 4 credits/month, 8 credits max
-- **Dual Queue System**
-  - Paid queue (Tiers 2/3/4): Strict FIFO ordering
-  - Free queue (Tier 1): Vote-based priority
-- **Request Modifiers**
-  - Large image set (+1 credit)
-  - Double character (+1 credit)
-- **Admin Dashboard** - Track completions, manage queue, view statistics
-- **Search & History** - Search completed requests by character/series
+### Active Features
+- **Post Search** - Browse and search 2691+ VAMA posts by character, series, tags
+- **Community Request Queue** - Unofficial tracking of community requests (FIFO)
+- **Collaborative Editing** - Community-approved metadata improvements with audit trail
+- **Patreon OAuth** - Subscriber-only access with tier detection
+
+### Hidden Features (Future)
+- Credit-based submission system
+- Dual queue system (paid/free)
+- Voting system
+- Admin dashboard for completions
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python)
+- **Backend**: FastAPI (Python 3.11+)
 - **Frontend**: React + Vite
-- **Database**: PostgreSQL
-- **Authentication**: Patreon OAuth 2.0
-- **Image Storage**: Local filesystem
+- **Database**: PostgreSQL 14+
+- **Authentication**: Patreon OAuth 2.0 + JWT
+- **Deployment**: Self-hosted on Linode (planned)
 
 ## Project Structure
 

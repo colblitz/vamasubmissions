@@ -13,7 +13,7 @@ export default function LoginPage() {
     try {
       setError(null);
       await login(selectedUser);
-      navigate('/dashboard');
+      navigate('/search');
     } catch (error) {
       console.error('Login failed:', error);
       setError('Login failed. Please try again.');

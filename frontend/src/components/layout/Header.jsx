@@ -9,26 +9,24 @@ export default function Header() {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold">
-            Character Submissions
+            VAMA Community
           </Link>
 
           {isAuthenticated ? (
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <Link to="/dashboard" className="hover:text-blue-400 transition-colors">
-                  Home
+                <Link to="/search" className="hover:text-blue-400 transition-colors">
+                  Search
                 </Link>
-                {user.tier > 1 && (
-                  <Link to="/requests" className="hover:text-blue-400 transition-colors">
-                    Queue
-                  </Link>
-                )}
-                <Link to="/votes" className="hover:text-blue-400 transition-colors">
-                  Votes
+                <Link to="/requests" className="hover:text-blue-400 transition-colors">
+                  Requests
+                </Link>
+                <Link to="/review" className="hover:text-blue-400 transition-colors">
+                  Review Edits
                 </Link>
                 {isAdmin() && (
-                  <Link to="/admin" className="hover:text-blue-400 transition-colors">
-                    Admin
+                  <Link to="/admin/import" className="hover:text-yellow-400 transition-colors">
+                    Import Posts
                   </Link>
                 )}
               </div>

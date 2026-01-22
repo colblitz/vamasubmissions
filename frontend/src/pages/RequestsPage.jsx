@@ -13,7 +13,7 @@ export default function RequestsPage() {
   const loadQueue = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/queue/requests', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/queue/requests', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },

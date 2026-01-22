@@ -59,9 +59,28 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userType = 'tier2') => {
     if (isMockAuth) {
-      const { user: mockUser } = mockAuth.login(userType);
-      setUser(mockUser);
-      return mockUser;
+      // Call the real backend's mock login endpoint
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/login?username=${userType}`, {
+          method: 'GET',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Mock login failed');
+        }
+        
+        const data = await response.json();
+        
+        // Store the real JWT token from backend
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+        
+        return data.user;
+      } catch (error) {
+        console.error('Mock login error:', error);
+        throw error;
+      }
     } else {
       // Real Patreon OAuth - redirect to backend
       authAPI.login();

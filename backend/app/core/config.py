@@ -41,7 +41,8 @@ class Settings(BaseSettings):
     
     # Patreon API
     patreon_api_url: str = "https://www.patreon.com/api/oauth2/v2"
-    patreon_oauth_url: str = "https://www.patreon.com/oauth2"
+    patreon_authorize_url: str = "https://www.patreon.com/oauth2/authorize"
+    patreon_token_url: str = "https://www.patreon.com/api/oauth2/token"
     
     @property
     def max_image_size_bytes(self) -> int:

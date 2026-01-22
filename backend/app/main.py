@@ -6,7 +6,15 @@ import os
 
 from app.core.config import settings
 from app.core.database import engine, Base
+# Import all models to ensure they're registered with SQLAlchemy
+from app.models import (
+    User, Submission, SubmissionImage, CreditTransaction,
+    Vote, UserVoteAllowance, UserSession, SystemConfig,
+    Post, CommunityRequest, PostEdit, EditHistory
+)
 from app.api import auth, submissions, queue, admin, users
+# Phase 1: Community Features
+from app.api import posts, community_requests, edits
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -33,12 +41,22 @@ app.add_middleware(
 # Mount static files for uploads
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
+# Mount static files for test thumbnails
+thumbnails_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_thumbnails")
+if os.path.exists(thumbnails_dir):
+    app.mount("/static/thumbnails", StaticFiles(directory=thumbnails_dir), name="thumbnails")
+
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(submissions.router, prefix="/api/submissions", tags=["Submissions"])
 app.include_router(queue.router, prefix="/api/queue", tags=["Queue"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+
+# Phase 1: Community Features
+app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
+app.include_router(community_requests.router, prefix="/api/requests", tags=["Community Requests"])
+app.include_router(edits.router, prefix="/api/edits", tags=["Post Edits"])
 
 
 @app.get("/")

@@ -6,14 +6,24 @@ import Layout from './components/layout/Layout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import CallbackPage from './pages/CallbackPage';
-import DashboardPageV2 from './pages/DashboardPageV2';
-import RequestsPage from './pages/RequestsPage';
-import VotesPage from './pages/VotesPage';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 
-// Smart redirect - everyone goes to dashboard
+// Phase 1: Community Features
+import SearchPage from './pages/SearchPage';
+import CommunityRequestsPage from './pages/CommunityRequestsPage';
+import ReviewEditsPage from './pages/ReviewEditsPage';
+
+// Admin pages
+import ImportPostsPage from './pages/admin/ImportPostsPage';
+
+// Legacy pages (hidden but preserved)
+// import DashboardPageV2 from './pages/DashboardPageV2';
+// import RequestsPage from './pages/RequestsPage';
+// import VotesPage from './pages/VotesPage';
+// import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+
+// Smart redirect - everyone goes to search
 function HomeRedirect() {
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/search" replace />;
 }
 
 function App() {
@@ -25,7 +35,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<CallbackPage />} />
 
-          {/* Protected routes */}
+          {/* Protected routes - Phase 1 */}
           <Route element={<Layout />}>
             <Route
               path="/"
@@ -37,10 +47,10 @@ function App() {
             />
             
             <Route
-              path="/dashboard"
+              path="/search"
               element={
                 <ProtectedRoute>
-                  <DashboardPageV2 />
+                  <SearchPage />
                 </ProtectedRoute>
               }
             />
@@ -49,36 +59,38 @@ function App() {
               path="/requests"
               element={
                 <ProtectedRoute>
-                  <RequestsPage />
+                  <CommunityRequestsPage />
                 </ProtectedRoute>
               }
             />
             
             <Route
-              path="/votes"
+              path="/review"
               element={
                 <ProtectedRoute>
-                  <VotesPage />
+                  <ReviewEditsPage />
                 </ProtectedRoute>
               }
             />
             
+            {/* Admin routes */}
             <Route
-              path="/admin"
+              path="/admin/import"
               element={
                 <ProtectedRoute requireAdmin>
-                  <AdminDashboardPage />
+                  <ImportPostsPage />
                 </ProtectedRoute>
               }
             />
 
-            {/* TODO: Add more admin routes */}
-            {/* /admin/submissions - Admin submissions list */}
-            {/* /admin/users - Admin users list */}
+            {/* Legacy routes - commented out but preserved */}
+            {/* <Route path="/dashboard" element={<ProtectedRoute><DashboardPageV2 /></ProtectedRoute>} /> */}
+            {/* <Route path="/votes" element={<ProtectedRoute><VotesPage /></ProtectedRoute>} /> */}
+            {/* <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>} /> */}
           </Route>
 
           {/* 404 */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/search" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

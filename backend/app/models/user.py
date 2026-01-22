@@ -14,7 +14,7 @@ class User(Base):
     patreon_id = Column(String(255), unique=True, nullable=False, index=True)
     patreon_username = Column(String(255))
     email = Column(String(255))
-    tier = Column(Integer, nullable=False, default=1, index=True)  # 1=free, 2/3/4=paid
+    tier = Column(Integer, nullable=False, default=1, index=True)  # 1=free, 2/3/4/5=paid
     credits = Column(Integer, nullable=False, default=0)
     role = Column(String(50), nullable=False, default="patron")  # patron, creator, admin
     last_credit_refresh = Column(DateTime)
@@ -22,12 +22,18 @@ class User(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     last_login = Column(DateTime)
     
+    # OAuth tokens
+    patreon_access_token = Column(String)
+    patreon_refresh_token = Column(String)
+    patreon_token_expires_at = Column(DateTime)
+    
     # Relationships
     submissions = relationship("Submission", back_populates="user", cascade="all, delete-orphan")
     credit_transactions = relationship("CreditTransaction", back_populates="user", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")
     vote_allowances = relationship("UserVoteAllowance", back_populates="user", cascade="all, delete-orphan")
-    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
+    admin_settings = relationship("AdminSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, patreon_username={self.patreon_username}, tier={self.tier})>"
@@ -46,10 +52,11 @@ class User(Base):
     def max_credits(self) -> int:
         """Get maximum credits based on tier."""
         credit_caps = {
-            1: 0,  # Tier 1 doesn't use credits
-            2: 2,
-            3: 4,
-            4: 8,
+            1: 0,  # Tier 1 (Free) doesn't use credits
+            2: 2,  # Tier 2 ($5/month)
+            3: 4,  # Tier 3 ($15/month)
+            4: 8,  # Tier 4 ($30/month)
+            5: 16, # Tier 5 ($60/month)
         }
         return credit_caps.get(self.tier, 0)
     
@@ -57,10 +64,11 @@ class User(Base):
     def credits_per_month(self) -> int:
         """Get credits earned per month based on tier."""
         monthly_credits = {
-            1: 0,  # Tier 1 doesn't use credits
-            2: 1,
-            3: 2,
-            4: 4,
+            1: 0,  # Tier 1 (Free) doesn't use credits
+            2: 1,  # Tier 2 ($5/month)
+            3: 2,  # Tier 3 ($15/month)
+            4: 4,  # Tier 4 ($30/month)
+            5: 8,  # Tier 5 ($60/month)
         }
         return monthly_credits.get(self.tier, 0)
     

@@ -14,7 +14,7 @@ export default function VotesPage() {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/votes/sessions', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/votes/sessions', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -36,7 +36,7 @@ export default function VotesPage() {
 
   const loadSession = async (sessionId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/votes/sessions/${sessionId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/votes/sessions/${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -69,7 +69,7 @@ export default function VotesPage() {
       
       try {
         await fetch(
-          `http://localhost:8000/api/votes/sessions/${activeSession.id}/submissions/${submissionId}/vote`,
+          `${import.meta.env.VITE_API_URL}/api/votes/sessions/${activeSession.id}/submissions/${submissionId}/vote`,
           {
             method: 'DELETE',
             headers: {
@@ -103,7 +103,7 @@ export default function VotesPage() {
       // If user already voted on a different submission, remove that vote first
       if (currentVote && currentVote.id !== submissionId) {
         await fetch(
-          `http://localhost:8000/api/votes/sessions/${activeSession.id}/submissions/${currentVote.id}/vote`,
+          `${import.meta.env.VITE_API_URL}/api/votes/sessions/${activeSession.id}/submissions/${currentVote.id}/vote`,
           {
             method: 'DELETE',
             headers: {
@@ -115,7 +115,7 @@ export default function VotesPage() {
       
       // Add vote to the new submission
       const response = await fetch(
-        `http://localhost:8000/api/votes/sessions/${activeSession.id}/submissions/${submissionId}/vote`,
+        `${import.meta.env.VITE_API_URL}/api/votes/sessions/${activeSession.id}/submissions/${submissionId}/vote`,
         {
           method: 'POST',
           headers: {

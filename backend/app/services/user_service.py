@@ -29,6 +29,9 @@ def create_user(
     patreon_username: Optional[str] = None,
     email: Optional[str] = None,
     tier: int = 1,
+    patreon_access_token: Optional[str] = None,
+    patreon_refresh_token: Optional[str] = None,
+    patreon_token_expires_at: Optional[datetime] = None,
 ) -> User:
     """
     Create a new user.
@@ -38,7 +41,10 @@ def create_user(
         patreon_id: Patreon user ID
         patreon_username: Patreon username
         email: User email
-        tier: User tier (1-4)
+        tier: User tier (1-5)
+        patreon_access_token: Patreon OAuth access token
+        patreon_refresh_token: Patreon OAuth refresh token
+        patreon_token_expires_at: When the access token expires
         
     Returns:
         Created user
@@ -57,6 +63,9 @@ def create_user(
         role=role,
         credits=0,
         last_login=datetime.utcnow(),
+        patreon_access_token=patreon_access_token,
+        patreon_refresh_token=patreon_refresh_token,
+        patreon_token_expires_at=patreon_token_expires_at,
     )
     
     db.add(user)
@@ -77,6 +86,9 @@ def update_user(
     email: Optional[str] = None,
     tier: Optional[int] = None,
     credits: Optional[int] = None,
+    patreon_access_token: Optional[str] = None,
+    patreon_refresh_token: Optional[str] = None,
+    patreon_token_expires_at: Optional[datetime] = None,
 ) -> User:
     """
     Update user information.
@@ -88,6 +100,9 @@ def update_user(
         email: New email
         tier: New tier
         credits: New credit amount
+        patreon_access_token: New Patreon access token
+        patreon_refresh_token: New Patreon refresh token
+        patreon_token_expires_at: New token expiration time
         
     Returns:
         Updated user
@@ -111,6 +126,12 @@ def update_user(
             user.credits = min(user.credits, user.max_credits)
     if credits is not None:
         user.credits = min(credits, user.max_credits)
+    if patreon_access_token is not None:
+        user.patreon_access_token = patreon_access_token
+    if patreon_refresh_token is not None:
+        user.patreon_refresh_token = patreon_refresh_token
+    if patreon_token_expires_at is not None:
+        user.patreon_token_expires_at = patreon_token_expires_at
     
     user.updated_at = datetime.utcnow()
     db.commit()

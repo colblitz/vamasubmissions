@@ -57,7 +57,7 @@ export default function DashboardPageV2() {
 
   const loadTierRules = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/users/me/tier-rules', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/users/me/tier-rules', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -637,7 +637,7 @@ function SubmissionCard({ submission, isEditing, onStartEdit, onCancelEdit, onSa
                   {images.map((image) => (
                     <div key={image.id} className="relative">
                       <img
-                        src={`http://localhost:8000${image.file_path}`}
+                        src={`${import.meta.env.VITE_API_URL}${image.file_path}`}
                         alt="Reference"
                         className="w-full h-24 object-cover rounded-lg border border-gray-200"
                       />
@@ -773,7 +773,7 @@ function SubmissionCard({ submission, isEditing, onStartEdit, onCancelEdit, onSa
                 {submission.images.map((image, index) => (
                   <img
                     key={index}
-                    src={`http://localhost:8000${image.file_path}`}
+                    src={`${import.meta.env.VITE_API_URL}${image.file_path}`}
                     alt={`Reference ${index + 1}`}
                     className="w-full h-24 object-cover rounded-lg border border-gray-200"
                   />

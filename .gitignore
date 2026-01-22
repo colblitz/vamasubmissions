@@ -176,3 +176,12 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Test data and temporary files
+all-post-api/
+all-post-api.zip
+posts.csv
+vama_posts_initial.csv
+*.csv
+backend/test_patreon_api.py
+cleanup.sh
