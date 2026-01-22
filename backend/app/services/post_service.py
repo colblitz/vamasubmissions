@@ -274,6 +274,56 @@ def get_autocomplete_tags(
     return [row[0] for row in results]
 
 
+def get_character_series_map(
+    db: Session,
+    query: str,
+    limit: int = 10,
+) -> List[dict]:
+    """
+    Get character name autocomplete suggestions with their most common series.
+    Only includes characters from published posts.
+
+    Args:
+        db: Database session
+        query: Search query
+        limit: Max results
+
+    Returns:
+        List of dicts with 'character' and 'series' keys
+    """
+    search_term = f"%{query.lower()}%"
+
+    results = db.execute(
+        text("""
+        WITH character_series AS (
+            SELECT 
+                unnest(characters) as character,
+                unnest(series) as series
+            FROM posts
+            WHERE status = 'published'
+        ),
+        ranked_series AS (
+            SELECT 
+                character,
+                series,
+                COUNT(*) as frequency,
+                ROW_NUMBER() OVER (PARTITION BY character ORDER BY COUNT(*) DESC) as rn
+            FROM character_series
+            GROUP BY character, series
+        )
+        SELECT DISTINCT character, series
+        FROM ranked_series
+        WHERE LOWER(character) LIKE :search_term
+          AND rn = 1
+        ORDER BY character
+        LIMIT :limit
+        """),
+        {"search_term": search_term, "limit": limit},
+    ).fetchall()
+
+    return [{"character": row[0], "series": row[1]} for row in results]
+
+
 def get_post_with_edit_count(db: Session, post_id: int) -> Optional[Tuple[Post, int]]:
     """
     Get post with count of edits in history.
