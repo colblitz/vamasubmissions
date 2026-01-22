@@ -110,6 +110,28 @@ async def autocomplete_characters(
     return post_service.get_autocomplete_characters(db, q, limit)
 
 
+@router.get("/autocomplete/characters-with-series")
+async def autocomplete_characters_with_series(
+    q: str = Query(..., min_length=1, description="Search query"),
+    limit: int = Query(10, ge=1, le=50, description="Max results"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get character name autocomplete suggestions with their most common series.
+
+    Args:
+        q: Search query
+        limit: Max results
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Dict mapping character names to their most common series
+    """
+    return post_service.get_character_series_map(db, q, limit)
+
+
 @router.get("/autocomplete/series", response_model=List[str])
 async def autocomplete_series(
     q: str = Query(..., min_length=1, description="Search query"),
