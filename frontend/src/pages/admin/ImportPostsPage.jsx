@@ -252,23 +252,27 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
   // Character autocomplete
   const [characterInput, setCharacterInput] = useState("");
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
+  const [characterSeriesMap, setCharacterSeriesMap] = useState({});
 
   // Series autocomplete
   const [seriesInput, setSeriesInput] = useState("");
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
 
-  // Fetch character suggestions
+  // Fetch character suggestions with series
   const fetchCharacterSuggestions = async (query) => {
     if (!query || query.length < 2) {
       setCharacterSuggestions([]);
+      setCharacterSeriesMap({});
       return;
     }
 
     try {
-      const response = await api.get("/api/posts/autocomplete/characters", {
+      const response = await api.get("/api/posts/autocomplete/characters-with-series", {
         params: { q: query, limit: 10 },
       });
-      setCharacterSuggestions(response.data || []);
+      const charSeriesMap = response.data || {};
+      setCharacterSeriesMap(charSeriesMap);
+      setCharacterSuggestions(Object.keys(charSeriesMap));
     } catch (err) {
       console.error("Failed to fetch character suggestions:", err);
     }
@@ -447,15 +451,31 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
                     <button
                       key={idx}
                       onClick={() => {
+                        // Add character if not already added
                         if (!characters.includes(suggestion)) {
                           setCharacters([...characters, suggestion]);
                         }
+                        
+                        // Auto-add series if character has one and series not already added
+                        const associatedSeries = characterSeriesMap[suggestion];
+                        if (associatedSeries && !series.includes(associatedSeries)) {
+                          setSeries([...series, associatedSeries]);
+                        }
+                        
                         setCharacterInput("");
                         setCharacterSuggestions([]);
+                        setCharacterSeriesMap({});
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
                     >
-                      {suggestion}
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{suggestion}</span>
+                        {characterSeriesMap[suggestion] && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            {characterSeriesMap[suggestion]}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>

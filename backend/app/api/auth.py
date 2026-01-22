@@ -252,6 +252,9 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
     """
     async with httpx.AsyncClient() as client:
         # Fetch user identity
+        print(f"DEBUG: Fetching user info from Patreon")
+        print(f"DEBUG: API URL: {settings.patreon_api_url}/identity")
+        
         identity_response = await client.get(
             f"{settings.patreon_api_url}/identity",
             params={
@@ -262,10 +265,17 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
             headers={"Authorization": f"Bearer {access_token}"},
         )
 
+        print(f"DEBUG: Identity response status: {identity_response.status_code}")
+        print(f"DEBUG: Identity response text: {identity_response.text}")
+
         if identity_response.status_code != 200:
+            error_detail = identity_response.text
+            print(f"ERROR: Failed to fetch user info from Patreon")
+            print(f"ERROR: Status code: {identity_response.status_code}")
+            print(f"ERROR: Response: {error_detail}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to fetch user info from Patreon",
+                detail=f"Failed to fetch user info from Patreon: {error_detail}",
             )
 
         data = identity_response.json()
