@@ -1,22 +1,22 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { mockAuth } from '../services/mockAuth';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { mockAuth } from "../services/mockAuth";
 
 export default function LoginPage() {
   const { login, isMockAuth } = useAuth();
   const navigate = useNavigate();
-  const [selectedUser, setSelectedUser] = useState('tier2');
+  const [selectedUser, setSelectedUser] = useState("tier2");
   const [error, setError] = useState(null);
 
   const handleLogin = async () => {
     try {
       setError(null);
       await login(selectedUser);
-      navigate('/search');
+      navigate("/search");
     } catch (error) {
-      console.error('Login failed:', error);
-      setError('Login failed. Please try again.');
+      console.error("Login failed:", error);
+      setError("Login failed. Please try again.");
     }
   };
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   // Mock authentication UI
   const mockUsers = mockAuth.getAvailableUsers();
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="card max-w-md w-full">
@@ -49,7 +49,7 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-3xl font-bold mb-6 text-center">Character Submissions</h1>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Select User Type</label>
@@ -75,11 +75,24 @@ export default function LoginPage() {
               const user = mockAuth.getMockUser(selectedUser);
               return (
                 <div className="text-sm space-y-1 text-gray-700">
-                  <p><span className="font-medium text-gray-900">Username:</span> {user.patreon_username}</p>
-                  <p><span className="font-medium text-gray-900">Tier:</span> {user.tier}</p>
-                  <p><span className="font-medium text-gray-900">Role:</span> {user.role}</p>
-                  <p><span className="font-medium text-gray-900">Credits:</span> {user.credits} / {user.max_credits}</p>
-                  <p><span className="font-medium text-gray-900">Can Submit Multiple:</span> {user.can_submit_multiple ? 'Yes' : 'No'}</p>
+                  <p>
+                    <span className="font-medium text-gray-900">Username:</span>{" "}
+                    {user.patreon_username}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-900">Tier:</span> {user.tier}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-900">Role:</span> {user.role}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-900">Credits:</span> {user.credits} /{" "}
+                    {user.max_credits}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-900">Can Submit Multiple:</span>{" "}
+                    {user.can_submit_multiple ? "Yes" : "No"}
+                  </p>
                 </div>
               );
             })()}

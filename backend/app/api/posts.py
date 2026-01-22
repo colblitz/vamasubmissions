@@ -1,4 +1,5 @@
 """Post API endpoints."""
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
@@ -14,8 +15,12 @@ router = APIRouter()
 
 @router.get("/search", response_model=PostSearchResult)
 async def search_posts(
-    q: Optional[str] = Query(None, description="Search query (searches title, characters, series, tags)"),
-    characters: Optional[str] = Query(None, description="Filter by character names (comma-separated)"),
+    q: Optional[str] = Query(
+        None, description="Search query (searches title, characters, series, tags)"
+    ),
+    characters: Optional[str] = Query(
+        None, description="Filter by character names (comma-separated)"
+    ),
     series: Optional[str] = Query(None, description="Filter by series names (comma-separated)"),
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -25,7 +30,7 @@ async def search_posts(
 ):
     """
     Search posts with filters.
-    
+
     Args:
         q: Full-text search query
         characters: Filter by character names (comma-separated)
@@ -35,15 +40,15 @@ async def search_posts(
         limit: Results per page
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Search results with pagination
     """
     # Parse comma-separated values
-    character_list = [c.strip() for c in characters.split(',')] if characters else []
-    series_list = [s.strip() for s in series.split(',')] if series else []
-    tag_list = [t.strip() for t in tags.split(',')] if tags else []
-    
+    character_list = [c.strip() for c in characters.split(",")] if characters else []
+    series_list = [s.strip() for s in series.split(",")] if series else []
+    tag_list = [t.strip() for t in tags.split(",")] if tags else []
+
     return post_service.search_posts(
         db,
         query=q,
@@ -63,18 +68,19 @@ async def get_post(
 ):
     """
     Get post details by ID.
-    
+
     Args:
         post_id: Post ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Post details
     """
     post = post_service.get_post_by_id(db, post_id)
     if not post:
         from fastapi import HTTPException, status
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
@@ -91,13 +97,13 @@ async def autocomplete_characters(
 ):
     """
     Get character name autocomplete suggestions.
-    
+
     Args:
         q: Search query
         limit: Max results
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of character names
     """
@@ -113,13 +119,13 @@ async def autocomplete_series(
 ):
     """
     Get series name autocomplete suggestions.
-    
+
     Args:
         q: Search query
         limit: Max results
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of series names
     """
@@ -135,13 +141,13 @@ async def autocomplete_tags(
 ):
     """
     Get tag autocomplete suggestions.
-    
+
     Args:
         q: Search query
         limit: Max results
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of tags
     """

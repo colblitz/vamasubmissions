@@ -1,4 +1,5 @@
 """Post Edit service for business logic."""
+
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from fastapi import HTTPException, status
@@ -30,12 +31,12 @@ def suggest_edit(
 ) -> PostEdit:
     """
     Suggest an edit to a post.
-    
+
     Args:
         db: Database session
         user_id: User ID suggesting the edit
         edit_data: Edit suggestion data
-        
+
     Returns:
         Created edit suggestion
     """
@@ -46,15 +47,15 @@ def suggest_edit(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
-    
+
     # Validate the edit
     field_name = edit_data.field_name
     action = edit_data.action
     value = edit_data.value.strip()
-    
+
     # Get current field value
     current_values = getattr(post, field_name, [])
-    
+
     if action == "ADD":
         # Check if value already exists (case-insensitive)
         if any(v.lower() == value.lower() for v in current_values):
@@ -69,7 +70,7 @@ def suggest_edit(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Value '{value}' not found in {field_name}",
             )
-    
+
     # Create edit suggestion
     edit = PostEdit(
         post_id=edit_data.post_id,
@@ -77,13 +78,13 @@ def suggest_edit(
         field_name=field_name,
         action=action,
         value=value,
-        status='pending',
+        status="pending",
     )
-    
+
     db.add(edit)
     db.commit()
     db.refresh(edit)
-    
+
     return edit
 
 
@@ -94,12 +95,12 @@ def approve_edit(
 ) -> PostEdit:
     """
     Approve an edit suggestion and apply it to the post.
-    
+
     Args:
         db: Database session
         edit_id: Edit ID to approve
         approver_id: User ID approving the edit
-        
+
     Returns:
         Approved edit
     """
@@ -109,21 +110,21 @@ def approve_edit(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Edit not found",
         )
-    
+
     # Check if edit is pending
-    if edit.status != 'pending':
+    if edit.status != "pending":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Edit is already {edit.status}",
         )
-    
+
     # Check if approver is different from suggester
     if edit.suggester_id == approver_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot approve your own edit suggestion",
         )
-    
+
     # Get the post
     post = db.query(Post).filter(Post.id == edit.post_id).first()
     if not post:
@@ -131,14 +132,14 @@ def approve_edit(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
-    
+
     # Apply the edit
     field_name = edit.field_name
     action = edit.action
     value = edit.value
-    
+
     current_values = list(getattr(post, field_name, []))
-    
+
     if action == "ADD":
         # Add value if not already present (case-insensitive check)
         if not any(v.lower() == value.lower() for v in current_values):
@@ -146,16 +147,16 @@ def approve_edit(
     elif action == "DELETE":
         # Remove value (case-insensitive)
         current_values = [v for v in current_values if v.lower() != value.lower()]
-    
+
     # Update post
     setattr(post, field_name, current_values)
     post.updated_at = datetime.utcnow()
-    
+
     # Update edit status
-    edit.status = 'approved'
+    edit.status = "approved"
     edit.approver_id = approver_id
     edit.approved_at = datetime.utcnow()
-    
+
     # Create history entry
     history = EditHistory(
         post_id=edit.post_id,
@@ -166,11 +167,11 @@ def approve_edit(
         value=value,
         applied_at=datetime.utcnow(),
     )
-    
+
     db.add(history)
     db.commit()
     db.refresh(edit)
-    
+
     return edit
 
 
@@ -182,13 +183,13 @@ def reject_edit(
 ) -> PostEdit:
     """
     Reject an edit suggestion (admin only).
-    
+
     Args:
         db: Database session
         edit_id: Edit ID to reject
         user_id: User ID rejecting the edit
         is_admin: Whether user is admin
-        
+
     Returns:
         Rejected edit
     """
@@ -197,27 +198,27 @@ def reject_edit(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can reject edits",
         )
-    
+
     edit = get_edit_by_id(db, edit_id)
     if not edit:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Edit not found",
         )
-    
-    if edit.status != 'pending':
+
+    if edit.status != "pending":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Edit is already {edit.status}",
         )
-    
-    edit.status = 'rejected'
+
+    edit.status = "rejected"
     edit.approver_id = user_id
     edit.approved_at = datetime.utcnow()
-    
+
     db.commit()
     db.refresh(edit)
-    
+
     return edit
 
 
@@ -228,36 +229,40 @@ def get_pending_edits(
 ) -> PostEditList:
     """
     Get all pending edit suggestions.
-    
+
     Args:
         db: Database session
         page: Page number (1-indexed)
         limit: Results per page
-        
+
     Returns:
         List of pending edits with details
     """
     # Query pending edits with post and user info
-    q = db.query(PostEdit).filter(PostEdit.status == 'pending')
-    
+    q = db.query(PostEdit).filter(PostEdit.status == "pending")
+
     # Get total count
     total = q.count()
-    
+
     # Apply pagination
     offset = (page - 1) * limit
     edits = q.order_by(PostEdit.created_at.asc()).offset(offset).limit(limit).all()
-    
+
     # Build detailed response
     edits_with_details = []
     for edit in edits:
         post = db.query(Post).filter(Post.id == edit.post_id).first()
-        suggester = db.query(User).filter(User.id == edit.suggester_id).first() if edit.suggester_id else None
-        
+        suggester = (
+            db.query(User).filter(User.id == edit.suggester_id).first()
+            if edit.suggester_id
+            else None
+        )
+
         # Get first thumbnail URL if available
         post_thumbnail = None
         if post and post.thumbnail_urls and len(post.thumbnail_urls) > 0:
             post_thumbnail = post.thumbnail_urls[0]
-        
+
         edit_detail = PostEditWithDetails(
             id=edit.id,
             post_id=edit.post_id,
@@ -275,7 +280,7 @@ def get_pending_edits(
             approver_username=None,
         )
         edits_with_details.append(edit_detail)
-    
+
     return PostEditList(
         edits=edits_with_details,
         total=total,
@@ -292,40 +297,48 @@ def get_edit_history(
 ) -> EditHistoryList:
     """
     Get edit history (audit log).
-    
+
     Args:
         db: Database session
         post_id: Optional post ID to filter by
         page: Page number (1-indexed)
         limit: Results per page
-        
+
     Returns:
         List of edit history entries
     """
     q = db.query(EditHistory)
-    
+
     if post_id:
         q = q.filter(EditHistory.post_id == post_id)
-    
+
     # Get total count
     total = q.count()
-    
+
     # Apply pagination
     offset = (page - 1) * limit
     history_entries = q.order_by(EditHistory.applied_at.desc()).offset(offset).limit(limit).all()
-    
+
     # Build detailed response
     history_with_details = []
     for entry in history_entries:
         post = db.query(Post).filter(Post.id == entry.post_id).first()
-        suggester = db.query(User).filter(User.id == entry.suggester_id).first() if entry.suggester_id else None
-        approver = db.query(User).filter(User.id == entry.approver_id).first() if entry.approver_id else None
-        
+        suggester = (
+            db.query(User).filter(User.id == entry.suggester_id).first()
+            if entry.suggester_id
+            else None
+        )
+        approver = (
+            db.query(User).filter(User.id == entry.approver_id).first()
+            if entry.approver_id
+            else None
+        )
+
         # Get first thumbnail URL if available
         post_thumbnail = None
         if post and post.thumbnail_urls and len(post.thumbnail_urls) > 0:
             post_thumbnail = post.thumbnail_urls[0]
-        
+
         history_detail = EditHistoryEntry(
             id=entry.id,
             post_id=entry.post_id,
@@ -341,7 +354,7 @@ def get_edit_history(
             approver_username=approver.patreon_username if approver else "Unknown",
         )
         history_with_details.append(history_detail)
-    
+
     return EditHistoryList(
         history=history_with_details,
         total=total,
@@ -358,13 +371,13 @@ def undo_edit(
 ) -> EditHistory:
     """
     Undo an edit from history (admin only).
-    
+
     Args:
         db: Database session
         history_id: History entry ID
         user_id: User ID performing the undo
         is_admin: Whether user is admin
-        
+
     Returns:
         History entry
     """
@@ -373,14 +386,14 @@ def undo_edit(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can undo edits",
         )
-    
+
     history = db.query(EditHistory).filter(EditHistory.id == history_id).first()
     if not history:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="History entry not found",
         )
-    
+
     # Get the post
     post = db.query(Post).filter(Post.id == history.post_id).first()
     if not post:
@@ -388,14 +401,14 @@ def undo_edit(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
-    
+
     # Reverse the edit
     field_name = history.field_name
     action = history.action
     value = history.value
-    
+
     current_values = list(getattr(post, field_name, []))
-    
+
     # Reverse the action
     if action == "ADD":
         # Remove the value that was added
@@ -404,11 +417,11 @@ def undo_edit(
         # Add back the value that was deleted
         if not any(v.lower() == value.lower() for v in current_values):
             current_values.append(value)
-    
+
     # Update post
     setattr(post, field_name, current_values)
     post.updated_at = datetime.utcnow()
-    
+
     db.commit()
-    
+
     return history

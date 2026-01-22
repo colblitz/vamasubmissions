@@ -1,4 +1,5 @@
 """Community Request API endpoints."""
+
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -26,12 +27,12 @@ async def create_request(
 ):
     """
     Create a new community request.
-    
+
     Args:
         request_data: Request creation data
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Created request
     """
@@ -49,14 +50,14 @@ async def get_all_requests(
     """
     Get all community requests (sorted by timestamp, oldest first).
     Private requests are obscured for other users.
-    
+
     Args:
         page: Page number (1-indexed)
         limit: Results per page
         include_fulfilled: Whether to include fulfilled requests
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of requests with pagination and user positions
     """
@@ -77,12 +78,12 @@ async def get_my_requests(
 ):
     """
     Get current user's requests.
-    
+
     Args:
         include_fulfilled: Whether to include fulfilled requests
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of user's requests
     """
@@ -102,13 +103,13 @@ async def update_request(
 ):
     """
     Update a community request (own requests only, unless admin).
-    
+
     Args:
         request_id: Request ID
         request_data: Request update data
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Updated request
     """
@@ -129,12 +130,12 @@ async def mark_request_fulfilled(
 ):
     """
     Mark a request as fulfilled (own requests only, unless admin).
-    
+
     Args:
         request_id: Request ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Updated request
     """
@@ -154,7 +155,7 @@ async def delete_request(
 ):
     """
     Delete a community request (own requests only, unless admin).
-    
+
     Args:
         request_id: Request ID
         current_user: Current authenticated user

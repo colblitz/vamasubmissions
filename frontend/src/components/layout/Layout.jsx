@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router-dom';
-import Header from './Header';
+import { Outlet } from "react-router-dom";
+import Header from "./Header";
 
 export default function Layout() {
   return (
@@ -9,9 +9,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="bg-gray-800 text-white text-center py-4 mt-12">
-        <p className="text-sm text-gray-400">
-          Character Submission System • Powered by Patreon
-        </p>
+        <p className="text-sm text-gray-400">Character Submission System • Powered by Patreon</p>
       </footer>
     </div>
   );

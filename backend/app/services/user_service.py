@@ -1,4 +1,5 @@
 """User service for business logic."""
+
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -35,7 +36,7 @@ def create_user(
 ) -> User:
     """
     Create a new user.
-    
+
     Args:
         db: Database session
         patreon_id: Patreon user ID
@@ -45,7 +46,7 @@ def create_user(
         patreon_access_token: Patreon OAuth access token
         patreon_refresh_token: Patreon OAuth refresh token
         patreon_token_expires_at: When the access token expires
-        
+
     Returns:
         Created user
     """
@@ -53,7 +54,7 @@ def create_user(
     role = "patron"
     if patreon_id == settings.admin_patreon_id:
         role = "admin"
-    
+
     # Create user
     user = User(
         patreon_id=patreon_id,
@@ -67,15 +68,15 @@ def create_user(
         patreon_refresh_token=patreon_refresh_token,
         patreon_token_expires_at=patreon_token_expires_at,
     )
-    
+
     db.add(user)
     db.commit()
     db.refresh(user)
-    
+
     # Initialize credits for paid tiers
     if tier > 1:
         refresh_user_credits(db, user)
-    
+
     return user
 
 
@@ -92,7 +93,7 @@ def update_user(
 ) -> User:
     """
     Update user information.
-    
+
     Args:
         db: Database session
         user_id: User ID
@@ -103,7 +104,7 @@ def update_user(
         patreon_access_token: New Patreon access token
         patreon_refresh_token: New Patreon refresh token
         patreon_token_expires_at: New token expiration time
-        
+
     Returns:
         Updated user
     """
@@ -113,7 +114,7 @@ def update_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    
+
     if patreon_username is not None:
         user.patreon_username = patreon_username
     if email is not None:
@@ -132,44 +133,44 @@ def update_user(
         user.patreon_refresh_token = patreon_refresh_token
     if patreon_token_expires_at is not None:
         user.patreon_token_expires_at = patreon_token_expires_at
-    
+
     user.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(user)
-    
+
     return user
 
 
 def refresh_user_credits(db: Session, user: User) -> User:
     """
     Refresh user credits based on their tier.
-    
+
     Args:
         db: Database session
         user: User to refresh credits for
-        
+
     Returns:
         Updated user
     """
     from app.services.credit_service import add_credits
-    
+
     # Only refresh for paid tiers
     if user.tier <= 1:
         return user
-    
+
     now = datetime.utcnow()
-    
+
     # Check if we need to refresh (monthly)
     if user.last_credit_refresh:
         # Check if it's been a month
         days_since_refresh = (now - user.last_credit_refresh).days
         if days_since_refresh < 30:
             return user
-    
+
     # Add monthly credits
     credits_to_add = user.credits_per_month
     new_credits = min(user.credits + credits_to_add, user.max_credits)
-    
+
     if new_credits > user.credits:
         add_credits(
             db,
@@ -182,7 +183,7 @@ def refresh_user_credits(db: Session, user: User) -> User:
         user.last_credit_refresh = now
         db.commit()
         db.refresh(user)
-    
+
     return user
 
 
@@ -192,19 +193,19 @@ async def get_current_user(
 ) -> User:
     """
     Get current authenticated user from JWT token.
-    
+
     Args:
         credentials: HTTP authorization credentials
         db: Database session
-        
+
     Returns:
         Current user
-        
+
     Raises:
         HTTPException: If token is invalid or user not found
     """
     token = credentials.credentials
-    
+
     # Decode token
     payload = decode_access_token(token)
     if not payload:
@@ -213,7 +214,7 @@ async def get_current_user(
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(
@@ -221,7 +222,7 @@ async def get_current_user(
             detail="Invalid token payload",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Get user from database
     user = get_user_by_id(db, user_id)
     if not user:
@@ -230,10 +231,10 @@ async def get_current_user(
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Refresh credits if needed
     refresh_user_credits(db, user)
-    
+
     return user
 
 
@@ -242,13 +243,13 @@ async def get_current_admin_user(
 ) -> User:
     """
     Get current user and verify they are an admin.
-    
+
     Args:
         current_user: Current authenticated user
-        
+
     Returns:
         Current admin user
-        
+
     Raises:
         HTTPException: If user is not an admin
     """
@@ -265,13 +266,13 @@ async def get_current_creator_user(
 ) -> User:
     """
     Get current user and verify they are the creator.
-    
+
     Args:
         current_user: Current authenticated user
-        
+
     Returns:
         Current creator user
-        
+
     Raises:
         HTTPException: If user is not the creator
     """

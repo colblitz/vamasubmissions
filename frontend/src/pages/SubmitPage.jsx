@@ -1,22 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { submissionsAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { submissionsAPI } from "../services/api";
 
 export default function SubmitPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
-  
+
   const [formData, setFormData] = useState({
-    character_name: '',
-    series: '',
-    description: '',
+    character_name: "",
+    series: "",
+    description: "",
     is_large_image_set: false,
     is_double_character: false,
   });
-  
+
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
 
@@ -33,13 +33,13 @@ export default function SubmitPage() {
   // Series autocomplete
   const handleSeriesChange = async (value) => {
     setFormData({ ...formData, series: value });
-    
+
     if (value.length > 2) {
       try {
         const response = await submissionsAPI.autocompleteSeries(value);
         setSeriesSuggestions(response.data.series || []);
       } catch (error) {
-        console.error('Failed to fetch series suggestions:', error);
+        console.error("Failed to fetch series suggestions:", error);
       }
     } else {
       setSeriesSuggestions([]);
@@ -49,16 +49,16 @@ export default function SubmitPage() {
   // Handle image selection
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    
+
     if (files.length > 20) {
-      alert('Maximum 20 images allowed');
+      alert("Maximum 20 images allowed");
       return;
     }
 
     setImages(files);
 
     // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
+    const previews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews(previews);
   };
 
@@ -81,7 +81,7 @@ export default function SubmitPage() {
     }
 
     if (images.length === 0) {
-      alert('Please upload at least one image');
+      alert("Please upload at least one image");
       return;
     }
 
@@ -90,11 +90,11 @@ export default function SubmitPage() {
 
       // Create submission
       const submissionFormData = new FormData();
-      submissionFormData.append('character_name', formData.character_name);
-      submissionFormData.append('series', formData.series);
-      submissionFormData.append('description', formData.description);
-      submissionFormData.append('is_large_image_set', formData.is_large_image_set);
-      submissionFormData.append('is_double_character', formData.is_double_character);
+      submissionFormData.append("character_name", formData.character_name);
+      submissionFormData.append("series", formData.series);
+      submissionFormData.append("description", formData.description);
+      submissionFormData.append("is_large_image_set", formData.is_large_image_set);
+      submissionFormData.append("is_double_character", formData.is_double_character);
 
       const response = await submissionsAPI.create(submissionFormData);
       const submissionId = response.data.id;
@@ -102,11 +102,11 @@ export default function SubmitPage() {
       // Upload images
       await submissionsAPI.uploadImages(submissionId, images);
 
-      alert('Submission created successfully!');
-      navigate('/dashboard');
+      alert("Submission created successfully!");
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Failed to create submission:', error);
-      alert(error.response?.data?.detail || 'Failed to create submission');
+      console.error("Failed to create submission:", error);
+      alert(error.response?.data?.detail || "Failed to create submission");
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ export default function SubmitPage() {
                 Current Credits: {user.credits} / {user.max_credits}
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                This submission will cost: {creditCost} credit{creditCost !== 1 ? 's' : ''}
+                This submission will cost: {creditCost} credit{creditCost !== 1 ? "s" : ""}
               </p>
             </div>
             {user.tier > 1 && user.credits < creditCost && (
@@ -195,9 +195,7 @@ export default function SubmitPage() {
               rows="6"
               placeholder="Describe your character request in detail..."
             />
-            <p className="text-sm text-gray-500 mt-1">
-              {formData.description.length} characters
-            </p>
+            <p className="text-sm text-gray-500 mt-1">{formData.description.length} characters</p>
           </div>
 
           {/* Image Upload */}
@@ -212,9 +210,7 @@ export default function SubmitPage() {
               onChange={handleImageChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Upload up to 20 images (max 10MB each)
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Upload up to 20 images (max 10MB each)</p>
 
             {imagePreviews.length > 0 && (
               <div className="grid grid-cols-4 gap-4 mt-4">
@@ -242,12 +238,14 @@ export default function SubmitPage() {
           {user.tier > 1 && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-900">Request Modifiers</h3>
-              
+
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.is_large_image_set}
-                  onChange={(e) => setFormData({ ...formData, is_large_image_set: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_large_image_set: e.target.checked })
+                  }
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700 font-medium">
@@ -259,7 +257,9 @@ export default function SubmitPage() {
                 <input
                   type="checkbox"
                   checked={formData.is_double_character}
-                  onChange={(e) => setFormData({ ...formData, is_double_character: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_double_character: e.target.checked })
+                  }
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700 font-medium">
@@ -276,13 +276,11 @@ export default function SubmitPage() {
               disabled={loading || (user.tier > 1 && user.credits < creditCost)}
               className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Submitting...' : `Submit (${creditCost} credit${creditCost !== 1 ? 's' : ''})`}
+              {loading
+                ? "Submitting..."
+                : `Submit (${creditCost} credit${creditCost !== 1 ? "s" : ""})`}
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="btn-secondary"
-            >
+            <button type="button" onClick={() => navigate("/dashboard")} className="btn-secondary">
               Cancel
             </button>
           </div>

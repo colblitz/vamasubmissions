@@ -1,13 +1,13 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
-import { mockAuth, useMockAuth } from '../services/mockAuth';
+import { createContext, useContext, useState, useEffect } from "react";
+import { authAPI } from "../services/api";
+import { mockAuth, useMockAuth } from "../services/mockAuth";
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -20,8 +20,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      
+      const token = localStorage.getItem("token");
+
       if (!token) {
         setLoading(false);
         return;
@@ -34,8 +34,8 @@ export const AuthProvider = ({ children }) => {
           setUser(mockUser);
         } else {
           // Token exists but no user - clear and redirect
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
         }
         setLoading(false);
       } else {
@@ -43,11 +43,11 @@ export const AuthProvider = ({ children }) => {
         try {
           const response = await authAPI.getCurrentUser();
           setUser(response.data);
-          localStorage.setItem('user', JSON.stringify(response.data));
+          localStorage.setItem("user", JSON.stringify(response.data));
         } catch (error) {
-          console.error('Failed to get current user:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          console.error("Failed to get current user:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
         } finally {
           setLoading(false);
         }
@@ -57,28 +57,31 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [isMockAuth]);
 
-  const login = async (userType = 'tier2') => {
+  const login = async (userType = "tier2") => {
     if (isMockAuth) {
       // Call the real backend's mock login endpoint
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/login?username=${userType}`, {
-          method: 'GET',
-        });
-        
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/auth/login?username=${userType}`,
+          {
+            method: "GET",
+          }
+        );
+
         if (!response.ok) {
-          throw new Error('Mock login failed');
+          throw new Error("Mock login failed");
         }
-        
+
         const data = await response.json();
-        
+
         // Store the real JWT token from backend
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
-        
+
         return data.user;
       } catch (error) {
-        console.error('Mock login error:', error);
+        console.error("Mock login error:", error);
         throw error;
       }
     } else {
@@ -94,7 +97,7 @@ export const AuthProvider = ({ children }) => {
       try {
         await authAPI.logout();
       } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
       }
     }
     setUser(null);
@@ -102,25 +105,25 @@ export const AuthProvider = ({ children }) => {
 
   const handleOAuthCallback = async (token) => {
     // Called after Patreon OAuth redirect
-    localStorage.setItem('token', token);
-    
+    localStorage.setItem("token", token);
+
     try {
       const response = await authAPI.getCurrentUser();
       setUser(response.data);
-      localStorage.setItem('user', JSON.stringify(response.data));
+      localStorage.setItem("user", JSON.stringify(response.data));
       return response.data;
     } catch (error) {
-      console.error('Failed to get user after OAuth:', error);
+      console.error("Failed to get user after OAuth:", error);
       throw error;
     }
   };
 
   const isAdmin = () => {
-    return user?.role === 'admin' || user?.role === 'creator';
+    return user?.role === "admin" || user?.role === "creator";
   };
 
   const isCreator = () => {
-    return user?.role === 'creator';
+    return user?.role === "creator";
   };
 
   const value = {

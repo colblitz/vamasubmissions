@@ -1,4 +1,5 @@
 """Submission API endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -30,7 +31,7 @@ async def create_submission(
 ):
     """
     Create a new submission.
-    
+
     Args:
         character_name: Character name
         series: Series name
@@ -40,7 +41,7 @@ async def create_submission(
         is_double_character: Whether this is a double character request
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Created submission
     """
@@ -54,7 +55,7 @@ async def create_submission(
         is_large_image_set=is_large_image_set,
         is_double_character=is_double_character,
     )
-    
+
     return submission
 
 
@@ -67,33 +68,33 @@ async def upload_submission_images(
 ):
     """
     Upload images for a submission.
-    
+
     Args:
         submission_id: Submission ID
         files: List of image files
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of uploaded images
     """
     # Verify submission exists and user owns it
     submission = submission_service.get_submission_by_id(db, submission_id)
-    
+
     if not submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Submission not found",
         )
-    
+
     if submission.user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to upload images for this submission",
         )
-    
+
     images = await submission_service.save_submission_images(db, submission_id, files)
-    
+
     return {"message": f"Uploaded {len(images)} images", "images": images}
 
 
@@ -105,12 +106,12 @@ async def list_my_submissions(
 ):
     """
     List current user's submissions.
-    
+
     Args:
         status: Optional status filter
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of submissions
     """
@@ -119,7 +120,7 @@ async def list_my_submissions(
         user_id=current_user.id,
         status=status,
     )
-    
+
     return submissions
 
 
@@ -131,23 +132,23 @@ async def get_submission(
 ):
     """
     Get a specific submission.
-    
+
     Args:
         submission_id: Submission ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Submission with images
     """
     submission = submission_service.get_submission_by_id(db, submission_id)
-    
+
     if not submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Submission not found",
         )
-    
+
     # Check permissions: owner, admin, or public
     if submission.user_id != current_user.id and not current_user.is_admin:
         if not submission.is_public:
@@ -155,7 +156,7 @@ async def get_submission(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to view this submission",
             )
-    
+
     return submission
 
 
@@ -168,13 +169,13 @@ async def update_submission(
 ):
     """
     Update a submission (only pending submissions).
-    
+
     Args:
         submission_id: Submission ID
         submission_update: Updated submission data
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Updated submission
     """
@@ -189,7 +190,7 @@ async def update_submission(
         is_large_image_set=submission_update.is_large_image_set,
         is_double_character=submission_update.is_double_character,
     )
-    
+
     return submission
 
 
@@ -202,25 +203,25 @@ async def cancel_submission(
 ):
     """
     Cancel a submission and refund credits.
-    
+
     Args:
         submission_id: Submission ID
         cancel_data: Optional cancellation data
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Cancelled submission
     """
     reason = cancel_data.reason if cancel_data else None
-    
+
     submission = submission_service.cancel_submission(
         db=db,
         submission_id=submission_id,
         user=current_user,
         reason=reason,
     )
-    
+
     return submission
 
 
@@ -232,12 +233,12 @@ async def search_submissions(
 ):
     """
     Search completed submissions by character name or series.
-    
+
     Args:
         q: Search query
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of matching submissions
     """
@@ -247,7 +248,7 @@ async def search_submissions(
         user=current_user,
         status="completed",
     )
-    
+
     return submissions
 
 
@@ -258,14 +259,14 @@ async def autocomplete_series(
 ):
     """
     Get series names for autocomplete.
-    
+
     Args:
         q: Search query
         db: Database session
-        
+
     Returns:
         List of series names
     """
     series_list = submission_service.get_series_autocomplete(db, q)
-    
+
     return {"series": series_list}

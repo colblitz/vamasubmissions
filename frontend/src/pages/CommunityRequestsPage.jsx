@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from "react";
+import api from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function CommunityRequestsPage() {
   const { user } = useAuth();
@@ -8,17 +8,17 @@ export default function CommunityRequestsPage() {
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // New request form
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    characters: '',
-    series: '',
-    description: '',
-    timestamp: '' // Date when user wants this fulfilled
+    characters: "",
+    series: "",
+    description: "",
+    timestamp: "", // Date when user wants this fulfilled
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  
+
   // Autocomplete state
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
@@ -29,14 +29,14 @@ export default function CommunityRequestsPage() {
   const fetchQueue = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await api.get('/api/requests/', {
-        params: { status: 'pending', limit: 50 }
+      const response = await api.get("/api/requests/", {
+        params: { status: "pending", limit: 50 },
       });
       setRequests(response.data.requests);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load queue');
+      setError(err.response?.data?.detail || "Failed to load queue");
     } finally {
       setLoading(false);
     }
@@ -46,13 +46,13 @@ export default function CommunityRequestsPage() {
   const fetchMyRequests = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await api.get('/api/requests/my');
+      const response = await api.get("/api/requests/my");
       // Backend returns plain array, not {requests: [...]}
       setMyRequests(response.data || []);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load your requests');
+      setError(err.response?.data?.detail || "Failed to load your requests");
     } finally {
       setLoading(false);
     }
@@ -64,14 +64,14 @@ export default function CommunityRequestsPage() {
       setCharacterSuggestions([]);
       return;
     }
-    
+
     try {
-      const response = await api.get('/api/posts/autocomplete/characters', {
-        params: { q: query, limit: 10 }
+      const response = await api.get("/api/posts/autocomplete/characters", {
+        params: { q: query, limit: 10 },
       });
       setCharacterSuggestions(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch character suggestions:', err);
+      console.error("Failed to fetch character suggestions:", err);
     }
   };
 
@@ -81,14 +81,14 @@ export default function CommunityRequestsPage() {
       setSeriesSuggestions([]);
       return;
     }
-    
+
     try {
-      const response = await api.get('/api/posts/autocomplete/series', {
-        params: { q: query, limit: 10 }
+      const response = await api.get("/api/posts/autocomplete/series", {
+        params: { q: query, limit: 10 },
       });
       setSeriesSuggestions(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch series suggestions:', err);
+      console.error("Failed to fetch series suggestions:", err);
     }
   };
 
@@ -96,11 +96,11 @@ export default function CommunityRequestsPage() {
   const handleCharacterInputChange = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, characters: value });
-    
+
     // Get the last item being typed (after the last comma)
-    const items = value.split(',');
+    const items = value.split(",");
     const lastItem = items[items.length - 1].trim();
-    
+
     if (lastItem.length >= 2) {
       fetchCharacterSuggestions(lastItem);
       setShowCharacterSuggestions(true);
@@ -113,11 +113,11 @@ export default function CommunityRequestsPage() {
   const handleSeriesInputChange = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, series: value });
-    
+
     // Get the last item being typed (after the last comma)
-    const items = value.split(',');
+    const items = value.split(",");
     const lastItem = items[items.length - 1].trim();
-    
+
     if (lastItem.length >= 2) {
       fetchSeriesSuggestions(lastItem);
       setShowSeriesSuggestions(true);
@@ -128,23 +128,29 @@ export default function CommunityRequestsPage() {
 
   // Add character from autocomplete
   const addCharacterSuggestion = (suggestion) => {
-    const items = formData.characters.split(',').map(s => s.trim()).filter(Boolean);
-    const lastItem = items.pop() || '';
-    
+    const items = formData.characters
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const lastItem = items.pop() || "";
+
     // Replace the last item with the suggestion
     items.push(suggestion);
-    setFormData({ ...formData, characters: items.join(', ') + ', ' });
+    setFormData({ ...formData, characters: items.join(", ") + ", " });
     setShowCharacterSuggestions(false);
   };
 
   // Add series from autocomplete
   const addSeriesSuggestion = (suggestion) => {
-    const items = formData.series.split(',').map(s => s.trim()).filter(Boolean);
-    const lastItem = items.pop() || '';
-    
+    const items = formData.series
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const lastItem = items.pop() || "";
+
     // Replace the last item with the suggestion
     items.push(suggestion);
-    setFormData({ ...formData, series: items.join(', ') + ', ' });
+    setFormData({ ...formData, series: items.join(", ") + ", " });
     setShowSeriesSuggestions(false);
   };
 
@@ -153,43 +159,51 @@ export default function CommunityRequestsPage() {
     e.preventDefault();
     setError(null);
     setSubmitSuccess(false);
-    
+
     try {
       // Convert date string to ISO datetime
-      const timestamp = formData.timestamp ? new Date(formData.timestamp).toISOString() : new Date().toISOString();
-      
-      await api.post('/api/requests/', {
-        characters: formData.characters.split(',').map(c => c.trim()).filter(Boolean),
-        series: formData.series.split(',').map(s => s.trim()).filter(Boolean),
+      const timestamp = formData.timestamp
+        ? new Date(formData.timestamp).toISOString()
+        : new Date().toISOString();
+
+      await api.post("/api/requests/", {
+        characters: formData.characters
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+        series: formData.series
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
         description: formData.description,
-        timestamp: timestamp
+        timestamp: timestamp,
       });
-      
-      setFormData({ characters: '', series: '', description: '', timestamp: '' });
+
+      setFormData({ characters: "", series: "", description: "", timestamp: "" });
       setSubmitSuccess(true);
       setShowForm(false);
-      
+
       // Refresh both lists
       fetchMyRequests();
       fetchQueue();
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSubmitSuccess(false), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to submit request');
+      setError(err.response?.data?.detail || "Failed to submit request");
     }
   };
 
   // Delete request
   const handleDelete = async (requestId) => {
-    if (!confirm('Are you sure you want to delete this request?')) return;
-    
+    if (!confirm("Are you sure you want to delete this request?")) return;
+
     try {
       await api.delete(`/api/requests/${requestId}`);
       fetchMyRequests();
-      alert('Request deleted');
+      alert("Request deleted");
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete request');
+      alert(err.response?.data?.detail || "Failed to delete request");
     }
   };
 
@@ -223,109 +237,109 @@ export default function CommunityRequestsPage() {
           className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50"
         >
           <span className="text-xl font-semibold text-gray-900">
-            {showForm ? '▼' : '▶'} Submit a New Request
+            {showForm ? "▼" : "▶"} Submit a New Request
           </span>
         </button>
-        
+
         {showForm && (
           <div className="px-6 pb-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Characters (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formData.characters}
-                onChange={handleCharacterInputChange}
-                onFocus={() => formData.characters && setShowCharacterSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowCharacterSuggestions(false), 200)}
-                placeholder="e.g., Kafka, Himeko"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
-                required
-              />
-              {showCharacterSuggestions && characterSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {characterSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => addCharacterSuggestion(suggestion)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Series (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formData.series}
-                onChange={handleSeriesInputChange}
-                onFocus={() => formData.series && setShowSeriesSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSeriesSuggestions(false), 200)}
-                placeholder="e.g., Honkai: Star Rail"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
-                required
-              />
-              {showSeriesSuggestions && seriesSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {seriesSuggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => addSeriesSuggestion(suggestion)}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Requested Date
-              </label>
-              <input
-                type="date"
-                value={formData.timestamp}
-                onChange={(e) => setFormData({ ...formData, timestamp: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                When would you like this request fulfilled?
-              </p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description (optional)
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Any additional details..."
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
-              />
-            </div>
-            
-            <button
-              type="submit"
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Submit Request
-            </button>
-          </form>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Characters (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.characters}
+                  onChange={handleCharacterInputChange}
+                  onFocus={() => formData.characters && setShowCharacterSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCharacterSuggestions(false), 200)}
+                  placeholder="e.g., Kafka, Himeko"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  required
+                />
+                {showCharacterSuggestions && characterSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {characterSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => addCharacterSuggestion(suggestion)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Series (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.series}
+                  onChange={handleSeriesInputChange}
+                  onFocus={() => formData.series && setShowSeriesSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSeriesSuggestions(false), 200)}
+                  placeholder="e.g., Honkai: Star Rail"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  required
+                />
+                {showSeriesSuggestions && seriesSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {seriesSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => addSeriesSuggestion(suggestion)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Requested Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.timestamp}
+                  onChange={(e) => setFormData({ ...formData, timestamp: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  When would you like this request fulfilled?
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Any additional details..."
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Submit Request
+              </button>
+            </form>
           </div>
         )}
       </div>
@@ -341,37 +355,45 @@ export default function CommunityRequestsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900">
-                        {request.characters.join(', ')}
+                        {request.characters.join(", ")}
                       </h3>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        request.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : request.status === 'fulfilled'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${
+                          request.status === "pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : request.status === "fulfilled"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
                         {request.status}
                       </span>
                     </div>
-                    
+
                     <p className="text-gray-600 text-sm mb-1">
-                      Series: {request.series.join(', ')}
+                      Series: {request.series.join(", ")}
                     </p>
-                    
+
                     {request.description && (
                       <p className="text-gray-700 text-sm mb-1">{request.description}</p>
                     )}
-                    
+
                     <div className="flex gap-3 text-xs text-gray-500">
                       <span>
-                        Requested for: {request.timestamp ? new Date(request.timestamp).toLocaleDateString() : 'Not specified'}
+                        Requested for:{" "}
+                        {request.timestamp
+                          ? new Date(request.timestamp).toLocaleDateString()
+                          : "Not specified"}
                       </span>
                       <span>•</span>
                       <span>
-                        Submitted: {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'Date unknown'}
+                        Submitted:{" "}
+                        {request.created_at
+                          ? new Date(request.created_at).toLocaleDateString()
+                          : "Date unknown"}
                       </span>
                     </div>
-                    
+
                     {request.fulfilled_post_id && (
                       <a
                         href={`https://www.patreon.com/posts/${request.fulfilled_post_id}`}
@@ -383,8 +405,8 @@ export default function CommunityRequestsPage() {
                       </a>
                     )}
                   </div>
-                  
-                  {request.status === 'pending' && (
+
+                  {request.status === "pending" && (
                     <button
                       onClick={() => handleDelete(request.id)}
                       className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
@@ -416,24 +438,28 @@ export default function CommunityRequestsPage() {
             {requests.map((request) => (
               <div key={request.id} className="bg-white rounded-lg shadow p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">
-                  {request.characters.join(', ')}
+                  {request.characters.join(", ")}
                 </h3>
-                
-                <p className="text-gray-600 text-sm mb-1">
-                  Series: {request.series.join(', ')}
-                </p>
-                
+
+                <p className="text-gray-600 text-sm mb-1">Series: {request.series.join(", ")}</p>
+
                 {request.description && (
                   <p className="text-gray-700 text-sm mb-1">{request.description}</p>
                 )}
-                
+
                 <div className="flex gap-3 text-xs text-gray-500">
                   <span>
-                    Requested for: {request.timestamp ? new Date(request.timestamp).toLocaleDateString() : 'Not specified'}
+                    Requested for:{" "}
+                    {request.timestamp
+                      ? new Date(request.timestamp).toLocaleDateString()
+                      : "Not specified"}
                   </span>
                   <span>•</span>
                   <span>
-                    Submitted: {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'Date unknown'}
+                    Submitted:{" "}
+                    {request.created_at
+                      ? new Date(request.created_at).toLocaleDateString()
+                      : "Date unknown"}
                   </span>
                 </div>
               </div>

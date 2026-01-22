@@ -1,4 +1,5 @@
 """Main FastAPI application."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,13 +7,24 @@ import os
 
 from app.core.config import settings
 from app.core.database import engine, Base
+
 # Import all models to ensure they're registered with SQLAlchemy
 from app.models import (
-    User, Submission, SubmissionImage, CreditTransaction,
-    Vote, UserVoteAllowance, UserSession, SystemConfig,
-    Post, CommunityRequest, PostEdit, EditHistory
+    User,
+    Submission,
+    SubmissionImage,
+    CreditTransaction,
+    Vote,
+    UserVoteAllowance,
+    UserSession,
+    SystemConfig,
+    Post,
+    CommunityRequest,
+    PostEdit,
+    EditHistory,
 )
 from app.api import auth, submissions, queue, admin, users
+
 # Phase 1: Community Features
 from app.api import posts, community_requests, edits
 
@@ -42,7 +54,9 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 # Mount static files for test thumbnails
-thumbnails_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_thumbnails")
+thumbnails_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_thumbnails"
+)
 if os.path.exists(thumbnails_dir):
     app.mount("/static/thumbnails", StaticFiles(directory=thumbnails_dir), name="thumbnails")
 

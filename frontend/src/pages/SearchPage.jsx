@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useState({
@@ -7,32 +7,32 @@ export default function SearchPage() {
     series: [],
     tags: [],
     page: 1,
-    limit: 20
+    limit: 20,
   });
   const [results, setResults] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Edit suggestion modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [editSuccess, setEditSuccess] = useState('');
-  
+  const [editSuccess, setEditSuccess] = useState("");
+
   // Separate input states for each field
-  const [newCharacter, setNewCharacter] = useState('');
-  const [newSeries, setNewSeries] = useState('');
-  const [newTag, setNewTag] = useState('');
-  
+  const [newCharacter, setNewCharacter] = useState("");
+  const [newSeries, setNewSeries] = useState("");
+  const [newTag, setNewTag] = useState("");
+
   // Separate suggestion states for each field
   const [characterModalSuggestions, setCharacterModalSuggestions] = useState([]);
   const [seriesModalSuggestions, setSeriesModalSuggestions] = useState([]);
   const [tagModalSuggestions, setTagModalSuggestions] = useState([]);
 
   // Autocomplete states
-  const [characterInput, setCharacterInput] = useState('');
-  const [seriesInput, setSeriesInput] = useState('');
-  const [tagInput, setTagInput] = useState('');
+  const [characterInput, setCharacterInput] = useState("");
+  const [seriesInput, setSeriesInput] = useState("");
+  const [tagInput, setTagInput] = useState("");
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -40,16 +40,16 @@ export default function SearchPage() {
   // Fetch autocomplete suggestions
   const fetchAutocomplete = async (type, query) => {
     if (!query || query.length < 2) return;
-    
+
     try {
       const response = await api.get(`/api/posts/autocomplete/${type}`, {
-        params: { q: query, limit: 10 }
+        params: { q: query, limit: 10 },
       });
-      
+
       // Backend returns a plain array, not { suggestions: [...] }
-      if (type === 'characters') setCharacterSuggestions(response.data || []);
-      if (type === 'series') setSeriesSuggestions(response.data || []);
-      if (type === 'tags') setTagSuggestions(response.data || []);
+      if (type === "characters") setCharacterSuggestions(response.data || []);
+      if (type === "series") setSeriesSuggestions(response.data || []);
+      if (type === "tags") setTagSuggestions(response.data || []);
     } catch (err) {
       console.error(`Autocomplete error for ${type}:`, err);
     }
@@ -58,21 +58,21 @@ export default function SearchPage() {
   // Debounced autocomplete
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (characterInput) fetchAutocomplete('characters', characterInput);
+      if (characterInput) fetchAutocomplete("characters", characterInput);
     }, 300);
     return () => clearTimeout(timer);
   }, [characterInput]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (seriesInput) fetchAutocomplete('series', seriesInput);
+      if (seriesInput) fetchAutocomplete("series", seriesInput);
     }, 300);
     return () => clearTimeout(timer);
   }, [seriesInput]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (tagInput) fetchAutocomplete('tags', tagInput);
+      if (tagInput) fetchAutocomplete("tags", tagInput);
     }, 300);
     return () => clearTimeout(timer);
   }, [tagInput]);
@@ -81,23 +81,23 @@ export default function SearchPage() {
   const handleSearch = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await api.get('/api/posts/search', {
+      const response = await api.get("/api/posts/search", {
         params: {
-          characters: searchParams.characters.join(','),
-          series: searchParams.series.join(','),
-          tags: searchParams.tags.join(','),
+          characters: searchParams.characters.join(","),
+          series: searchParams.series.join(","),
+          tags: searchParams.tags.join(","),
           page: searchParams.page,
-          limit: searchParams.limit
-        }
+          limit: searchParams.limit,
+        },
       });
-      
+
       // Backend returns 'posts' not 'results'
       setResults(response.data.posts || []);
       setTotal(response.data.total || 0);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Search failed');
+      setError(err.response?.data?.detail || "Search failed");
     } finally {
       setLoading(false);
     }
@@ -105,147 +105,153 @@ export default function SearchPage() {
 
   // Add filter chip
   const addFilter = (type, value) => {
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       [type]: [...prev[type], value],
-      page: 1
+      page: 1,
     }));
-    
+
     // Clear input and suggestions
-    if (type === 'characters') {
-      setCharacterInput('');
+    if (type === "characters") {
+      setCharacterInput("");
       setCharacterSuggestions([]);
     }
-    if (type === 'series') {
-      setSeriesInput('');
+    if (type === "series") {
+      setSeriesInput("");
       setSeriesSuggestions([]);
     }
-    if (type === 'tags') {
-      setTagInput('');
+    if (type === "tags") {
+      setTagInput("");
       setTagSuggestions([]);
     }
   };
 
   // Remove filter chip
   const removeFilter = (type, value) => {
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
-      [type]: prev[type].filter(v => v !== value),
-      page: 1
+      [type]: prev[type].filter((v) => v !== value),
+      page: 1,
     }));
   };
 
   // Auto-search when filters change
   useEffect(() => {
-    if (searchParams.characters.length > 0 || searchParams.series.length > 0 || searchParams.tags.length > 0) {
+    if (
+      searchParams.characters.length > 0 ||
+      searchParams.series.length > 0 ||
+      searchParams.tags.length > 0
+    ) {
       handleSearch();
     }
   }, [searchParams]);
-  
+
   // Open edit modal
   const openEditModal = (post) => {
     setSelectedPost(post);
-    setNewCharacter('');
-    setNewSeries('');
-    setNewTag('');
+    setNewCharacter("");
+    setNewSeries("");
+    setNewTag("");
     setCharacterModalSuggestions([]);
     setSeriesModalSuggestions([]);
     setTagModalSuggestions([]);
     setEditModalOpen(true);
   };
-  
+
   // Close edit modal
   const closeEditModal = () => {
     setEditModalOpen(false);
     setSelectedPost(null);
-    setNewCharacter('');
-    setNewSeries('');
-    setNewTag('');
+    setNewCharacter("");
+    setNewSeries("");
+    setNewTag("");
     setCharacterModalSuggestions([]);
     setSeriesModalSuggestions([]);
     setTagModalSuggestions([]);
   };
-  
+
   // Fetch suggestions for modal (for each field type)
   const fetchModalSuggestions = async (fieldType, query) => {
     if (!query || query.length < 2) {
-      if (fieldType === 'characters') setCharacterModalSuggestions([]);
-      if (fieldType === 'series') setSeriesModalSuggestions([]);
-      if (fieldType === 'tags') setTagModalSuggestions([]);
+      if (fieldType === "characters") setCharacterModalSuggestions([]);
+      if (fieldType === "series") setSeriesModalSuggestions([]);
+      if (fieldType === "tags") setTagModalSuggestions([]);
       return;
     }
-    
+
     try {
       const response = await api.get(`/api/posts/autocomplete/${fieldType}`, {
-        params: { q: query, limit: 10 }
+        params: { q: query, limit: 10 },
       });
-      if (fieldType === 'characters') setCharacterModalSuggestions(response.data || []);
-      if (fieldType === 'series') setSeriesModalSuggestions(response.data || []);
-      if (fieldType === 'tags') setTagModalSuggestions(response.data || []);
+      if (fieldType === "characters") setCharacterModalSuggestions(response.data || []);
+      if (fieldType === "series") setSeriesModalSuggestions(response.data || []);
+      if (fieldType === "tags") setTagModalSuggestions(response.data || []);
     } catch (err) {
-      console.error('Autocomplete error:', err);
+      console.error("Autocomplete error:", err);
     }
   };
-  
+
   // Debounced autocomplete for modal - characters
   useEffect(() => {
     const timer = setTimeout(() => {
       if (newCharacter && editModalOpen) {
-        fetchModalSuggestions('characters', newCharacter);
+        fetchModalSuggestions("characters", newCharacter);
       }
     }, 300);
     return () => clearTimeout(timer);
   }, [newCharacter, editModalOpen]);
-  
+
   // Debounced autocomplete for modal - series
   useEffect(() => {
     const timer = setTimeout(() => {
       if (newSeries && editModalOpen) {
-        fetchModalSuggestions('series', newSeries);
+        fetchModalSuggestions("series", newSeries);
       }
     }, 300);
     return () => clearTimeout(timer);
   }, [newSeries, editModalOpen]);
-  
+
   // Debounced autocomplete for modal - tags
   useEffect(() => {
     const timer = setTimeout(() => {
       if (newTag && editModalOpen) {
-        fetchModalSuggestions('tags', newTag);
+        fetchModalSuggestions("tags", newTag);
       }
     }, 300);
     return () => clearTimeout(timer);
   }, [newTag, editModalOpen]);
-  
+
   // Submit edit suggestion (add or remove)
   const submitEdit = async (fieldName, action, value) => {
     try {
-      await api.post('/api/edits/suggest', {
+      await api.post("/api/edits/suggest", {
         post_id: selectedPost.id,
         field_name: fieldName,
         action: action,
-        value: value.trim()
+        value: value.trim(),
       });
-      
-      setEditSuccess(`${action === 'ADD' ? 'Added' : 'Removed'} "${value}" ${action === 'ADD' ? 'to' : 'from'} ${fieldName}`);
-      setTimeout(() => setEditSuccess(''), 3000);
+
+      setEditSuccess(
+        `${action === "ADD" ? "Added" : "Removed"} "${value}" ${action === "ADD" ? "to" : "from"} ${fieldName}`
+      );
+      setTimeout(() => setEditSuccess(""), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to submit edit suggestion');
+      alert(err.response?.data?.detail || "Failed to submit edit suggestion");
     }
   };
-  
+
   // Handle adding a new item
   const handleAdd = (fieldType, value, clearFunc, clearSuggestionsFunc) => {
     if (!value.trim()) return;
-    submitEdit(fieldType, 'ADD', value);
-    clearFunc('');
+    submitEdit(fieldType, "ADD", value);
+    clearFunc("");
     clearSuggestionsFunc([]);
   };
-  
+
   // Handle removing an item
   const handleRemove = (fieldType, value) => {
     if (confirm(`Suggest removing "${value}" from ${fieldType}?`)) {
-      submitEdit(fieldType, 'DELETE', value);
+      submitEdit(fieldType, "DELETE", value);
     }
   };
 
@@ -258,9 +264,7 @@ export default function SearchPage() {
         <div className="space-y-4">
           {/* Characters */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Characters
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Characters</label>
             <div className="relative">
               <input
                 type="text"
@@ -274,7 +278,7 @@ export default function SearchPage() {
                   {characterSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
-                      onClick={() => addFilter('characters', suggestion)}
+                      onClick={() => addFilter("characters", suggestion)}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
                     >
                       {suggestion}
@@ -291,7 +295,7 @@ export default function SearchPage() {
                 >
                   {char}
                   <button
-                    onClick={() => removeFilter('characters', char)}
+                    onClick={() => removeFilter("characters", char)}
                     className="hover:text-blue-600"
                   >
                     ×
@@ -303,9 +307,7 @@ export default function SearchPage() {
 
           {/* Series */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Series
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Series</label>
             <div className="relative">
               <input
                 type="text"
@@ -319,7 +321,7 @@ export default function SearchPage() {
                   {seriesSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
-                      onClick={() => addFilter('series', suggestion)}
+                      onClick={() => addFilter("series", suggestion)}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
                     >
                       {suggestion}
@@ -336,7 +338,7 @@ export default function SearchPage() {
                 >
                   {s}
                   <button
-                    onClick={() => removeFilter('series', s)}
+                    onClick={() => removeFilter("series", s)}
                     className="hover:text-green-600"
                   >
                     ×
@@ -348,9 +350,7 @@ export default function SearchPage() {
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
             <div className="relative">
               <input
                 type="text"
@@ -364,7 +364,7 @@ export default function SearchPage() {
                   {tagSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
-                      onClick={() => addFilter('tags', suggestion)}
+                      onClick={() => addFilter("tags", suggestion)}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
                     >
                       {suggestion}
@@ -381,7 +381,7 @@ export default function SearchPage() {
                 >
                   {tag}
                   <button
-                    onClick={() => removeFilter('tags', tag)}
+                    onClick={() => removeFilter("tags", tag)}
                     className="hover:text-purple-600"
                   >
                     ×
@@ -410,18 +410,21 @@ export default function SearchPage() {
         <>
           {results.length > 0 && (
             <div className="mb-4 text-gray-600">
-              Found {total} post{total !== 1 ? 's' : ''}
+              Found {total} post{total !== 1 ? "s" : ""}
             </div>
           )}
 
           {/* Single column layout - one post per row */}
           <div className="space-y-4">
             {results.map((post) => (
-              <div key={post.post_id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex overflow-hidden">
+              <div
+                key={post.post_id}
+                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex overflow-hidden"
+              >
                 {/* Thumbnail */}
                 {post.thumbnail_urls?.[0] ? (
-                  <img 
-                    src={post.thumbnail_urls[0]} 
+                  <img
+                    src={post.thumbnail_urls[0]}
                     alt={post.title}
                     loading="lazy"
                     className="w-48 h-48 flex-shrink-0 object-cover border-r border-gray-200"
@@ -429,14 +432,24 @@ export default function SearchPage() {
                 ) : (
                   <div className="w-48 h-48 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
                     <div className="text-center px-4">
-                      <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                       <span className="text-gray-400 text-xs">No preview</span>
                     </div>
                   </div>
                 )}
-                
+
                 <div className="p-4 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-xl text-gray-900">{post.title}</h3>
@@ -446,22 +459,22 @@ export default function SearchPage() {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2 flex-1">
                     {post.characters?.length > 0 && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Characters: </span>
-                        <span className="text-sm text-gray-900">{post.characters.join(', ')}</span>
+                        <span className="text-sm text-gray-900">{post.characters.join(", ")}</span>
                       </div>
                     )}
-                    
+
                     {post.series?.length > 0 && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Series: </span>
-                        <span className="text-sm text-gray-900">{post.series.join(', ')}</span>
+                        <span className="text-sm text-gray-900">{post.series.join(", ")}</span>
                       </div>
                     )}
-                    
+
                     {post.tags?.length > 0 && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Tags: </span>
@@ -478,7 +491,7 @@ export default function SearchPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
                     <a
                       href={post.url}
@@ -487,11 +500,21 @@ export default function SearchPage() {
                       className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
                     >
                       View on Patreon
-                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      <svg
+                        className="w-4 h-4 ml-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
                       </svg>
                     </a>
-                    
+
                     <button
                       onClick={() => openEditModal(post)}
                       className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium"
@@ -508,7 +531,9 @@ export default function SearchPage() {
           {total > searchParams.limit && (
             <div className="flex justify-center gap-2 mt-8">
               <button
-                onClick={() => setSearchParams(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                onClick={() =>
+                  setSearchParams((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
+                }
                 disabled={searchParams.page === 1}
                 className="px-4 py-2 bg-gray-200 text-gray-900 rounded disabled:opacity-50"
               >
@@ -518,7 +543,7 @@ export default function SearchPage() {
                 Page {searchParams.page} of {Math.ceil(total / searchParams.limit)}
               </span>
               <button
-                onClick={() => setSearchParams(prev => ({ ...prev, page: prev.page + 1 }))}
+                onClick={() => setSearchParams((prev) => ({ ...prev, page: prev.page + 1 }))}
                 disabled={searchParams.page >= Math.ceil(total / searchParams.limit)}
                 className="px-4 py-2 bg-gray-200 text-gray-900 rounded disabled:opacity-50"
               >
@@ -528,7 +553,7 @@ export default function SearchPage() {
           )}
         </>
       )}
-      
+
       {/* Edit Suggestion Modal - All Fields on One Page */}
       {editModalOpen && selectedPost && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -542,71 +567,115 @@ export default function SearchPage() {
                 </div>
                 <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
-              
+
               {/* Success Message */}
               {editSuccess && (
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
                   {editSuccess}
                 </div>
               )}
-              
+
               <div className="space-y-4">
                 {/* CHARACTERS SECTION */}
                 <div className="border-b pb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Characters</h3>
-                  
+
                   <div className="relative">
                     <div className="flex flex-wrap gap-2">
                       {/* Current Characters */}
-                      {selectedPost.characters?.length > 0 && selectedPost.characters.map((char, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-800 rounded-md text-sm hover:bg-red-50 transition-colors"
-                        >
-                          {char}
-                          <button
-                            onClick={() => handleRemove('characters', char)}
-                            className="text-blue-400 hover:text-red-600 transition-colors"
-                            title="Suggest removing this"
+                      {selectedPost.characters?.length > 0 &&
+                        selectedPost.characters.map((char, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-800 rounded-md text-sm hover:bg-red-50 transition-colors"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </span>
-                      ))}
-                      
+                            {char}
+                            <button
+                              onClick={() => handleRemove("characters", char)}
+                              className="text-blue-400 hover:text-red-600 transition-colors"
+                              title="Suggest removing this"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+
                       {/* Add New Character - Inline */}
                       <div className="relative inline-flex items-center gap-1">
                         <input
                           type="text"
                           value={newCharacter}
                           onChange={(e) => setNewCharacter(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleAdd('characters', newCharacter, setNewCharacter, setCharacterModalSuggestions)}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            handleAdd(
+                              "characters",
+                              newCharacter,
+                              setNewCharacter,
+                              setCharacterModalSuggestions
+                            )
+                          }
                           placeholder="Add character..."
                           className="w-40 px-2.5 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-sm"
                         />
                         <button
-                          onClick={() => handleAdd('characters', newCharacter, setNewCharacter, setCharacterModalSuggestions)}
+                          onClick={() =>
+                            handleAdd(
+                              "characters",
+                              newCharacter,
+                              setNewCharacter,
+                              setCharacterModalSuggestions
+                            )
+                          }
                           disabled={!newCharacter.trim()}
                           className="p-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
                           </svg>
                         </button>
-                        
+
                         {/* Autocomplete for Characters */}
                         {characterModalSuggestions.length > 0 && (
                           <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                             {characterModalSuggestions.map((suggestion, idx) => (
                               <button
                                 key={idx}
-                                onClick={() => {setNewCharacter(suggestion); setCharacterModalSuggestions([]);}}
+                                onClick={() => {
+                                  setNewCharacter(suggestion);
+                                  setCharacterModalSuggestions([]);
+                                }}
                                 className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm"
                               >
                                 {suggestion}
@@ -618,59 +687,88 @@ export default function SearchPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* SERIES SECTION */}
                 <div className="border-b pb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Series</h3>
-                  
+
                   <div className="relative">
                     <div className="flex flex-wrap gap-2">
                       {/* Current Series */}
-                      {selectedPost.series?.length > 0 && selectedPost.series.map((s, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-800 rounded-md text-sm hover:bg-red-50 transition-colors"
-                        >
-                          {s}
-                          <button
-                            onClick={() => handleRemove('series', s)}
-                            className="text-green-400 hover:text-red-600 transition-colors"
-                            title="Suggest removing this"
+                      {selectedPost.series?.length > 0 &&
+                        selectedPost.series.map((s, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-800 rounded-md text-sm hover:bg-red-50 transition-colors"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </span>
-                      ))}
-                      
+                            {s}
+                            <button
+                              onClick={() => handleRemove("series", s)}
+                              className="text-green-400 hover:text-red-600 transition-colors"
+                              title="Suggest removing this"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+
                       {/* Add New Series - Inline */}
                       <div className="relative inline-flex items-center gap-1">
                         <input
                           type="text"
                           value={newSeries}
                           onChange={(e) => setNewSeries(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleAdd('series', newSeries, setNewSeries, setSeriesModalSuggestions)}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            handleAdd("series", newSeries, setNewSeries, setSeriesModalSuggestions)
+                          }
                           placeholder="Add series..."
                           className="w-40 px-2.5 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-sm"
                         />
                         <button
-                          onClick={() => handleAdd('series', newSeries, setNewSeries, setSeriesModalSuggestions)}
+                          onClick={() =>
+                            handleAdd("series", newSeries, setNewSeries, setSeriesModalSuggestions)
+                          }
                           disabled={!newSeries.trim()}
                           className="p-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
                           </svg>
                         </button>
-                        
+
                         {/* Autocomplete for Series */}
                         {seriesModalSuggestions.length > 0 && (
                           <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                             {seriesModalSuggestions.map((suggestion, idx) => (
                               <button
                                 key={idx}
-                                onClick={() => {setNewSeries(suggestion); setSeriesModalSuggestions([]);}}
+                                onClick={() => {
+                                  setNewSeries(suggestion);
+                                  setSeriesModalSuggestions([]);
+                                }}
                                 className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm"
                               >
                                 {suggestion}
@@ -682,59 +780,88 @@ export default function SearchPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* TAGS SECTION */}
                 <div className="pb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Tags</h3>
-                  
+
                   <div className="relative">
                     <div className="flex flex-wrap gap-2">
                       {/* Current Tags */}
-                      {selectedPost.tags?.length > 0 && selectedPost.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-800 rounded-md text-sm hover:bg-red-50 transition-colors"
-                        >
-                          {tag}
-                          <button
-                            onClick={() => handleRemove('tags', tag)}
-                            className="text-purple-400 hover:text-red-600 transition-colors"
-                            title="Suggest removing this"
+                      {selectedPost.tags?.length > 0 &&
+                        selectedPost.tags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-800 rounded-md text-sm hover:bg-red-50 transition-colors"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </span>
-                      ))}
-                      
+                            {tag}
+                            <button
+                              onClick={() => handleRemove("tags", tag)}
+                              className="text-purple-400 hover:text-red-600 transition-colors"
+                              title="Suggest removing this"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+
                       {/* Add New Tag - Inline */}
                       <div className="relative inline-flex items-center gap-1">
                         <input
                           type="text"
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleAdd('tags', newTag, setNewTag, setTagModalSuggestions)}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            handleAdd("tags", newTag, setNewTag, setTagModalSuggestions)
+                          }
                           placeholder="Add tag..."
                           className="w-40 px-2.5 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-sm"
                         />
                         <button
-                          onClick={() => handleAdd('tags', newTag, setNewTag, setTagModalSuggestions)}
+                          onClick={() =>
+                            handleAdd("tags", newTag, setNewTag, setTagModalSuggestions)
+                          }
                           disabled={!newTag.trim()}
                           className="p-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
                           </svg>
                         </button>
-                        
+
                         {/* Autocomplete for Tags */}
                         {tagModalSuggestions.length > 0 && (
                           <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                             {tagModalSuggestions.map((suggestion, idx) => (
                               <button
                                 key={idx}
-                                onClick={() => {setNewTag(suggestion); setTagModalSuggestions([]);}}
+                                onClick={() => {
+                                  setNewTag(suggestion);
+                                  setTagModalSuggestions([]);
+                                }}
                                 className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm"
                               >
                                 {suggestion}
@@ -747,14 +874,15 @@ export default function SearchPage() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Info Box */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
-                  Click the × button to suggest removing an item, or use the + button to suggest adding a new one. All suggestions will be reviewed by the community.
+                  Click the × button to suggest removing an item, or use the + button to suggest
+                  adding a new one. All suggestions will be reviewed by the community.
                 </p>
               </div>
-              
+
               {/* Close Button */}
               <div className="flex justify-end">
                 <button

@@ -1,4 +1,5 @@
 """Community Request service for business logic."""
+
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
@@ -27,12 +28,12 @@ def create_request(
 ) -> CommunityRequest:
     """
     Create a new community request.
-    
+
     Args:
         db: Database session
         user_id: User ID creating the request
         request_data: Request creation data
-        
+
     Returns:
         Created request
     """
@@ -45,11 +46,11 @@ def create_request(
         is_private=request_data.is_private,
         fulfilled=False,
     )
-    
+
     db.add(request)
     db.commit()
     db.refresh(request)
-    
+
     return request
 
 
@@ -62,14 +63,14 @@ def update_request(
 ) -> CommunityRequest:
     """
     Update a community request.
-    
+
     Args:
         db: Database session
         request_id: Request ID
         user_id: User ID making the update
         request_data: Request update data
         is_admin: Whether user is admin (can update any request)
-        
+
     Returns:
         Updated request
     """
@@ -79,22 +80,22 @@ def update_request(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found",
         )
-    
+
     # Check permissions
     if not is_admin and request.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this request",
         )
-    
+
     update_data = request_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(request, field, value)
-    
+
     request.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(request)
-    
+
     return request
 
 
@@ -106,13 +107,13 @@ def mark_request_fulfilled(
 ) -> CommunityRequest:
     """
     Mark a request as fulfilled.
-    
+
     Args:
         db: Database session
         request_id: Request ID
         user_id: User ID marking as fulfilled
         is_admin: Whether user is admin (can mark any request)
-        
+
     Returns:
         Updated request
     """
@@ -122,19 +123,19 @@ def mark_request_fulfilled(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found",
         )
-    
+
     # Check permissions
     if not is_admin and request.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this request",
         )
-    
+
     request.fulfilled = True
     request.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(request)
-    
+
     return request
 
 
@@ -146,7 +147,7 @@ def delete_request(
 ) -> None:
     """
     Delete a community request.
-    
+
     Args:
         db: Database session
         request_id: Request ID
@@ -159,14 +160,14 @@ def delete_request(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found",
         )
-    
+
     # Check permissions
     if not is_admin and request.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this request",
         )
-    
+
     db.delete(request)
     db.commit()
 
@@ -180,41 +181,41 @@ def get_all_requests(
 ) -> CommunityRequestList:
     """
     Get all community requests (sorted by timestamp, oldest first).
-    
+
     Args:
         db: Database session
         current_user_id: Current user ID (for marking own requests)
         page: Page number (1-indexed)
         limit: Results per page
         include_fulfilled: Whether to include fulfilled requests
-        
+
     Returns:
         List of requests with pagination and user positions
     """
     # Base query
     q = db.query(CommunityRequest)
-    
+
     # Filter out fulfilled if requested
     if not include_fulfilled:
         q = q.filter(CommunityRequest.fulfilled == False)
-    
+
     # Order by timestamp (oldest first - FIFO queue)
     q = q.order_by(CommunityRequest.timestamp.asc())
-    
+
     # Get total count
     total = q.count()
-    
+
     # Apply pagination
     offset = (page - 1) * limit
     requests = q.offset(offset).limit(limit).all()
-    
+
     # Convert to public format and mark user's own requests
     public_requests = []
     user_positions = []
-    
+
     for i, request in enumerate(requests, start=offset + 1):
         is_own = request.user_id == current_user_id
-        
+
         # Create public representation
         if request.is_private and not is_own:
             public_req = CommunityRequestPublic(
@@ -240,13 +241,13 @@ def get_all_requests(
                 is_own_request=is_own,
                 queue_position=i,
             )
-        
+
         public_requests.append(public_req)
-        
+
         # Track user's positions
         if is_own:
             user_positions.append(i)
-    
+
     return CommunityRequestList(
         requests=public_requests,
         total=total,
@@ -263,43 +264,47 @@ def get_user_requests(
 ) -> List[CommunityRequest]:
     """
     Get all requests for a specific user.
-    
+
     Args:
         db: Database session
         user_id: User ID
         include_fulfilled: Whether to include fulfilled requests
-        
+
     Returns:
         List of user's requests
     """
     q = db.query(CommunityRequest).filter(CommunityRequest.user_id == user_id)
-    
+
     if not include_fulfilled:
         q = q.filter(CommunityRequest.fulfilled == False)
-    
+
     return q.order_by(CommunityRequest.timestamp.asc()).all()
 
 
 def get_queue_position(db: Session, request_id: int) -> Optional[int]:
     """
     Get the position of a request in the queue.
-    
+
     Args:
         db: Database session
         request_id: Request ID
-        
+
     Returns:
         Queue position (1-indexed) or None if not found
     """
     request = get_request_by_id(db, request_id)
     if not request or request.fulfilled:
         return None
-    
+
     # Count how many unfulfilled requests have earlier timestamps
-    position = db.query(func.count(CommunityRequest.id)).filter(
-        CommunityRequest.fulfilled == False,
-        CommunityRequest.timestamp <= request.timestamp,
-        CommunityRequest.id <= request.id,  # Break ties by ID
-    ).scalar()
-    
+    position = (
+        db.query(func.count(CommunityRequest.id))
+        .filter(
+            CommunityRequest.fulfilled == False,
+            CommunityRequest.timestamp <= request.timestamp,
+            CommunityRequest.id <= request.id,  # Break ties by ID
+        )
+        .scalar()
+    )
+
     return position

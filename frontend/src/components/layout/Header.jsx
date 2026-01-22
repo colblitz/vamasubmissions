@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Header() {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
@@ -38,10 +38,7 @@ export default function Header() {
                     Tier {user.tier} {user.tier > 1 && `• ${user.credits} credits`}
                   </div>
                 </div>
-                <button
-                  onClick={logout}
-                  className="text-sm hover:text-red-400 transition-colors"
-                >
+                <button onClick={logout} className="text-sm hover:text-red-400 transition-colors">
                   Logout
                 </button>
               </div>

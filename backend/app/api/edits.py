@@ -1,4 +1,5 @@
 """Post Edit API endpoints."""
+
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -24,12 +25,12 @@ async def suggest_edit(
 ):
     """
     Suggest an edit to a post.
-    
+
     Args:
         edit_data: Edit suggestion data
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Created edit suggestion
     """
@@ -45,13 +46,13 @@ async def get_pending_edits(
 ):
     """
     Get all pending edit suggestions.
-    
+
     Args:
         page: Page number (1-indexed)
         limit: Results per page
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of pending edits with details
     """
@@ -67,12 +68,12 @@ async def approve_edit(
     """
     Approve an edit suggestion and apply it to the post.
     Cannot approve your own suggestions.
-    
+
     Args:
         edit_id: Edit ID to approve
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Approved edit
     """
@@ -87,12 +88,12 @@ async def reject_edit(
 ):
     """
     Reject an edit suggestion (admin only).
-    
+
     Args:
         edit_id: Edit ID to reject
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Rejected edit
     """
@@ -109,14 +110,14 @@ async def get_edit_history(
 ):
     """
     Get edit history (audit log).
-    
+
     Args:
         post_id: Optional post ID to filter by
         page: Page number (1-indexed)
         limit: Results per page
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of edit history entries
     """
@@ -136,12 +137,12 @@ async def undo_edit(
 ):
     """
     Undo an edit from history (admin only).
-    
+
     Args:
         history_id: History entry ID
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Success message
     """

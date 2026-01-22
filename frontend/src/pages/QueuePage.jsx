@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { queueAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { queueAPI } from "../services/api";
 
 export default function QueuePage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('paid');
+  const [activeTab, setActiveTab] = useState("paid");
   const [paidQueue, setPaidQueue] = useState(null);
   const [freeQueue, setFreeQueue] = useState(null);
   const [voteAllowance, setVoteAllowance] = useState(null);
@@ -28,7 +28,7 @@ export default function QueuePage() {
       setPaidQueue(paidResponse.data);
       setFreeQueue(freeResponse.data);
     } catch (error) {
-      console.error('Failed to load queues:', error);
+      console.error("Failed to load queues:", error);
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ export default function QueuePage() {
       setVoteAllowance(allowanceResponse.data);
       setMyVotes(votesResponse.data.submission_ids);
     } catch (error) {
-      console.error('Failed to load vote info:', error);
+      console.error("Failed to load vote info:", error);
     }
   };
 
@@ -53,7 +53,7 @@ export default function QueuePage() {
       await loadQueues();
       await loadVoteInfo();
     } catch (error) {
-      alert(error.response?.data?.detail || 'Failed to vote');
+      alert(error.response?.data?.detail || "Failed to vote");
     }
   };
 
@@ -63,7 +63,7 @@ export default function QueuePage() {
       await loadQueues();
       await loadVoteInfo();
     } catch (error) {
-      alert(error.response?.data?.detail || 'Failed to remove vote');
+      alert(error.response?.data?.detail || "Failed to remove vote");
     }
   };
 
@@ -73,16 +73,14 @@ export default function QueuePage() {
     <div
       key={submission.id}
       className={`bg-white border rounded-lg p-4 ${
-        submission.is_own_submission
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-200'
+        submission.is_own_submission ? "border-blue-500 bg-blue-50" : "border-gray-200"
       }`}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-semibold text-gray-900">
-              {submission.is_own_submission ? submission.character_name : '???'}
+              {submission.is_own_submission ? submission.character_name : "???"}
             </h3>
             {submission.is_own_submission && (
               <span className="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800">
@@ -90,15 +88,13 @@ export default function QueuePage() {
               </span>
             )}
             {submission.is_public && !submission.is_own_submission && (
-              <span className="text-sm text-gray-700">
-                {submission.character_name}
-              </span>
+              <span className="text-sm text-gray-700">{submission.character_name}</span>
             )}
           </div>
-          
+
           <p className="text-sm text-gray-700 mb-2">
-            <span className="font-medium text-gray-900">Series:</span>{' '}
-            {submission.is_own_submission || submission.is_public ? submission.series : '???'}
+            <span className="font-medium text-gray-900">Series:</span>{" "}
+            {submission.is_own_submission || submission.is_public ? submission.series : "???"}
           </p>
 
           <div className="flex items-center gap-4 text-xs text-gray-600">
@@ -106,12 +102,13 @@ export default function QueuePage() {
             <span>Submitted: {new Date(submission.submitted_at).toLocaleDateString()}</span>
             {submission.estimated_completion_date && (
               <span>
-                Est. Completion: {new Date(submission.estimated_completion_date).toLocaleDateString()}
+                Est. Completion:{" "}
+                {new Date(submission.estimated_completion_date).toLocaleDateString()}
               </span>
             )}
             {showVoting && (
               <span className="font-semibold text-blue-600">
-                {submission.vote_count} vote{submission.vote_count !== 1 ? 's' : ''}
+                {submission.vote_count} vote{submission.vote_count !== 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -154,9 +151,7 @@ export default function QueuePage() {
     <div className="space-y-6">
       <div className="card">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Submission Queues</h1>
-        <p className="text-gray-600">
-          View the current queue status and your position
-        </p>
+        <p className="text-gray-600">View the current queue status and your position</p>
       </div>
 
       {/* Vote Allowance (Tier 1 only) */}
@@ -168,7 +163,9 @@ export default function QueuePage() {
               {voteAllowance.votes_remaining}
             </div>
             <div className="text-sm text-gray-600">
-              <p>{voteAllowance.votes_used} used / {voteAllowance.votes_available} available</p>
+              <p>
+                {voteAllowance.votes_used} used / {voteAllowance.votes_available} available
+              </p>
               <p className="text-xs">Votes reset monthly</p>
             </div>
           </div>
@@ -178,21 +175,17 @@ export default function QueuePage() {
       {/* Tabs */}
       <div className="flex gap-2">
         <button
-          onClick={() => setActiveTab('paid')}
+          onClick={() => setActiveTab("paid")}
           className={`px-6 py-3 rounded-lg font-semibold ${
-            activeTab === 'paid'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700'
+            activeTab === "paid" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
           }`}
         >
           Paid Queue ({paidQueue?.total_submissions || 0})
         </button>
         <button
-          onClick={() => setActiveTab('free')}
+          onClick={() => setActiveTab("free")}
           className={`px-6 py-3 rounded-lg font-semibold ${
-            activeTab === 'free'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700'
+            activeTab === "free" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
           }`}
         >
           Free Queue ({freeQueue?.total_submissions || 0})
@@ -200,7 +193,7 @@ export default function QueuePage() {
       </div>
 
       {/* Queue Content */}
-      {activeTab === 'paid' && paidQueue && (
+      {activeTab === "paid" && paidQueue && (
         <div className="card">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Paid Queue (FIFO)</h2>
@@ -215,12 +208,10 @@ export default function QueuePage() {
           </div>
 
           {paidQueue.visible_submissions.length === 0 ? (
-            <p className="text-center text-gray-600 py-8">
-              No submissions in paid queue
-            </p>
+            <p className="text-center text-gray-600 py-8">No submissions in paid queue</p>
           ) : (
             <div className="space-y-4">
-              {paidQueue.visible_submissions.map(submission => 
+              {paidQueue.visible_submissions.map((submission) =>
                 renderSubmission(submission, false)
               )}
             </div>
@@ -228,13 +219,11 @@ export default function QueuePage() {
         </div>
       )}
 
-      {activeTab === 'free' && freeQueue && (
+      {activeTab === "free" && freeQueue && (
         <div className="card">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Free Queue (Vote-Based)</h2>
-            <p className="text-gray-600">
-              Ordered by community votes, then submission time
-            </p>
+            <p className="text-gray-600">Ordered by community votes, then submission time</p>
             {freeQueue.user_position && (
               <p className="text-lg font-semibold text-blue-600 mt-2">
                 Your position: #{freeQueue.user_position}
@@ -243,12 +232,10 @@ export default function QueuePage() {
           </div>
 
           {freeQueue.visible_submissions.length === 0 ? (
-            <p className="text-center text-gray-600 py-8">
-              No submissions in free queue
-            </p>
+            <p className="text-center text-gray-600 py-8">No submissions in free queue</p>
           ) : (
             <div className="space-y-4">
-              {freeQueue.visible_submissions.map(submission => 
+              {freeQueue.visible_submissions.map((submission) =>
                 renderSubmission(submission, true)
               )}
             </div>

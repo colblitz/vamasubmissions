@@ -1,4 +1,5 @@
 """User API endpoints."""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -16,10 +17,10 @@ async def get_current_user(
 ):
     """
     Get current user information.
-    
+
     Args:
         current_user: Current authenticated user
-        
+
     Returns:
         User information
     """
@@ -34,12 +35,12 @@ async def get_credit_history(
 ):
     """
     Get credit transaction history for current user.
-    
+
     Args:
         limit: Maximum number of transactions to return
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of credit transactions
     """
@@ -48,7 +49,7 @@ async def get_credit_history(
         user_id=current_user.id,
         limit=limit,
     )
-    
+
     return {
         "transactions": [
             {

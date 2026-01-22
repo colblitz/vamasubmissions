@@ -1,4 +1,5 @@
 """Pydantic schemas for request/response validation."""
+
 from app.schemas.user import User, UserCreate, UserUpdate, UserInDB
 from app.schemas.submission import (
     Submission,

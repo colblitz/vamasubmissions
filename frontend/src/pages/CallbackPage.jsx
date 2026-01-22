@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function CallbackPage() {
   const [searchParams] = useSearchParams();
@@ -9,20 +9,20 @@ export default function CallbackPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    
+    const token = searchParams.get("token");
+
     if (!token) {
-      setError('No token received from authentication');
+      setError("No token received from authentication");
       return;
     }
 
     const processCallback = async () => {
       try {
         await handleOAuthCallback(token);
-        navigate('/dashboard');
+        navigate("/dashboard");
       } catch (err) {
-        console.error('OAuth callback error:', err);
-        setError('Failed to complete authentication');
+        console.error("OAuth callback error:", err);
+        setError("Failed to complete authentication");
       }
     };
 
@@ -36,10 +36,7 @@ export default function CallbackPage() {
           <div className="text-red-600 text-5xl mb-4">[ERROR]</div>
           <h2 className="text-2xl font-bold mb-4">Authentication Failed</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="btn-primary"
-          >
+          <button onClick={() => navigate("/login")} className="btn-primary">
             Back to Login
           </button>
         </div>

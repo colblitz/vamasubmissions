@@ -1,4 +1,5 @@
 """Database connection and session management."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -11,7 +12,7 @@ engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,  # Verify connections before using
     pool_size=10,
-    max_overflow=20
+    max_overflow=20,
 )
 
 # Create session factory
@@ -24,7 +25,7 @@ Base = declarative_base()
 def get_db() -> Generator[Session, None, None]:
     """
     Dependency for getting database sessions.
-    
+
     Usage in FastAPI endpoints:
         @app.get("/items")
         def read_items(db: Session = Depends(get_db)):

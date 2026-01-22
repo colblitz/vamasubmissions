@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import { useState, useEffect } from "react";
+import api from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function ImportPostsPage() {
   const { user } = useAuth();
@@ -9,7 +9,7 @@ export default function ImportPostsPage() {
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Bulk selection
   const [selectedPosts, setSelectedPosts] = useState([]);
 
@@ -17,14 +17,14 @@ export default function ImportPostsPage() {
   const fetchPendingPosts = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await api.get('/api/admin/posts/pending', {
-        params: { limit: 50 }
+      const response = await api.get("/api/admin/posts/pending", {
+        params: { limit: 50 },
       });
       setPendingPosts(response.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load pending posts');
+      setError(err.response?.data?.detail || "Failed to load pending posts");
     } finally {
       setLoading(false);
     }
@@ -32,21 +32,23 @@ export default function ImportPostsPage() {
 
   // Fetch new posts from Patreon
   const handleFetchNew = async () => {
-    if (!confirm('Fetch new posts from Patreon? This may take a minute.')) return;
-    
+    if (!confirm("Fetch new posts from Patreon? This may take a minute.")) return;
+
     setFetching(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
-      const response = await api.post('/api/admin/posts/fetch-new', {
-        since_days: 7
+      const response = await api.post("/api/admin/posts/fetch-new", {
+        since_days: 7,
       });
-      
-      setSuccess(`Imported ${response.data.imported} new posts, ${response.data.skipped} already existed`);
-      fetchPendingPosts();  // Refresh list
+
+      setSuccess(
+        `Imported ${response.data.imported} new posts, ${response.data.skipped} already existed`
+      );
+      fetchPendingPosts(); // Refresh list
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch new posts');
+      setError(err.response?.data?.detail || "Failed to fetch new posts");
     } finally {
       setFetching(false);
     }
@@ -55,50 +57,52 @@ export default function ImportPostsPage() {
   // Bulk publish
   const handleBulkPublish = async () => {
     if (selectedPosts.length === 0) {
-      alert('No posts selected');
+      alert("No posts selected");
       return;
     }
-    
+
     if (!confirm(`Publish ${selectedPosts.length} selected posts?`)) return;
-    
+
     try {
-      const response = await api.post('/api/admin/posts/bulk-publish', selectedPosts);
-      
-      alert(`Published ${response.data.published.length} posts, ${response.data.failed.length} failed`);
+      const response = await api.post("/api/admin/posts/bulk-publish", selectedPosts);
+
+      alert(
+        `Published ${response.data.published.length} posts, ${response.data.failed.length} failed`
+      );
       setSelectedPosts([]);
       fetchPendingPosts();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to bulk publish');
+      alert(err.response?.data?.detail || "Failed to bulk publish");
     }
   };
 
   // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedPosts.length === 0) {
-      alert('No posts selected');
+      alert("No posts selected");
       return;
     }
-    
+
     if (!confirm(`Delete ${selectedPosts.length} selected posts? This cannot be undone.`)) return;
-    
+
     try {
-      const response = await api.delete('/api/admin/posts/bulk-delete', {
-        data: selectedPosts
+      const response = await api.delete("/api/admin/posts/bulk-delete", {
+        data: selectedPosts,
       });
-      
+
       alert(`Deleted ${response.data.deleted.length} posts, ${response.data.failed.length} failed`);
       setSelectedPosts([]);
       fetchPendingPosts();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to bulk delete');
+      alert(err.response?.data?.detail || "Failed to bulk delete");
     }
   };
 
   // Toggle post selection
   const togglePostSelection = (postId) => {
-    setSelectedPosts(prev => {
+    setSelectedPosts((prev) => {
       if (prev.includes(postId)) {
-        return prev.filter(id => id !== postId);
+        return prev.filter((id) => id !== postId);
       } else {
         return [...prev, postId];
       }
@@ -110,7 +114,7 @@ export default function ImportPostsPage() {
     if (selectedPosts.length === pendingPosts.length) {
       setSelectedPosts([]);
     } else {
-      setSelectedPosts(pendingPosts.map(p => p.id));
+      setSelectedPosts(pendingPosts.map((p) => p.id));
     }
   };
 
@@ -122,13 +126,13 @@ export default function ImportPostsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Import Posts</h1>
-        
+
         <button
           onClick={handleFetchNew}
           disabled={fetching}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {fetching ? 'Fetching...' : 'Fetch New Posts from Patreon'}
+          {fetching ? "Fetching..." : "Fetch New Posts from Patreon"}
         </button>
       </div>
 
@@ -138,7 +142,7 @@ export default function ImportPostsPage() {
           {success}
         </div>
       )}
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
           {error}
@@ -162,7 +166,7 @@ export default function ImportPostsPage() {
                 </span>
               </label>
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={handleBulkPublish}
@@ -171,7 +175,7 @@ export default function ImportPostsPage() {
               >
                 Publish Selected ({selectedPosts.length})
               </button>
-              
+
               <button
                 onClick={handleBulkDelete}
                 disabled={selectedPosts.length === 0}
@@ -186,7 +190,7 @@ export default function ImportPostsPage() {
 
       {/* Pending Posts Count */}
       <div className="mb-4 text-gray-600">
-        {pendingPosts.length} pending post{pendingPosts.length !== 1 ? 's' : ''} awaiting review
+        {pendingPosts.length} pending post{pendingPosts.length !== 1 ? "s" : ""} awaiting review
       </div>
 
       {/* Loading State */}
@@ -201,9 +205,9 @@ export default function ImportPostsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {pendingPosts.map(post => (
-            <PendingPostCard 
-              key={post.id} 
+          {pendingPosts.map((post) => (
+            <PendingPostCard
+              key={post.id}
               post={post}
               isSelected={selectedPosts.includes(post.id)}
               onToggleSelect={() => togglePostSelection(post.id)}
@@ -221,13 +225,13 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
   const [series, setSeries] = useState(post.series || []);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  
+
   // Character autocomplete
-  const [characterInput, setCharacterInput] = useState('');
+  const [characterInput, setCharacterInput] = useState("");
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
-  
+
   // Series autocomplete
-  const [seriesInput, setSeriesInput] = useState('');
+  const [seriesInput, setSeriesInput] = useState("");
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
 
   // Fetch character suggestions
@@ -236,14 +240,14 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
       setCharacterSuggestions([]);
       return;
     }
-    
+
     try {
-      const response = await api.get('/api/posts/autocomplete/characters', {
-        params: { q: query, limit: 10 }
+      const response = await api.get("/api/posts/autocomplete/characters", {
+        params: { q: query, limit: 10 },
       });
       setCharacterSuggestions(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch character suggestions:', err);
+      console.error("Failed to fetch character suggestions:", err);
     }
   };
 
@@ -253,14 +257,14 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
       setSeriesSuggestions([]);
       return;
     }
-    
+
     try {
-      const response = await api.get('/api/posts/autocomplete/series', {
-        params: { q: query, limit: 10 }
+      const response = await api.get("/api/posts/autocomplete/series", {
+        params: { q: query, limit: 10 },
       });
       setSeriesSuggestions(response.data || []);
     } catch (err) {
-      console.error('Failed to fetch series suggestions:', err);
+      console.error("Failed to fetch series suggestions:", err);
     }
   };
 
@@ -282,16 +286,16 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
   // Save changes
   const handleSave = async () => {
     setSaving(true);
-    
+
     try {
       await api.patch(`/api/admin/posts/${post.id}`, {
         characters,
-        series
+        series,
       });
-      
-      alert('Changes saved!');
+
+      alert("Changes saved!");
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to save changes');
+      alert(err.response?.data?.detail || "Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -300,28 +304,28 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
   // Publish post
   const handlePublish = async () => {
     if (!characters.length || !series.length) {
-      alert('Please add at least one character and series before publishing');
+      alert("Please add at least one character and series before publishing");
       return;
     }
-    
-    if (!confirm('Publish this post? It will become visible in search results.')) return;
-    
+
+    if (!confirm("Publish this post? It will become visible in search results.")) return;
+
     setPublishing(true);
-    
+
     try {
       // Save first
       await api.patch(`/api/admin/posts/${post.id}`, {
         characters,
-        series
+        series,
       });
-      
+
       // Then publish
       await api.post(`/api/admin/posts/${post.id}/publish`);
-      
-      alert('Post published successfully!');
-      onUpdate();  // Refresh list
+
+      alert("Post published successfully!");
+      onUpdate(); // Refresh list
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to publish post');
+      alert(err.response?.data?.detail || "Failed to publish post");
     } finally {
       setPublishing(false);
     }
@@ -329,19 +333,19 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
 
   // Delete post
   const handleDelete = async () => {
-    if (!confirm('Delete this pending post? This cannot be undone.')) return;
-    
+    if (!confirm("Delete this pending post? This cannot be undone.")) return;
+
     try {
       await api.delete(`/api/admin/posts/${post.id}`);
-      alert('Post deleted');
-      onUpdate();  // Refresh list
+      alert("Post deleted");
+      onUpdate(); // Refresh list
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete post');
+      alert(err.response?.data?.detail || "Failed to delete post");
     }
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
+    <div className={`bg-white rounded-lg shadow p-6 ${isSelected ? "ring-2 ring-blue-500" : ""}`}>
       <div className="flex gap-6">
         {/* Checkbox */}
         <div className="flex items-start pt-2">
@@ -352,11 +356,11 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
             className="w-5 h-5 cursor-pointer"
           />
         </div>
-        
+
         {/* Thumbnail */}
         {post.thumbnail_urls?.[0] ? (
-          <img 
-            src={post.thumbnail_urls[0]} 
+          <img
+            src={post.thumbnail_urls[0]}
             alt={post.title}
             className="w-48 h-48 object-cover rounded flex-shrink-0"
           />
@@ -365,24 +369,27 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
             <span className="text-gray-400">No preview</span>
           </div>
         )}
-        
+
         {/* Content */}
         <div className="flex-1">
           <h3 className="text-xl font-bold text-gray-900 mb-2">{post.title}</h3>
-          
+
           <div className="text-sm text-gray-500 mb-4">
-            <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            <a
+              href={post.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
               View on Patreon
             </a>
             <span className="mx-2">•</span>
             <span>{new Date(post.timestamp).toLocaleDateString()}</span>
           </div>
-          
+
           {/* Characters Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Characters *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Characters *</label>
             <div className="relative">
               <input
                 type="text"
@@ -400,7 +407,7 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
                         if (!characters.includes(suggestion)) {
                           setCharacters([...characters, suggestion]);
                         }
-                        setCharacterInput('');
+                        setCharacterInput("");
                         setCharacterSuggestions([]);
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
@@ -428,12 +435,10 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
               ))}
             </div>
           </div>
-          
+
           {/* Series Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Series *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Series *</label>
             <div className="relative">
               <input
                 type="text"
@@ -451,7 +456,7 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
                         if (!series.includes(suggestion)) {
                           setSeries([...series, suggestion]);
                         }
-                        setSeriesInput('');
+                        setSeriesInput("");
                         setSeriesSuggestions([]);
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
@@ -479,7 +484,7 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
               ))}
             </div>
           </div>
-          
+
           {/* Actions */}
           <div className="flex gap-2">
             <button
@@ -487,17 +492,17 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
               disabled={saving}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? "Saving..." : "Save"}
             </button>
-            
+
             <button
               onClick={handlePublish}
               disabled={publishing || !characters.length || !series.length}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
             >
-              {publishing ? 'Publishing...' : 'Publish'}
+              {publishing ? "Publishing..." : "Publish"}
             </button>
-            
+
             <button
               onClick={handleDelete}
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-auto"

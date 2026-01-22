@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { submissionsAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { submissionsAPI } from "../services/api";
 
 export default function SubmissionEditPage() {
   const { id } = useParams();
@@ -11,11 +11,11 @@ export default function SubmissionEditPage() {
   const [saving, setSaving] = useState(false);
   const [submission, setSubmission] = useState(null);
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
-  
+
   const [formData, setFormData] = useState({
-    character_name: '',
-    series: '',
-    description: '',
+    character_name: "",
+    series: "",
+    description: "",
     is_public: false,
     is_large_image_set: false,
     is_double_character: false,
@@ -32,16 +32,16 @@ export default function SubmissionEditPage() {
       setLoading(true);
       const response = await submissionsAPI.get(id);
       const sub = response.data;
-      
+
       // Check permissions
       if (sub.user_id !== user.id) {
-        alert('You can only edit your own submissions');
-        navigate('/dashboard');
+        alert("You can only edit your own submissions");
+        navigate("/dashboard");
         return;
       }
 
-      if (sub.status !== 'pending') {
-        alert('You can only edit pending submissions');
+      if (sub.status !== "pending") {
+        alert("You can only edit pending submissions");
         navigate(`/submission/${id}`);
         return;
       }
@@ -57,9 +57,9 @@ export default function SubmissionEditPage() {
       });
       setOriginalCost(sub.credit_cost);
     } catch (error) {
-      console.error('Failed to load submission:', error);
-      alert('Failed to load submission');
-      navigate('/dashboard');
+      console.error("Failed to load submission:", error);
+      alert("Failed to load submission");
+      navigate("/dashboard");
     } finally {
       setLoading(false);
     }
@@ -77,13 +77,13 @@ export default function SubmissionEditPage() {
 
   const handleSeriesChange = async (value) => {
     setFormData({ ...formData, series: value });
-    
+
     if (value.length > 2) {
       try {
         const response = await submissionsAPI.autocompleteSeries(value);
         setSeriesSuggestions(response.data.series || []);
       } catch (error) {
-        console.error('Failed to fetch series suggestions:', error);
+        console.error("Failed to fetch series suggestions:", error);
       }
     } else {
       setSeriesSuggestions([]);
@@ -95,18 +95,20 @@ export default function SubmissionEditPage() {
 
     // Check if user has enough credits for cost increase
     if (user.tier > 1 && costDifference > 0 && user.credits < costDifference) {
-      alert(`Not enough credits. You need ${costDifference} more credit(s) but have ${user.credits}.`);
+      alert(
+        `Not enough credits. You need ${costDifference} more credit(s) but have ${user.credits}.`
+      );
       return;
     }
 
     try {
       setSaving(true);
       await submissionsAPI.update(id, formData);
-      alert('Submission updated successfully!');
+      alert("Submission updated successfully!");
       navigate(`/submission/${id}`);
     } catch (error) {
-      console.error('Failed to update submission:', error);
-      alert(error.response?.data?.detail || 'Failed to update submission');
+      console.error("Failed to update submission:", error);
+      alert(error.response?.data?.detail || "Failed to update submission");
     } finally {
       setSaving(false);
     }
@@ -128,19 +130,20 @@ export default function SubmissionEditPage() {
 
         {/* Cost Change Warning */}
         {costDifference !== 0 && (
-          <div className={`border rounded-lg p-4 mb-6 ${
-            costDifference > 0
-              ? 'bg-yellow-50 dark:bg-yellow-900 border-yellow-200 dark:border-yellow-700'
-              : 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700'
-          }`}>
+          <div
+            className={`border rounded-lg p-4 mb-6 ${
+              costDifference > 0
+                ? "bg-yellow-50 dark:bg-yellow-900 border-yellow-200 dark:border-yellow-700"
+                : "bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700"
+            }`}
+          >
             <p className="font-semibold">
-              {costDifference > 0 ? '[WARNING] Cost Increase' : '[INFO] Cost Decrease'}
+              {costDifference > 0 ? "[WARNING] Cost Increase" : "[INFO] Cost Decrease"}
             </p>
             <p className="text-sm mt-1">
               {costDifference > 0
                 ? `This change will cost ${costDifference} additional credit(s). You have ${user.credits} credit(s) available.`
-                : `This change will refund ${Math.abs(costDifference)} credit(s) to your account.`
-              }
+                : `This change will refund ${Math.abs(costDifference)} credit(s) to your account.`}
             </p>
             <p className="text-sm mt-1">
               Original cost: {originalCost} → New cost: {newCost}
@@ -217,9 +220,7 @@ export default function SubmissionEditPage() {
                 onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 font-medium">
-                Make this submission public
-              </span>
+              <span className="text-sm text-gray-700 font-medium">Make this submission public</span>
             </label>
 
             <label className="flex items-center gap-3 cursor-pointer">
@@ -229,16 +230,16 @@ export default function SubmissionEditPage() {
                 onChange={(e) => setFormData({ ...formData, is_large_image_set: e.target.checked })}
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 font-medium">
-                Large image set (+1 credit)
-              </span>
+              <span className="text-sm text-gray-700 font-medium">Large image set (+1 credit)</span>
             </label>
 
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.is_double_character}
-                onChange={(e) => setFormData({ ...formData, is_double_character: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_double_character: e.target.checked })
+                }
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700 font-medium">
@@ -250,8 +251,9 @@ export default function SubmissionEditPage() {
           {/* Note about images */}
           <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-semibold">[INFO]</span> Images cannot be edited after submission. 
-              If you need to change images, please cancel this submission and create a new one.
+              <span className="font-semibold">[INFO]</span> Images cannot be edited after
+              submission. If you need to change images, please cancel this submission and create a
+              new one.
             </p>
           </div>
 
@@ -259,10 +261,12 @@ export default function SubmissionEditPage() {
           <div className="flex gap-4">
             <button
               type="submit"
-              disabled={saving || (user.tier > 1 && costDifference > 0 && user.credits < costDifference)}
+              disabled={
+                saving || (user.tier > 1 && costDifference > 0 && user.credits < costDifference)
+              }
               className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? "Saving..." : "Save Changes"}
             </button>
             <button
               type="button"

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { submissionsAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { submissionsAPI } from "../services/api";
 
 export default function SubmissionDetailPage() {
   const { id } = useParams();
@@ -21,27 +21,29 @@ export default function SubmissionDetailPage() {
       const response = await submissionsAPI.get(id);
       setSubmission(response.data);
     } catch (error) {
-      console.error('Failed to load submission:', error);
-      alert('Failed to load submission');
-      navigate('/dashboard');
+      console.error("Failed to load submission:", error);
+      alert("Failed to load submission");
+      navigate("/dashboard");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel this submission? Your credits will be refunded.')) {
+    if (
+      !confirm("Are you sure you want to cancel this submission? Your credits will be refunded.")
+    ) {
       return;
     }
 
     try {
       setCancelling(true);
       await submissionsAPI.cancel(id);
-      alert('Submission cancelled successfully');
-      navigate('/dashboard');
+      alert("Submission cancelled successfully");
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Failed to cancel submission:', error);
-      alert(error.response?.data?.detail || 'Failed to cancel submission');
+      console.error("Failed to cancel submission:", error);
+      alert(error.response?.data?.detail || "Failed to cancel submission");
     } finally {
       setCancelling(false);
     }
@@ -49,12 +51,12 @@ export default function SubmissionDetailPage() {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      in_progress: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-gray-100 text-gray-800',
+      pending: "bg-yellow-100 text-yellow-800",
+      in_progress: "bg-blue-100 text-blue-800",
+      completed: "bg-green-100 text-green-800",
+      cancelled: "bg-gray-100 text-gray-800",
     };
-    return badges[status] || 'bg-gray-100 text-gray-800';
+    return badges[status] || "bg-gray-100 text-gray-800";
   };
 
   if (loading) {
@@ -83,7 +85,9 @@ export default function SubmissionDetailPage() {
   if (!canView) {
     return (
       <div className="card text-center">
-        <p className="text-red-600 font-semibold">[ERROR] You don't have permission to view this submission</p>
+        <p className="text-red-600 font-semibold">
+          [ERROR] You don't have permission to view this submission
+        </p>
         <Link to="/dashboard" className="btn-primary mt-4 inline-block">
           Back to Dashboard
         </Link>
@@ -99,8 +103,10 @@ export default function SubmissionDetailPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold">{submission.character_name}</h1>
-              <span className={`px-3 py-1 rounded text-sm font-semibold ${getStatusBadge(submission.status)}`}>
-                {submission.status.replace('_', ' ').toUpperCase()}
+              <span
+                className={`px-3 py-1 rounded text-sm font-semibold ${getStatusBadge(submission.status)}`}
+              >
+                {submission.status.replace("_", " ").toUpperCase()}
               </span>
               {submission.is_public && (
                 <span className="px-3 py-1 rounded text-sm font-semibold bg-purple-100 text-purple-800">
@@ -108,25 +114,16 @@ export default function SubmissionDetailPage() {
                 </span>
               )}
             </div>
-            <p className="text-lg text-gray-600">
-              {submission.series}
-            </p>
+            <p className="text-lg text-gray-600">{submission.series}</p>
           </div>
-          
-          {isOwner && submission.status === 'pending' && (
+
+          {isOwner && submission.status === "pending" && (
             <div className="flex gap-2">
-              <Link
-                to={`/submission/${submission.id}/edit`}
-                className="btn-secondary"
-              >
+              <Link to={`/submission/${submission.id}/edit`} className="btn-secondary">
                 Edit
               </Link>
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="btn-danger"
-              >
-                {cancelling ? 'Cancelling...' : 'Cancel'}
+              <button onClick={handleCancel} disabled={cancelling} className="btn-danger">
+                {cancelling ? "Cancelling..." : "Cancel"}
               </button>
             </div>
           )}
@@ -136,7 +133,9 @@ export default function SubmissionDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <p className="text-gray-500">Submitted</p>
-            <p className="font-semibold text-gray-900">{new Date(submission.submitted_at).toLocaleDateString()}</p>
+            <p className="font-semibold text-gray-900">
+              {new Date(submission.submitted_at).toLocaleDateString()}
+            </p>
           </div>
           {submission.queue_position && (
             <div>
@@ -146,7 +145,9 @@ export default function SubmissionDetailPage() {
           )}
           <div>
             <p className="text-gray-500">Queue Type</p>
-            <p className="font-semibold text-gray-900">{submission.queue_type === 'paid' ? 'Paid' : 'Free'}</p>
+            <p className="font-semibold text-gray-900">
+              {submission.queue_type === "paid" ? "Paid" : "Free"}
+            </p>
           </div>
           <div>
             <p className="text-gray-500">Credit Cost</p>
@@ -154,17 +155,17 @@ export default function SubmissionDetailPage() {
           </div>
         </div>
 
-        {submission.estimated_completion_date && submission.status === 'pending' && (
+        {submission.estimated_completion_date && submission.status === "pending" && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
-              <span className="font-semibold">Estimated Completion:</span>{' '}
+              <span className="font-semibold">Estimated Completion:</span>{" "}
               {new Date(submission.estimated_completion_date).toLocaleDateString()}
               <span className="text-xs ml-2">(estimate only)</span>
             </p>
           </div>
         )}
 
-        {submission.status === 'completed' && submission.patreon_post_url && (
+        {submission.status === "completed" && submission.patreon_post_url && (
           <div className="mt-4">
             <a
               href={submission.patreon_post_url}
@@ -181,9 +182,7 @@ export default function SubmissionDetailPage() {
       {/* Description */}
       <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-3">Description</h2>
-        <p className="text-gray-700 whitespace-pre-wrap">
-          {submission.description}
-        </p>
+        <p className="text-gray-700 whitespace-pre-wrap">{submission.description}</p>
       </div>
 
       {/* Request Modifiers */}
@@ -246,7 +245,7 @@ export default function SubmissionDetailPage() {
               </p>
             </div>
           </div>
-          
+
           {submission.workflow_started_at && (
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-yellow-600 rounded-full"></div>
@@ -258,7 +257,7 @@ export default function SubmissionDetailPage() {
               </div>
             </div>
           )}
-          
+
           {submission.completed_at && (
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-green-600 rounded-full"></div>
@@ -276,12 +275,8 @@ export default function SubmissionDetailPage() {
       {/* Admin Notes */}
       {isAdmin() && submission.admin_notes && (
         <div className="card bg-yellow-50 border border-yellow-200">
-          <h2 className="text-xl font-bold mb-3 text-yellow-900">
-            Admin Notes (Admin Only)
-          </h2>
-          <p className="text-yellow-800 whitespace-pre-wrap">
-            {submission.admin_notes}
-          </p>
+          <h2 className="text-xl font-bold mb-3 text-yellow-900">Admin Notes (Admin Only)</h2>
+          <p className="text-yellow-800 whitespace-pre-wrap">{submission.admin_notes}</p>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 """SQLAlchemy models."""
+
 from app.models.user import User
 from app.models.submission import Submission, SubmissionImage
 from app.models.credit import CreditTransaction

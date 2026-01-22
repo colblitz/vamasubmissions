@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { adminAPI } from '../../services/api';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { adminAPI } from "../../services/api";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
       const response = await adminAPI.getStats();
       setStats(response.data);
     } catch (error) {
-      console.error('Failed to load stats:', error);
+      console.error("Failed to load stats:", error);
     } finally {
       setLoading(false);
     }
@@ -36,30 +36,28 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="card">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">
-          Overview of submissions, queues, and system statistics
-        </p>
+        <p className="text-gray-600">Overview of submissions, queues, and system statistics</p>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link to="/admin/submissions" className="card hover:border-blue-500 transition-colors border border-transparent">
+        <Link
+          to="/admin/submissions"
+          className="card hover:border-blue-500 transition-colors border border-transparent"
+        >
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Manage Submissions</h3>
-          <p className="text-sm text-gray-600">
-            View, complete, and manage all submissions
-          </p>
+          <p className="text-sm text-gray-600">View, complete, and manage all submissions</p>
         </Link>
-        <Link to="/admin/users" className="card hover:border-blue-500 transition-colors border border-transparent">
+        <Link
+          to="/admin/users"
+          className="card hover:border-blue-500 transition-colors border border-transparent"
+        >
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Manage Users</h3>
-          <p className="text-sm text-gray-600">
-            View users, adjust credits, and manage roles
-          </p>
+          <p className="text-sm text-gray-600">View users, adjust credits, and manage roles</p>
         </Link>
         <div className="card bg-gray-50">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Statistics</h3>
-          <p className="text-sm text-gray-600">
-            Detailed stats shown below
-          </p>
+          <p className="text-sm text-gray-600">Detailed stats shown below</p>
         </div>
       </div>
 
@@ -68,27 +66,19 @@ export default function AdminDashboardPage() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="card text-center">
-              <div className="text-3xl font-bold text-yellow-600">
-                {stats.paid_queue_size}
-              </div>
+              <div className="text-3xl font-bold text-yellow-600">{stats.paid_queue_size}</div>
               <div className="text-sm text-gray-600">Paid Queue</div>
             </div>
             <div className="card text-center">
-              <div className="text-3xl font-bold text-purple-600">
-                {stats.free_queue_size}
-              </div>
+              <div className="text-3xl font-bold text-purple-600">{stats.free_queue_size}</div>
               <div className="text-sm text-gray-600">Free Queue</div>
             </div>
             <div className="card text-center">
-              <div className="text-3xl font-bold text-blue-600">
-                {stats.total_in_progress}
-              </div>
+              <div className="text-3xl font-bold text-blue-600">{stats.total_in_progress}</div>
               <div className="text-sm text-gray-600">In Progress</div>
             </div>
             <div className="card text-center">
-              <div className="text-3xl font-bold text-green-600">
-                {stats.total_completed}
-              </div>
+              <div className="text-3xl font-bold text-green-600">{stats.total_completed}</div>
               <div className="text-sm text-gray-600">Completed</div>
             </div>
           </div>
@@ -130,9 +120,7 @@ export default function AdminDashboardPage() {
                       <span className="text-sm text-gray-700">
                         {index + 1}. {item.series}
                       </span>
-                      <span className="text-sm font-semibold text-blue-600">
-                        {item.count}
-                      </span>
+                      <span className="text-sm font-semibold text-blue-600">{item.count}</span>
                     </div>
                   ))}
                 </div>

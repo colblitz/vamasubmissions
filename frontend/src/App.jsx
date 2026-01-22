@@ -1,19 +1,19 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import Layout from './components/layout/Layout';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Layout from "./components/layout/Layout";
 
 // Pages
-import LoginPage from './pages/LoginPage';
-import CallbackPage from './pages/CallbackPage';
+import LoginPage from "./pages/LoginPage";
+import CallbackPage from "./pages/CallbackPage";
 
 // Phase 1: Community Features
-import SearchPage from './pages/SearchPage';
-import CommunityRequestsPage from './pages/CommunityRequestsPage';
-import ReviewEditsPage from './pages/ReviewEditsPage';
+import SearchPage from "./pages/SearchPage";
+import CommunityRequestsPage from "./pages/CommunityRequestsPage";
+import ReviewEditsPage from "./pages/ReviewEditsPage";
 
 // Admin pages
-import ImportPostsPage from './pages/admin/ImportPostsPage';
+import ImportPostsPage from "./pages/admin/ImportPostsPage";
 
 // Legacy pages (hidden but preserved)
 // import DashboardPageV2 from './pages/DashboardPageV2';
@@ -45,7 +45,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             <Route
               path="/search"
               element={
@@ -54,7 +54,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             <Route
               path="/requests"
               element={
@@ -63,7 +63,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             <Route
               path="/review"
               element={
@@ -72,7 +72,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             {/* Admin routes */}
             <Route
               path="/admin/import"

@@ -1,4 +1,5 @@
 """Admin API endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
@@ -30,26 +31,26 @@ async def list_all_submissions(
 ):
     """
     List all submissions (admin only).
-    
+
     Args:
         status: Optional status filter
         queue_type: Optional queue type filter
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         List of all submissions
     """
     query = db.query(Submission)
-    
+
     if status:
         query = query.filter(Submission.status == status)
-    
+
     if queue_type:
         query = query.filter(Submission.queue_type == queue_type)
-    
+
     submissions = query.order_by(Submission.submitted_at.desc()).all()
-    
+
     return submissions
 
 
@@ -61,23 +62,23 @@ async def get_submission_admin(
 ):
     """
     Get a specific submission with all details (admin only).
-    
+
     Args:
         submission_id: Submission ID
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Submission with all details including creator notes
     """
     submission = submission_service.get_submission_by_id(db, submission_id)
-    
+
     if not submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Submission not found",
         )
-    
+
     return submission
 
 
@@ -90,13 +91,13 @@ async def complete_submission(
 ):
     """
     Mark a submission as complete (admin/creator only).
-    
+
     Args:
         submission_id: Submission ID
         completion_data: Completion data
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Completed submission
     """
@@ -106,7 +107,7 @@ async def complete_submission(
         patreon_post_link=completion_data.patreon_post_link,
         creator_notes=completion_data.creator_notes,
     )
-    
+
     return submission
 
 
@@ -119,27 +120,27 @@ async def update_creator_notes(
 ):
     """
     Update creator notes for a submission (admin/creator only).
-    
+
     Args:
         submission_id: Submission ID
         notes: Creator notes
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Success message
     """
     submission = submission_service.get_submission_by_id(db, submission_id)
-    
+
     if not submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Submission not found",
         )
-    
+
     submission.creator_notes = notes
     db.commit()
-    
+
     return {"message": "Notes updated successfully"}
 
 
@@ -151,34 +152,35 @@ async def start_submission(
 ):
     """
     Mark a submission as in progress (admin/creator only).
-    
+
     Args:
         submission_id: Submission ID
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Success message
     """
     submission = submission_service.get_submission_by_id(db, submission_id)
-    
+
     if not submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Submission not found",
         )
-    
+
     if submission.status != "pending":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Can only start pending submissions",
         )
-    
+
     from datetime import datetime
+
     submission.status = "in_progress"
     submission.started_at = datetime.utcnow()
     db.commit()
-    
+
     return {"message": "Submission marked as in progress"}
 
 
@@ -189,67 +191,61 @@ async def get_queue_stats(
 ):
     """
     Get queue statistics (admin only).
-    
+
     Args:
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Queue statistics
     """
     # Count submissions by status and queue type
-    paid_queue_size = db.query(Submission).filter(
-        Submission.queue_type == "paid",
-        Submission.status == "pending"
-    ).count()
-    
-    free_queue_size = db.query(Submission).filter(
-        Submission.queue_type == "free",
-        Submission.status == "pending"
-    ).count()
-    
+    paid_queue_size = (
+        db.query(Submission)
+        .filter(Submission.queue_type == "paid", Submission.status == "pending")
+        .count()
+    )
+
+    free_queue_size = (
+        db.query(Submission)
+        .filter(Submission.queue_type == "free", Submission.status == "pending")
+        .count()
+    )
+
     total_pending = paid_queue_size + free_queue_size
-    
-    total_in_progress = db.query(Submission).filter(
-        Submission.status == "in_progress"
-    ).count()
-    
-    total_completed = db.query(Submission).filter(
-        Submission.status == "completed"
-    ).count()
-    
+
+    total_in_progress = db.query(Submission).filter(Submission.status == "in_progress").count()
+
+    total_completed = db.query(Submission).filter(Submission.status == "completed").count()
+
     # Calculate average completion time
-    completed_submissions = db.query(Submission).filter(
-        Submission.status == "completed",
-        Submission.submitted_at.isnot(None),
-        Submission.completed_at.isnot(None)
-    ).all()
-    
+    completed_submissions = (
+        db.query(Submission)
+        .filter(
+            Submission.status == "completed",
+            Submission.submitted_at.isnot(None),
+            Submission.completed_at.isnot(None),
+        )
+        .all()
+    )
+
     avg_completion_days = None
     if completed_submissions:
-        total_days = sum(
-            (s.completed_at - s.submitted_at).days
-            for s in completed_submissions
-        )
+        total_days = sum((s.completed_at - s.submitted_at).days for s in completed_submissions)
         avg_completion_days = total_days / len(completed_submissions)
-    
+
     # Get popular series
-    popular_series = db.query(
-        Submission.series,
-        func.count(Submission.id).label("count")
-    ).filter(
-        Submission.status == "completed"
-    ).group_by(
-        Submission.series
-    ).order_by(
-        desc("count")
-    ).limit(10).all()
-    
-    popular_series_list = [
-        {"series": series, "count": count}
-        for series, count in popular_series
-    ]
-    
+    popular_series = (
+        db.query(Submission.series, func.count(Submission.id).label("count"))
+        .filter(Submission.status == "completed")
+        .group_by(Submission.series)
+        .order_by(desc("count"))
+        .limit(10)
+        .all()
+    )
+
+    popular_series_list = [{"series": series, "count": count} for series, count in popular_series]
+
     return QueueStats(
         paid_queue_size=paid_queue_size,
         free_queue_size=free_queue_size,
@@ -268,44 +264,49 @@ async def list_users(
 ):
     """
     List all users with statistics (admin only).
-    
+
     Args:
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         List of users with stats
     """
     # Query user stats view
     users = db.query(User).all()
-    
+
     user_stats = []
     for user in users:
-        pending = db.query(Submission).filter(
-            Submission.user_id == user.id,
-            Submission.status == "pending"
-        ).count()
-        
-        completed = db.query(Submission).filter(
-            Submission.user_id == user.id,
-            Submission.status == "completed"
-        ).count()
-        
-        cancelled = db.query(Submission).filter(
-            Submission.user_id == user.id,
-            Submission.status == "cancelled"
-        ).count()
-        
-        user_stats.append(UserStats(
-            user_id=user.id,
-            patreon_username=user.patreon_username,
-            tier=user.tier,
-            credits=user.credits,
-            pending_submissions=pending,
-            completed_submissions=completed,
-            cancelled_submissions=cancelled,
-        ))
-    
+        pending = (
+            db.query(Submission)
+            .filter(Submission.user_id == user.id, Submission.status == "pending")
+            .count()
+        )
+
+        completed = (
+            db.query(Submission)
+            .filter(Submission.user_id == user.id, Submission.status == "completed")
+            .count()
+        )
+
+        cancelled = (
+            db.query(Submission)
+            .filter(Submission.user_id == user.id, Submission.status == "cancelled")
+            .count()
+        )
+
+        user_stats.append(
+            UserStats(
+                user_id=user.id,
+                patreon_username=user.patreon_username,
+                tier=user.tier,
+                credits=user.credits,
+                pending_submissions=pending,
+                completed_submissions=completed,
+                cancelled_submissions=cancelled,
+            )
+        )
+
     return user_stats
 
 
@@ -318,13 +319,13 @@ async def update_user_role(
 ):
     """
     Update a user's role (admin only).
-    
+
     Args:
         user_id: User ID
         role: New role (patron, creator, admin)
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Success message
     """
@@ -333,18 +334,18 @@ async def update_user_role(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid role. Must be patron, creator, or admin",
         )
-    
+
     user = user_service.get_user_by_id(db, user_id)
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    
+
     user.role = role
     db.commit()
-    
+
     return {"message": f"User role updated to {role}"}
 
 
@@ -358,31 +359,31 @@ async def adjust_user_credits(
 ):
     """
     Manually adjust a user's credits (admin only).
-    
+
     Args:
         user_id: User ID
         amount: Amount to adjust (positive or negative)
         reason: Reason for adjustment
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Success message
     """
     from app.services import credit_service
-    
+
     user = user_service.get_user_by_id(db, user_id)
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    
+
     # Update credits
     new_credits = max(0, min(user.credits + amount, user.max_credits))
     actual_change = new_credits - user.credits
-    
+
     if actual_change > 0:
         credit_service.add_credits(
             db,
@@ -399,10 +400,10 @@ async def adjust_user_credits(
             transaction_type="adjustment",
             description=f"Admin adjustment: {reason}",
         )
-    
+
     user.credits = new_credits
     db.commit()
-    
+
     return {
         "message": "Credits adjusted successfully",
         "old_credits": user.credits - actual_change,
@@ -415,6 +416,7 @@ async def adjust_user_credits(
 # POST IMPORT ENDPOINTS (Phase 1: Community Features)
 # ============================================================================
 
+
 @router.post("/posts/fetch-new")
 async def fetch_new_posts(
     creator_username: str = "vama",
@@ -425,36 +427,36 @@ async def fetch_new_posts(
     """
     Fetch new posts from Patreon using gallery-dl with admin's OAuth token.
     Posts are imported with status='pending' for review.
-    
+
     Args:
         creator_username: Patreon creator username (default: vama)
         since_days: Look back N days for new posts (default 2, only used if no posts exist yet)
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Import summary with counts
-        
+
     Note:
         If posts already exist in the database, fetches posts since the most recent post.
         The since_days parameter is only used as a fallback when the database is empty.
     """
     print(f"[FETCH-NEW-POSTS] Starting fetch for user {current_user.patreon_username}")
     print(f"[FETCH-NEW-POSTS] Creator: {creator_username}, Since days: {since_days}")
-    
+
     # Get admin's Patreon tokens from admin_settings
-    admin_settings = db.query(AdminSettings).filter(
-        AdminSettings.user_id == current_user.id
-    ).first()
-    
+    admin_settings = (
+        db.query(AdminSettings).filter(AdminSettings.user_id == current_user.id).first()
+    )
+
     print(f"[FETCH-NEW-POSTS] Admin settings found: {admin_settings is not None}")
-    
+
     if not admin_settings or not admin_settings.patreon_access_token:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admin must be logged in with Patreon. Please log out and log in again to refresh your token."
+            detail="Admin must be logged in with Patreon. Please log out and log in again to refresh your token.",
         )
-    
+
     # Check if token is expired and refresh if needed
     if admin_settings.is_token_expired:
         try:
@@ -469,64 +471,68 @@ async def fetch_new_posts(
         except PatreonAPIError as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Failed to refresh Patreon token: {str(e)}. Please log out and log in again."
+                detail=f"Failed to refresh Patreon token: {str(e)}. Please log out and log in again.",
             )
-    
+
     # Initialize Patreon service with admin's token
     patreon = PatreonService(admin_settings.patreon_access_token)
-    
+
     # Get the most recent post date from database
     most_recent_post = db.query(Post).order_by(Post.timestamp.desc()).first()
-    
+
     if most_recent_post:
         # Fetch posts since the most recent one
         since_date = most_recent_post.timestamp
-        print(f"[FETCH-NEW-POSTS] Using most recent post date: {since_date} (post_id: {most_recent_post.post_id})")
+        print(
+            f"[FETCH-NEW-POSTS] Using most recent post date: {since_date} (post_id: {most_recent_post.post_id})"
+        )
     else:
         # No posts yet, fetch from N days ago
         since_date = datetime.utcnow() - timedelta(days=since_days)
-        print(f"[FETCH-NEW-POSTS] No existing posts, using fallback: {since_days} days ago = {since_date}")
-    
+        print(
+            f"[FETCH-NEW-POSTS] No existing posts, using fallback: {since_days} days ago = {since_date}"
+        )
+
     # Fetch posts using gallery-dl (with browser cookies for authentication)
     try:
         posts_metadata = patreon.fetch_posts_with_gallery_dl(
             creator_username=creator_username,
             since_date=since_date,
-            session_id=True  # Signal to use browser cookies
+            session_id=True,  # Signal to use browser cookies
         )
     except PatreonAPIError as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to fetch posts from Patreon: {str(e)}"
+            detail=f"Failed to fetch posts from Patreon: {str(e)}",
         )
-    
+
     # Step 1: Extract post IDs from metadata
     print(f"[IMPORT] Processing {len(posts_metadata)} posts from gallery-dl")
-    post_ids_to_check = [str(m.get('id')) for m in posts_metadata if m.get('id')]
-    
+    post_ids_to_check = [str(m.get("id")) for m in posts_metadata if m.get("id")]
+
     # Step 2: Bulk check which post_ids already exist in database
     existing_post_ids = set()
     if post_ids_to_check:
-        existing_posts = db.query(Post.post_id).filter(
-            Post.post_id.in_(post_ids_to_check)
-        ).all()
+        existing_posts = db.query(Post.post_id).filter(Post.post_id.in_(post_ids_to_check)).all()
         existing_post_ids = {p.post_id for p in existing_posts}
-        print(f"[IMPORT] Found {len(existing_post_ids)} existing posts, {len(post_ids_to_check) - len(existing_post_ids)} new")
-    
+        print(
+            f"[IMPORT] Found {len(existing_post_ids)} existing posts, {len(post_ids_to_check) - len(existing_post_ids)} new"
+        )
+
     # Step 3: Process and import only new posts
     imported_count = 0
     skipped_count = 0
     errors = []
-    
+
     for metadata in posts_metadata:
         try:
             post_data = patreon.extract_post_data_from_gallery_dl(metadata)
-            
+
             # Skip if already exists (checked in bulk above)
             if post_data["post_id"] in existing_post_ids:
                 skipped_count += 1
                 continue
-            
+
             # Create new post with status='pending'
             new_post = Post(
                 post_id=post_data["post_id"],
@@ -539,29 +545,26 @@ async def fetch_new_posts(
                 characters=[],  # To be filled in by admin
                 series=[],  # To be filled in by admin
                 tags=[],  # Will be auto-generated on publish
-                raw_patreon_json=post_data["raw_patreon_json"]
+                raw_patreon_json=post_data["raw_patreon_json"],
             )
             db.add(new_post)
             imported_count += 1
             print(f"[IMPORT] Added post {post_data['post_id']}: {post_data['title']}")
-            
+
         except Exception as e:
-            errors.append({
-                "post_id": metadata.get("id", "unknown"),
-                "error": str(e)
-            })
+            errors.append({"post_id": metadata.get("id", "unknown"), "error": str(e)})
             print(f"[IMPORT] ERROR processing post {metadata.get('id')}: {e}")
-    
+
     db.commit()
     print(f"[IMPORT] Committed {imported_count} new posts to database")
-    
+
     return {
         "message": f"Import complete: {imported_count} new posts imported, {skipped_count} skipped",
         "imported": imported_count,
         "skipped": skipped_count,
         "errors": errors,
         "total_processed": len(posts_metadata),
-        "since_date": since_date.isoformat() if since_date else None
+        "since_date": since_date.isoformat() if since_date else None,
     }
 
 
@@ -574,24 +577,27 @@ async def get_pending_posts(
 ):
     """
     Get all pending posts for review.
-    
+
     Args:
         page: Page number (1-indexed)
         limit: Posts per page
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         List of pending posts
     """
     offset = (page - 1) * limit
-    
-    posts = db.query(Post).filter(
-        Post.status == "pending"
-    ).order_by(
-        Post.timestamp.desc()
-    ).offset(offset).limit(limit).all()
-    
+
+    posts = (
+        db.query(Post)
+        .filter(Post.status == "pending")
+        .order_by(Post.timestamp.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
     return posts
 
 
@@ -604,24 +610,21 @@ async def update_pending_post(
 ):
     """
     Update a pending post (add characters/series/tags).
-    
+
     Args:
         post_id: Post ID
         update_data: Update data
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Updated post
     """
     post = db.query(Post).filter(Post.id == post_id).first()
-    
+
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
     # Update fields if provided
     if update_data.characters is not None:
         post.characters = update_data.characters
@@ -631,11 +634,11 @@ async def update_pending_post(
         post.tags = update_data.tags
     if update_data.title is not None:
         post.title = update_data.title
-    
+
     post.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(post)
-    
+
     return post
 
 
@@ -648,47 +651,44 @@ async def publish_post(
     """
     Publish a pending post (makes it visible in search).
     Auto-generates tags if not already set.
-    
+
     Args:
         post_id: Post ID
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Published post
     """
     post = db.query(Post).filter(Post.id == post_id).first()
-    
+
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
     if post.status == "published":
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Post is already published"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Post is already published"
         )
-    
+
     # Validate required fields
     if not post.characters or not post.series:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Post must have at least one character and series before publishing"
+            detail="Post must have at least one character and series before publishing",
         )
-    
+
     # Auto-generate tags
     from app.services.post_service import generate_tags
+
     post.tags = generate_tags(post)
-    
+
     # Change status to published
     post.status = "published"
     post.updated_at = datetime.utcnow()
-    
+
     db.commit()
     db.refresh(post)
-    
+
     return post
 
 
@@ -700,50 +700,51 @@ async def bulk_publish_posts(
 ):
     """
     Publish multiple posts at once.
-    
+
     Args:
         post_ids: List of post IDs to publish
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Summary of published/failed posts
     """
     published = []
     failed = []
-    
+
     for post_id in post_ids:
         post = db.query(Post).filter(Post.id == post_id).first()
-        
+
         if not post:
             failed.append({"id": post_id, "reason": "Not found"})
             continue
-        
+
         if post.status == "published":
             failed.append({"id": post_id, "reason": "Already published"})
             continue
-        
+
         if not post.characters or not post.series:
             failed.append({"id": post_id, "reason": "Missing characters/series"})
             continue
-        
+
         # Auto-generate tags
         from app.services.post_service import generate_tags
+
         post.tags = generate_tags(post)
-        
+
         # Change status to published
         post.status = "published"
         post.updated_at = datetime.utcnow()
-        
+
         published.append(post_id)
-    
+
     db.commit()
-    
+
     return {
         "message": f"Published {len(published)} posts, {len(failed)} failed",
         "published": published,
         "failed": failed,
-        "total": len(post_ids)
+        "total": len(post_ids),
     }
 
 
@@ -756,32 +757,29 @@ async def delete_pending_post(
     """
     Delete a pending post (if it was imported by mistake).
     Cannot delete published posts.
-    
+
     Args:
         post_id: Post ID
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Success message
     """
     post = db.query(Post).filter(Post.id == post_id).first()
-    
+
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
     if post.status == "published":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete published posts. Unpublish first if needed."
+            detail="Cannot delete published posts. Unpublish first if needed.",
         )
-    
+
     db.delete(post)
     db.commit()
-    
+
     return {"message": "Post deleted successfully"}
 
 
@@ -793,37 +791,37 @@ async def bulk_delete_posts(
 ):
     """
     Delete multiple pending posts at once.
-    
+
     Args:
         post_ids: List of post IDs to delete
         current_user: Current admin user
         db: Database session
-        
+
     Returns:
         Summary of deleted/failed posts
     """
     deleted = []
     failed = []
-    
+
     for post_id in post_ids:
         post = db.query(Post).filter(Post.id == post_id).first()
-        
+
         if not post:
             failed.append({"id": post_id, "reason": "Not found"})
             continue
-        
+
         if post.status == "published":
             failed.append({"id": post_id, "reason": "Cannot delete published posts"})
             continue
-        
+
         db.delete(post)
         deleted.append(post_id)
-    
+
     db.commit()
-    
+
     return {
         "message": f"Deleted {len(deleted)} posts, {len(failed)} failed",
         "deleted": deleted,
         "failed": failed,
-        "total": len(post_ids)
+        "total": len(post_ids),
     }
