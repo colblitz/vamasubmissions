@@ -448,18 +448,29 @@ class PatreonService:
         # TODO: For production, extract real thumbnail URLs and download them
         # thumbnail_url = gallery_dl_metadata.get('thumbnail', {}).get('thumbnail_large')
 
-        # Use League of Legends placeholder thumbnails (cycling through test data)
+        # Use League of Legends placeholder thumbnails (random selection)
+        import random
+
         placeholder_thumbnails = [
             "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg",
             "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Jinx_0.jpg",
             "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Lux_0.jpg",
             "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/MissFortune_0.jpg",
             "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Akali_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ashe_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Caitlyn_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Evelynn_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Janna_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Katarina_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/KaiSa_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/LeeSin_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Riven_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Sona_0.jpg",
+            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Syndra_0.jpg",
         ]
 
-        # Use post_id hash to consistently assign a placeholder
-        post_id_int = int(post_id) if post_id.isdigit() else hash(post_id)
-        placeholder_url = placeholder_thumbnails[post_id_int % len(placeholder_thumbnails)]
+        # Randomly choose a placeholder thumbnail
+        placeholder_url = random.choice(placeholder_thumbnails)
 
         thumbnail_urls = [placeholder_url]
         image_urls = thumbnail_urls  # For now, just use thumbnail
