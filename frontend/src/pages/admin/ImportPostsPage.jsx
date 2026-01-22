@@ -52,8 +52,6 @@ export default function ImportPostsPage() {
 
   // Fetch new posts from Patreon
   const handleFetchNew = async () => {
-    if (!confirm("Fetch new posts from Patreon? This may take a minute.")) return;
-
     setFetching(true);
     setError(null);
     setSuccess(null);
@@ -67,6 +65,7 @@ export default function ImportPostsPage() {
         `Imported ${response.data.imported} new posts, ${response.data.skipped} already existed`
       );
       fetchPendingPosts(); // Refresh list
+      fetchTotalCount();
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to fetch new posts");
     } finally {
@@ -77,44 +76,87 @@ export default function ImportPostsPage() {
   // Bulk publish
   const handleBulkPublish = async () => {
     if (selectedPosts.length === 0) {
-      alert("No posts selected");
+      setError("No posts selected");
       return;
     }
 
-    if (!confirm(`Publish ${selectedPosts.length} selected posts?`)) return;
+    setError(null);
+    setSuccess(null);
 
     try {
       const response = await api.post("/api/admin/posts/bulk-publish", selectedPosts);
 
-      alert(
+      setSuccess(
         `Published ${response.data.published.length} posts, ${response.data.failed.length} failed`
       );
       setSelectedPosts([]);
       fetchPendingPosts();
+      fetchTotalCount();
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to bulk publish");
+      setError(err.response?.data?.detail || "Failed to bulk publish");
+    }
+  };
+
+  // Bulk save
+  const handleBulkSave = async () => {
+    if (selectedPosts.length === 0) {
+      setError("No posts selected");
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Get all selected post cards and save them
+      let savedCount = 0;
+      let failedCount = 0;
+
+      for (const postId of selectedPosts) {
+        try {
+          // Find the post in pendingPosts
+          const post = pendingPosts.find(p => p.id === postId);
+          if (post && (post.characters?.length > 0 || post.series?.length > 0)) {
+            await api.patch(`/api/admin/posts/${postId}`, {
+              characters: post.characters || [],
+              series: post.series || [],
+            });
+            savedCount++;
+          }
+        } catch (err) {
+          console.error(`Failed to save post ${postId}:`, err);
+          failedCount++;
+        }
+      }
+
+      setSuccess(`Saved ${savedCount} posts${failedCount > 0 ? `, ${failedCount} failed` : ''}`);
+      fetchPendingPosts(); // Refresh to clear unsaved indicators
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to bulk save");
     }
   };
 
   // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedPosts.length === 0) {
-      alert("No posts selected");
+      setError("No posts selected");
       return;
     }
 
-    if (!confirm(`Delete ${selectedPosts.length} selected posts? This cannot be undone.`)) return;
+    setError(null);
+    setSuccess(null);
 
     try {
       const response = await api.delete("/api/admin/posts/bulk-delete", {
         data: selectedPosts,
       });
 
-      alert(`Deleted ${response.data.deleted.length} posts, ${response.data.failed.length} failed`);
+      setSuccess(`Deleted ${response.data.deleted.length} posts, ${response.data.failed.length} failed`);
       setSelectedPosts([]);
       fetchPendingPosts();
+      fetchTotalCount();
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to bulk delete");
+      setError(err.response?.data?.detail || "Failed to bulk delete");
     }
   };
 
@@ -190,6 +232,14 @@ export default function ImportPostsPage() {
 
             <div className="flex gap-2">
               <button
+                onClick={handleBulkSave}
+                disabled={selectedPosts.length === 0}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save Selected ({selectedPosts.length})
+              </button>
+
+              <button
                 onClick={handleBulkPublish}
                 disabled={selectedPosts.length === 0}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -249,6 +299,11 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
   const [cardError, setCardError] = useState(null);
   const [cardSuccess, setCardSuccess] = useState(null);
 
+  // Track unsaved changes
+  const hasUnsavedChanges = 
+    JSON.stringify(characters.sort()) !== JSON.stringify((post.characters || []).sort()) ||
+    JSON.stringify(series.sort()) !== JSON.stringify((post.series || []).sort());
+
   // Character autocomplete
   const [characterInput, setCharacterInput] = useState("");
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
@@ -257,6 +312,10 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
   // Series autocomplete
   const [seriesInput, setSeriesInput] = useState("");
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
+
+  // Refs for click-away detection
+  const characterRef = useRef(null);
+  const seriesRef = useRef(null);
 
   // Fetch character suggestions with series
   const fetchCharacterSuggestions = async (query) => {
@@ -295,6 +354,24 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
     }
   };
 
+  // Click-away detection for autocomplete dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (characterRef.current && !characterRef.current.contains(event.target)) {
+        setCharacterSuggestions([]);
+        setCharacterSeriesMap({});
+      }
+      if (seriesRef.current && !seriesRef.current.contains(event.target)) {
+        setSeriesSuggestions([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Debounced autocomplete
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -321,6 +398,10 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
         characters,
         series,
       });
+
+      // Update the post object to reflect saved changes
+      post.characters = [...characters];
+      post.series = [...series];
 
       setCardSuccess("Changes saved!");
       setTimeout(() => setCardSuccess(null), 3000);
@@ -419,7 +500,17 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
 
         {/* Content */}
         <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{post.title}</h3>
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-xl font-bold text-gray-900">{post.title}</h3>
+            {hasUnsavedChanges && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+                Unsaved changes
+              </span>
+            )}
+          </div>
 
           <div className="text-sm text-gray-500 mb-4">
             <a
@@ -437,14 +528,41 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
           {/* Characters Input */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Characters *</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={characterInput}
-                onChange={(e) => setCharacterInput(e.target.value)}
-                placeholder="Type to search..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-              />
+            <div className="relative" ref={characterRef}>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={characterInput}
+                  onChange={(e) => setCharacterInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && characterInput.trim()) {
+                      e.preventDefault();
+                      if (!characters.includes(characterInput.trim())) {
+                        setCharacters([...characters, characterInput.trim()]);
+                      }
+                      setCharacterInput("");
+                      setCharacterSuggestions([]);
+                      setCharacterSeriesMap({});
+                    }
+                  }}
+                  placeholder="Type character name and press Enter..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+                <button
+                  onClick={() => {
+                    if (characterInput.trim() && !characters.includes(characterInput.trim())) {
+                      setCharacters([...characters, characterInput.trim()]);
+                      setCharacterInput("");
+                      setCharacterSuggestions([]);
+                      setCharacterSeriesMap({});
+                    }
+                  }}
+                  disabled={!characterInput.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+              </div>
               {characterSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {characterSuggestions.map((suggestion, idx) => (
@@ -502,14 +620,39 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
           {/* Series Input */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Series *</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={seriesInput}
-                onChange={(e) => setSeriesInput(e.target.value)}
-                placeholder="Type to search..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-              />
+            <div className="relative" ref={seriesRef}>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={seriesInput}
+                  onChange={(e) => setSeriesInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && seriesInput.trim()) {
+                      e.preventDefault();
+                      if (!series.includes(seriesInput.trim())) {
+                        setSeries([...series, seriesInput.trim()]);
+                      }
+                      setSeriesInput("");
+                      setSeriesSuggestions([]);
+                    }
+                  }}
+                  placeholder="Type series name and press Enter..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+                <button
+                  onClick={() => {
+                    if (seriesInput.trim() && !series.includes(seriesInput.trim())) {
+                      setSeries([...series, seriesInput.trim()]);
+                      setSeriesInput("");
+                      setSeriesSuggestions([]);
+                    }
+                  }}
+                  disabled={!seriesInput.trim()}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+              </div>
               {seriesSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {seriesSuggestions.map((suggestion, idx) => (
