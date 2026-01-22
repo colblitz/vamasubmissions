@@ -744,6 +744,39 @@ async def bulk_publish_posts(
     }
 
 
+@router.post("/posts/{post_id}/skip", response_model=PostSchema)
+async def skip_post(
+    post_id: int,
+    current_user: User = Depends(user_service.get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Mark a post as skipped (for non-character posts like announcements).
+    Skipped posts won't appear in search results but will prevent re-import.
+
+    Args:
+        post_id: Post ID
+        current_user: Current admin user
+        db: Database session
+
+    Returns:
+        Skipped post
+    """
+    post = db.query(Post).filter(Post.id == post_id).first()
+
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+    # Change status to skipped
+    post.status = "skipped"
+    post.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(post)
+
+    return post
+
+
 @router.delete("/posts/{post_id}")
 async def delete_pending_post(
     post_id: int,

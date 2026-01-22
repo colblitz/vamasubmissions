@@ -11,6 +11,7 @@ class PostStatus(str, Enum):
 
     PENDING = "pending"
     PUBLISHED = "published"
+    SKIPPED = "skipped"  # For non-character posts (announcements, etc.)
 
 
 class PostBase(BaseModel):

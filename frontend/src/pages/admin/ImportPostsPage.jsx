@@ -457,6 +457,22 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
     }
   };
 
+  // Skip post (for non-character posts like announcements)
+  const handleSkip = async () => {
+    setCardError(null);
+    setCardSuccess(null);
+
+    try {
+      await api.post(`/api/admin/posts/${post.id}/skip`);
+      setCardSuccess("Post marked as skipped (won't appear in search, won't be re-imported)");
+      setTimeout(() => {
+        onRemove(post.id);
+      }, 1500);
+    } catch (err) {
+      setCardError(err.response?.data?.detail || "Failed to skip post");
+    }
+  };
+
   // Delete post
   const handleDelete = async () => {
     setCardError(null);
@@ -722,8 +738,16 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
             </button>
 
             <button
+              onClick={handleSkip}
+              className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 ml-auto"
+              title="Mark as non-character post (announcement, etc.) - won't appear in search or be re-imported"
+            >
+              Skip
+            </button>
+
+            <button
               onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-auto"
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
             >
               Delete
             </button>
