@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function ImportPostsPage() {
   const { user } = useAuth();
   const [pendingPosts, setPendingPosts] = useState([]);
+  const [totalPendingCount, setTotalPendingCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
@@ -28,6 +29,25 @@ export default function ImportPostsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch total pending count
+  const fetchTotalCount = async () => {
+    try {
+      const response = await api.get("/api/admin/posts/pending", {
+        params: { limit: 1000 },
+      });
+      setTotalPendingCount(response.data.length);
+    } catch (err) {
+      console.error("Failed to fetch total count:", err);
+    }
+  };
+
+  // Remove a post from the local list (after publish/delete)
+  const removePostFromList = (postId) => {
+    setPendingPosts(prev => prev.filter(p => p.id !== postId));
+    setTotalPendingCount(prev => Math.max(0, prev - 1));
+    setSelectedPosts(prev => prev.filter(id => id !== postId));
   };
 
   // Fetch new posts from Patreon
@@ -120,6 +140,7 @@ export default function ImportPostsPage() {
 
   useEffect(() => {
     fetchPendingPosts();
+    fetchTotalCount();
   }, []);
 
   return (
@@ -190,7 +211,7 @@ export default function ImportPostsPage() {
 
       {/* Pending Posts Count */}
       <div className="mb-4 text-gray-600">
-        {pendingPosts.length} pending post{pendingPosts.length !== 1 ? "s" : ""} awaiting review
+        {pendingPosts.length} of {totalPendingCount} pending post{totalPendingCount !== 1 ? "s" : ""} awaiting review
       </div>
 
       {/* Loading State */}
@@ -211,7 +232,7 @@ export default function ImportPostsPage() {
               post={post}
               isSelected={selectedPosts.includes(post.id)}
               onToggleSelect={() => togglePostSelection(post.id)}
-              onUpdate={fetchPendingPosts}
+              onRemove={removePostFromList}
             />
           ))}
         </div>
@@ -220,11 +241,13 @@ export default function ImportPostsPage() {
   );
 }
 
-function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
+function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
   const [characters, setCharacters] = useState(post.characters || []);
   const [series, setSeries] = useState(post.series || []);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [cardError, setCardError] = useState(null);
+  const [cardSuccess, setCardSuccess] = useState(null);
 
   // Character autocomplete
   const [characterInput, setCharacterInput] = useState("");
@@ -286,6 +309,8 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
   // Save changes
   const handleSave = async () => {
     setSaving(true);
+    setCardError(null);
+    setCardSuccess(null);
 
     try {
       await api.patch(`/api/admin/posts/${post.id}`, {
@@ -293,9 +318,10 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
         series,
       });
 
-      alert("Changes saved!");
+      setCardSuccess("Changes saved!");
+      setTimeout(() => setCardSuccess(null), 3000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to save changes");
+      setCardError(err.response?.data?.detail || "Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -304,13 +330,13 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
   // Publish post
   const handlePublish = async () => {
     if (!characters.length || !series.length) {
-      alert("Please add at least one character and series before publishing");
+      setCardError("Please add at least one character and series before publishing");
       return;
     }
 
-    if (!confirm("Publish this post? It will become visible in search results.")) return;
-
     setPublishing(true);
+    setCardError(null);
+    setCardSuccess(null);
 
     try {
       // Save first
@@ -322,10 +348,13 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
       // Then publish
       await api.post(`/api/admin/posts/${post.id}/publish`);
 
-      alert("Post published successfully!");
-      onUpdate(); // Refresh list
+      setCardSuccess("Post published successfully!");
+      // Remove this post from the list after a brief delay
+      setTimeout(() => {
+        onRemove(post.id);
+      }, 1000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to publish post");
+      setCardError(err.response?.data?.detail || "Failed to publish post");
     } finally {
       setPublishing(false);
     }
@@ -333,19 +362,33 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onUpdate }) {
 
   // Delete post
   const handleDelete = async () => {
-    if (!confirm("Delete this pending post? This cannot be undone.")) return;
+    setCardError(null);
+    setCardSuccess(null);
 
     try {
       await api.delete(`/api/admin/posts/${post.id}`);
-      alert("Post deleted");
-      onUpdate(); // Refresh list
+      setCardSuccess("Post deleted");
+      setTimeout(() => {
+        onRemove(post.id);
+      }, 1000);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to delete post");
+      setCardError(err.response?.data?.detail || "Failed to delete post");
     }
   };
 
   return (
     <div className={`bg-white rounded-lg shadow p-6 ${isSelected ? "ring-2 ring-blue-500" : ""}`}>
+      {/* Card-level success/error banners */}
+      {cardSuccess && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded mb-4 text-sm">
+          {cardSuccess}
+        </div>
+      )}
+      {cardError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+          {cardError}
+        </div>
+      )}
       <div className="flex gap-6">
         {/* Checkbox */}
         <div className="flex items-start pt-2">
