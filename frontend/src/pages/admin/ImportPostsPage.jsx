@@ -329,9 +329,21 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
       const response = await api.get("/api/posts/autocomplete/characters-with-series", {
         params: { q: query, limit: 10 },
       });
-      const charSeriesMap = response.data || {};
+      
+      // Backend returns array of {character, series} objects
+      const data = response.data || [];
+      
+      // Convert to map: {character: series}
+      const charSeriesMap = {};
+      const charNames = [];
+      
+      data.forEach(item => {
+        charSeriesMap[item.character] = item.series;
+        charNames.push(item.character);
+      });
+      
       setCharacterSeriesMap(charSeriesMap);
-      setCharacterSuggestions(Object.keys(charSeriesMap));
+      setCharacterSuggestions(charNames);
     } catch (err) {
       console.error("Failed to fetch character suggestions:", err);
     }
