@@ -2,8 +2,12 @@ import { useState, useEffect } from "react";
 import api from "../services/api";
 import SearchFilters from "../components/search/SearchFilters";
 import SearchResults from "../components/search/SearchResults";
+import BrowseTab from "../components/search/BrowseTab";
 
 export default function SearchPage() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState("search"); // "search" | "browse"
+
   // Search parameters
   const [searchParams, setSearchParams] = useState({
     query: "",
@@ -171,45 +175,94 @@ export default function SearchPage() {
     }
   };
 
+  // Handle browse item selection
+  const handleBrowseItemSelect = (fieldType, itemName) => {
+    // Switch to search tab
+    setActiveTab("search");
+    
+    // Apply the filter based on field type
+    if (fieldType === "characters") {
+      setSearchParams((prev) => ({ ...prev, characters: [itemName], page: 1 }));
+    } else if (fieldType === "series") {
+      setSearchParams((prev) => ({ ...prev, series: [itemName], page: 1 }));
+    } else if (fieldType === "tags") {
+      setSearchParams((prev) => ({ ...prev, tags: [itemName], page: 1 }));
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">Search Posts</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900">VAMA Posts</h1>
 
-      {/* Search Filters */}
-      <SearchFilters
-        searchParams={searchParams}
-        onSearchParamsChange={setSearchParams}
-        onSearch={handleSearch}
-        onClear={handleClear}
-        autocomplete={{
-          characterInput,
-          setCharacterInput,
-          characterSuggestions,
-          setCharacterSuggestions,
-          seriesInput,
-          setSeriesInput,
-          seriesSuggestions,
-          setSeriesSuggestions,
-          tagInput,
-          setTagInput,
-          tagSuggestions,
-          setTagSuggestions,
-        }}
-      />
+      {/* Tab Buttons */}
+      <div className="flex gap-2 border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab("search")}
+          className={`px-6 py-3 font-medium transition-colors ${
+            activeTab === "search"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Search
+        </button>
+        <button
+          onClick={() => setActiveTab("browse")}
+          className={`px-6 py-3 font-medium transition-colors ${
+            activeTab === "browse"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Browse
+        </button>
+      </div>
 
-      {/* Search Results */}
-      <SearchResults
-        results={results}
-        total={total}
-        loading={loading}
-        error={error}
-        pendingEditsMap={resultsPendingEdits}
-        pagination={{ page: searchParams.page, limit: searchParams.limit }}
-        onPageChange={handlePageChange}
-        onEditSuccess={handleEditSuccess}
-        sortParams={{ sortBy: searchParams.sortBy, sortOrder: searchParams.sortOrder }}
-        onSortChange={handleSortChange}
-      />
+      {/* Search Tab */}
+      {activeTab === "search" && (
+        <>
+          {/* Search Filters */}
+          <SearchFilters
+            searchParams={searchParams}
+            onSearchParamsChange={setSearchParams}
+            onSearch={handleSearch}
+            onClear={handleClear}
+            autocomplete={{
+              characterInput,
+              setCharacterInput,
+              characterSuggestions,
+              setCharacterSuggestions,
+              seriesInput,
+              setSeriesInput,
+              seriesSuggestions,
+              setSeriesSuggestions,
+              tagInput,
+              setTagInput,
+              tagSuggestions,
+              setTagSuggestions,
+            }}
+          />
+
+          {/* Search Results */}
+          <SearchResults
+            results={results}
+            total={total}
+            loading={loading}
+            error={error}
+            pendingEditsMap={resultsPendingEdits}
+            pagination={{ page: searchParams.page, limit: searchParams.limit }}
+            onPageChange={handlePageChange}
+            onEditSuccess={handleEditSuccess}
+            sortParams={{ sortBy: searchParams.sortBy, sortOrder: searchParams.sortOrder }}
+            onSortChange={handleSortChange}
+          />
+        </>
+      )}
+
+      {/* Browse Tab */}
+      {activeTab === "browse" && (
+        <BrowseTab onSelectItem={handleBrowseItemSelect} />
+      )}
     </div>
   );
 }

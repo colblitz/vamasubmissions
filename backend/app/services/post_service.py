@@ -385,3 +385,83 @@ def get_post_with_edit_count(db: Session, post_id: int) -> Optional[Tuple[Post, 
     edit_count = db.query(func.count()).filter(Post.id == post_id).scalar() or 0
 
     return post, edit_count
+
+
+def get_browse_data(
+    db: Session,
+    field_type: str,
+    page: int = 1,
+    limit: int = 100,
+) -> dict:
+    """
+    Get aggregated data for browsing (characters, series, or tags).
+    Returns items with their post counts.
+    
+    Args:
+        db: Database session
+        field_type: "characters" | "series" | "tags"
+        page: Page number (1-indexed)
+        limit: Results per page
+        
+    Returns:
+        Dict with items list and pagination info
+    """
+    # Map field type to column name
+    field_map = {
+        "characters": "characters",
+        "series": "series",
+        "tags": "tags",
+    }
+    
+    if field_type not in field_map:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid field_type. Must be one of: {', '.join(field_map.keys())}",
+        )
+    
+    field = field_map[field_type]
+    
+    # SQL query to unnest array, count occurrences, and paginate
+    # Use raw SQL for better performance with array operations
+    offset = (page - 1) * limit
+    
+    results = db.execute(
+        text(f"""
+        WITH unnested AS (
+            SELECT unnest({field}) as name
+            FROM posts
+            WHERE status = 'published'
+        )
+        SELECT name, COUNT(*) as count
+        FROM unnested
+        GROUP BY name
+        ORDER BY count DESC, name ASC
+        LIMIT :limit OFFSET :offset
+        """),
+        {"limit": limit, "offset": offset},
+    ).fetchall()
+    
+    # Get total count of unique items
+    total_result = db.execute(
+        text(f"""
+        WITH unnested AS (
+            SELECT DISTINCT unnest({field}) as name
+            FROM posts
+            WHERE status = 'published'
+        )
+        SELECT COUNT(*) FROM unnested
+        """)
+    ).fetchone()
+    
+    total = total_result[0] if total_result else 0
+    total_pages = (total + limit - 1) // limit if total > 0 else 0
+    
+    items = [{"name": row[0], "count": row[1]} for row in results]
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+    }

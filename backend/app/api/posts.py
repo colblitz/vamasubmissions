@@ -197,3 +197,27 @@ async def autocomplete_tags(
         List of tags
     """
     return post_service.get_autocomplete_tags(db, q, limit)
+
+
+@router.get("/browse/{field_type}")
+async def browse_posts(
+    field_type: str,
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(100, ge=1, le=500, description="Results per page"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get aggregated browse data for characters, series, or tags.
+    
+    Args:
+        field_type: Type of field to browse ("characters", "series", or "tags")
+        page: Page number (1-indexed)
+        limit: Results per page
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        List of items with their post counts and pagination info
+    """
+    return post_service.get_browse_data(db, field_type, page, limit)
