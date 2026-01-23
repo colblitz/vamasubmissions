@@ -7,6 +7,10 @@ This script:
 2. Reads metadata (url, timestamp, images) from JSON files
 3. Auto-generates tags based on rules
 4. Inserts into posts table
+
+Environment Variables:
+- STATIC_THUMBNAIL_BASE: Base URL for static thumbnails (default: uses Patreon URLs)
+  Example: STATIC_THUMBNAIL_BASE="https://vamarequests.com/static/thumbnails"
 """
 import csv
 import json
@@ -22,6 +26,9 @@ try:
 except ImportError:
     print("ERROR: psycopg2 not installed. Install with: pip install psycopg2-binary")
     sys.exit(1)
+
+# Configuration: Static thumbnail base URL (if hosting thumbnails yourself)
+STATIC_THUMBNAIL_BASE = os.environ.get('STATIC_THUMBNAIL_BASE', None)
 
 
 def load_json_data(post_id: str, json_dir: Path) -> Optional[Dict]:
@@ -69,11 +76,15 @@ def load_json_data(post_id: str, json_dir: Path) -> Optional[Dict]:
             elif 'url' in image_url_obj:
                 image_urls.append(image_url_obj['url'])
             
-            # Get thumbnail URL
+            # Get thumbnail URL (from Patreon or use static URL if configured)
             if 'thumbnail' in image_url_obj:
                 thumbnail_urls.append(image_url_obj['thumbnail'])
             elif 'thumbnail_large' in image_url_obj:
                 thumbnail_urls.append(image_url_obj['thumbnail_large'])
+        
+        # Override with static thumbnail URL if configured
+        if STATIC_THUMBNAIL_BASE:
+            thumbnail_urls = [f"{STATIC_THUMBNAIL_BASE}/{post_id}-thumbnail.jpg"]
         
         return {
             'url': url,
