@@ -2,13 +2,22 @@
 
 A community-driven web application for VAMA's Patreon subscribers to search existing posts, track community requests, and collaboratively improve post metadata.
 
-## Phase 1: Community Features (Current)
+## Current Status: Phase 1 + Post Import System COMPLETE ✅
 
 ### Active Features
-- **Post Search** - Browse and search 2691+ VAMA posts by character, series, tags
+- **Post Search** - Browse and search 2691+ VAMA posts by character, series, tags, or title
 - **Community Request Queue** - Unofficial tracking of community requests (FIFO)
 - **Collaborative Editing** - Community-approved metadata improvements with audit trail
+- **Admin Post Import** - Full workflow for importing, tagging, and publishing new Patreon posts
 - **Patreon OAuth** - Subscriber-only access with tier detection
+- **Non-blocking UI** - All feedback via banner notifications (zero disruptive popups!)
+
+### Admin Features
+- **Import Posts** - Fetch new posts from Patreon via gallery-dl integration
+- **Tag & Publish** - Review, tag, and publish pending posts
+- **Skip Non-Character Posts** - Mark announcements/polls as skipped
+- **Bulk Operations** - Save, publish, or delete multiple posts at once
+- **Character-Series Autocomplete** - Smart suggestions with auto-association
 
 ### Hidden Features (Future)
 - Credit-based submission system
