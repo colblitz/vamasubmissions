@@ -97,9 +97,9 @@ export default function SearchPage() {
         limit: searchParams.limit,
       };
 
-      // Add query if present
+      // Add query if present (API expects 'q' not 'query')
       if (searchParams.query?.trim()) {
-        params.query = searchParams.query.trim();
+        params.q = searchParams.query.trim();
       }
 
       // Add filters if present

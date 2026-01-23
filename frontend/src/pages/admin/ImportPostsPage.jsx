@@ -304,6 +304,50 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
     JSON.stringify(characters.sort()) !== JSON.stringify((post.characters || []).sort()) ||
     JSON.stringify(series.sort()) !== JSON.stringify((post.series || []).sort());
 
+  // Auto-fill from title
+  const handleAutoFill = () => {
+    const title = post.title;
+    
+    // Pattern 1: "Character Name (Series)" or "Character Name (Series) 500 pics"
+    // Examples: "Hasuma Kanae (Tsumamigui)", "lucrezia noin (gundam) 500 pics"
+    const pattern1 = /^([^(]+)\s*\(([^)]+)\)/i;
+    const match1 = title.match(pattern1);
+    
+    if (match1) {
+      const extractedChar = match1[1].trim();
+      const extractedSeries = match1[2].trim();
+      
+      // Title case the names
+      const titleCaseChar = extractedChar
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      
+      const titleCaseSeries = extractedSeries
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      
+      // Add character if not already present
+      if (!characters.includes(titleCaseChar)) {
+        setCharacters([...characters, titleCaseChar]);
+      }
+      
+      // Add series if not already present
+      if (!series.includes(titleCaseSeries)) {
+        setSeries([...series, titleCaseSeries]);
+      }
+      
+      setCardSuccess("Auto-filled character and series from title!");
+      setTimeout(() => setCardSuccess(null), 3000);
+      return;
+    }
+    
+    // If no pattern matched, show a message
+    setCardError("Could not auto-fill: title format not recognized. Expected format: 'Character Name (Series)'");
+    setTimeout(() => setCardError(null), 3000);
+  };
+
   // Character autocomplete
   const [characterInput, setCharacterInput] = useState("");
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
@@ -721,6 +765,14 @@ function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
 
           {/* Actions */}
           <div className="flex gap-2">
+            <button
+              onClick={handleAutoFill}
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              title="Auto-fill character and series from title"
+            >
+              Auto-fill
+            </button>
+
             <button
               onClick={handleSave}
               disabled={saving}

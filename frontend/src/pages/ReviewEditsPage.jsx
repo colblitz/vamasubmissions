@@ -8,15 +8,15 @@ export default function ReviewEditsPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("pending"); // 'pending' or 'history'
   
-  // Banner messages
-  const [successMessage, setSuccessMessage] = useState("");
+  // Banner messages (only for errors)
   const [errorMessage, setErrorMessage] = useState("");
   
-  // Confirmation states
-  const [approveConfirm, setApproveConfirm] = useState(null);
-  const [rejectConfirm, setRejectConfirm] = useState(null);
+  // Inline confirmation states - track which edit is in confirm mode
+  const [confirmingAction, setConfirmingAction] = useState(null); // {editId, action: 'approve'|'reject'|'undo'}
   const [rejectReason, setRejectReason] = useState("");
-  const [undoConfirm, setUndoConfirm] = useState(null);
+  
+  // Inline success messages per edit
+  const [editSuccessMessages, setEditSuccessMessages] = useState({}); // {editId: "message"}
 
   // Fetch pending edits
   const fetchPending = async () => {
@@ -50,98 +50,70 @@ export default function ReviewEditsPage() {
     }
   };
 
-  // Show approve confirmation
-  const handleApproveClick = (editId) => {
-    setApproveConfirm(editId);
-    setSuccessMessage("");
-    setErrorMessage("");
-  };
-
-  // Confirm approve
-  const confirmApprove = async () => {
-    const editId = approveConfirm;
-    setApproveConfirm(null);
-    setSuccessMessage("");
-    setErrorMessage("");
-
-    try {
-      await api.post(`/api/edits/${editId}/approve`);
-      fetchPending();
-      setSuccessMessage("Edit approved and applied!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (err) {
-      setErrorMessage(err.response?.data?.detail || "Failed to approve edit");
-      setTimeout(() => setErrorMessage(""), 5000);
-    }
-  };
-
-  // Cancel approve
-  const cancelApprove = () => {
-    setApproveConfirm(null);
-  };
-
-  // Show reject confirmation
-  const handleRejectClick = (editId) => {
-    setRejectConfirm(editId);
+  // Handle action button click (first click - show confirmation)
+  const handleActionClick = (editId, action) => {
+    setConfirmingAction({ editId, action });
     setRejectReason("");
-    setSuccessMessage("");
     setErrorMessage("");
   };
 
-  // Confirm reject
-  const confirmReject = async () => {
-    const editId = rejectConfirm;
-    const reason = rejectReason;
-    setRejectConfirm(null);
-    setRejectReason("");
-    setSuccessMessage("");
-    setErrorMessage("");
-
-    try {
-      await api.post(`/api/edits/${editId}/reject`, { reason: reason || undefined });
-      fetchPending();
-      setSuccessMessage("Edit rejected");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (err) {
-      setErrorMessage(err.response?.data?.detail || "Failed to reject edit");
-      setTimeout(() => setErrorMessage(""), 5000);
-    }
-  };
-
-  // Cancel reject
-  const cancelReject = () => {
-    setRejectConfirm(null);
+  // Cancel confirmation
+  const cancelConfirmation = () => {
+    setConfirmingAction(null);
     setRejectReason("");
   };
 
-  // Show undo confirmation
-  const handleUndoClick = (historyId) => {
-    setUndoConfirm(historyId);
-    setSuccessMessage("");
-    setErrorMessage("");
-  };
-
-  // Confirm undo
-  const confirmUndo = async () => {
-    const historyId = undoConfirm;
-    setUndoConfirm(null);
-    setSuccessMessage("");
+  // Execute action (second click - confirm)
+  const executeAction = async () => {
+    if (!confirmingAction) return;
+    
+    const { editId, action } = confirmingAction;
+    setConfirmingAction(null);
     setErrorMessage("");
 
     try {
-      await api.post(`/api/edits/history/${historyId}/undo`);
-      fetchHistory();
-      setSuccessMessage("Edit undone successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      if (action === 'approve') {
+        await api.post(`/api/edits/${editId}/approve`);
+        // Show inline success message
+        setEditSuccessMessages(prev => ({ ...prev, [editId]: "✓ Approved!" }));
+        // Remove from list after brief delay
+        setTimeout(() => {
+          setPendingEdits(prev => prev.filter(e => e.id !== editId));
+          setEditSuccessMessages(prev => {
+            const { [editId]: _, ...rest } = prev;
+            return rest;
+          });
+        }, 1500);
+      } else if (action === 'reject') {
+        await api.post(`/api/edits/${editId}/reject`, { reason: rejectReason || undefined });
+        setRejectReason("");
+        // Show inline success message
+        setEditSuccessMessages(prev => ({ ...prev, [editId]: "✓ Rejected" }));
+        // Remove from list after brief delay
+        setTimeout(() => {
+          setPendingEdits(prev => prev.filter(e => e.id !== editId));
+          setEditSuccessMessages(prev => {
+            const { [editId]: _, ...rest } = prev;
+            return rest;
+          });
+        }, 1500);
+      } else if (action === 'undo') {
+        await api.post(`/api/edits/history/${editId}/undo`);
+        // Show inline success message
+        setEditSuccessMessages(prev => ({ ...prev, [editId]: "✓ Undone!" }));
+        // Remove from list after brief delay
+        setTimeout(() => {
+          setHistory(prev => prev.filter(e => e.id !== editId));
+          setEditSuccessMessages(prev => {
+            const { [editId]: _, ...rest } = prev;
+            return rest;
+          });
+        }, 1500);
+      }
     } catch (err) {
-      setErrorMessage(err.response?.data?.detail || "Failed to undo edit");
+      setErrorMessage(err.response?.data?.detail || `Failed to ${action} edit`);
       setTimeout(() => setErrorMessage(""), 5000);
     }
-  };
-
-  // Cancel undo
-  const cancelUndo = () => {
-    setUndoConfirm(null);
   };
 
   useEffect(() => {
@@ -285,19 +257,72 @@ export default function ReviewEditsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleApproveClick(edit.id)}
-                        className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleRejectClick(edit.id)}
-                        className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                      >
-                        Reject
-                      </button>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      {/* Show success message if present */}
+                      {editSuccessMessages[edit.id] ? (
+                        <span className="text-green-600 font-medium text-sm whitespace-nowrap">
+                          {editSuccessMessages[edit.id]}
+                        </span>
+                      ) : confirmingAction?.editId === edit.id ? (
+                        /* Confirmation state */
+                        <>
+                          {confirmingAction.action === 'approve' && (
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={executeAction}
+                                className="px-3 py-1.5 bg-green-700 text-white text-sm rounded hover:bg-green-800 font-medium whitespace-nowrap"
+                              >
+                                ✓ Confirm Approve
+                              </button>
+                              <button
+                                onClick={cancelConfirmation}
+                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                          {confirmingAction.action === 'reject' && (
+                            <div className="flex flex-col gap-2">
+                              <input
+                                type="text"
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                placeholder="Reason (optional)"
+                                className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400"
+                              />
+                              <button
+                                onClick={executeAction}
+                                className="px-3 py-1.5 bg-red-700 text-white text-sm rounded hover:bg-red-800 font-medium whitespace-nowrap"
+                              >
+                                ✓ Confirm Reject
+                              </button>
+                              <button
+                                onClick={cancelConfirmation}
+                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        /* Initial state */
+                        <>
+                          <button
+                            onClick={() => handleActionClick(edit.id, 'approve')}
+                            className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleActionClick(edit.id, 'reject')}
+                            className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 whitespace-nowrap"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))
@@ -359,12 +384,37 @@ export default function ReviewEditsPage() {
                     </div>
 
                     {/* Actions */}
-                    <button
-                      onClick={() => handleUndoClick(item.id)}
-                      className="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 flex-shrink-0"
-                    >
-                      Undo
-                    </button>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      {editSuccessMessages[item.id] ? (
+                        <span className="text-green-600 font-medium text-sm whitespace-nowrap">
+                          {editSuccessMessages[item.id]}
+                        </span>
+                      ) : confirmingAction?.editId === item.id && confirmingAction.action === 'undo' ? (
+                        /* Confirmation state */
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={executeAction}
+                            className="px-3 py-1.5 bg-yellow-700 text-white text-sm rounded hover:bg-yellow-800 font-medium whitespace-nowrap"
+                          >
+                            ✓ Confirm Undo
+                          </button>
+                          <button
+                            onClick={cancelConfirmation}
+                            className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        /* Initial state */
+                        <button
+                          onClick={() => handleActionClick(item.id, 'undo')}
+                          className="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 whitespace-nowrap"
+                        >
+                          Undo
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -373,79 +423,6 @@ export default function ReviewEditsPage() {
         </div>
       )}
 
-      {/* Approve Confirmation Banner */}
-      {approveConfirm && (
-        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
-          <p className="text-gray-900 font-medium mb-3">
-            Approve this edit? This will update the post.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={confirmApprove}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Approve
-            </button>
-            <button
-              onClick={cancelApprove}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Confirmation Banner */}
-      {rejectConfirm && (
-        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
-          <p className="text-gray-900 font-medium mb-2">Reject this edit?</p>
-          <input
-            type="text"
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Reason for rejection (optional)"
-            className="w-full px-3 py-2 border border-gray-300 rounded mb-3 text-gray-900 placeholder-gray-400"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={confirmReject}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Reject
-            </button>
-            <button
-              onClick={cancelReject}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Undo Confirmation Banner */}
-      {undoConfirm && (
-        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
-          <p className="text-gray-900 font-medium mb-3">
-            Undo this edit? This will revert the post to its previous state.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={confirmUndo}
-              className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-            >
-              Undo
-            </button>
-            <button
-              onClick={cancelUndo}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

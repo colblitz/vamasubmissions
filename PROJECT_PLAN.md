@@ -1001,3 +1001,705 @@ Current priority: **Phase 1 Frontend - Hide Legacy Pages & Build New UI**
 4. Test edit suggestions workflow
 5. Mobile responsiveness testing
 6. Prepare for production deployment
+
+---
+
+## 📋 Feature Backlog (Prioritized)
+
+### ✅ COMPLETED - 2026-01-22
+
+#### ✅ Debug "futa" Title Search Issue
+**Status**: Fixed
+- **Problem**: Search for "futa" returned 2,807 posts (all posts) instead of 10
+- **Root Causes**:
+  1. Backend: Incorrect SQLAlchemy `any()` syntax for PostgreSQL arrays
+  2. Frontend: Parameter mismatch (`query` vs `q`)
+- **Solution**:
+  1. Replaced `Post.characters.any()` with raw SQL `unnest()` queries
+  2. Fixed frontend to send `q` parameter
+  3. Added comprehensive debug logging
+- **Files Modified**:
+  - `backend/app/services/post_service.py` - Fixed array search logic
+  - `backend/app/api/posts.py` - Added debug logging, fixed user attribute
+  - `backend/app/main.py` - Added logging configuration
+  - `frontend/src/pages/SearchPage.jsx` - Fixed parameter name
+
+#### ✅ Auto-fill Feature
+**Status**: Complete
+- **What**: Button to auto-fill character and series from post title
+- **Regex Pattern**: `^([^(]+)\s*\(([^)]+)\)` - Matches "Character (Series)"
+- **Features**:
+  - Title-cases extracted values
+  - Prevents duplicate additions
+  - Success/error feedback banners
+  - Smart behavior: no-op if regex fails
+- **UI Location**: First button in action row (before Save/Publish)
+- **Files**: `frontend/src/pages/admin/ImportPostsPage.jsx`
+
+#### ✅ Inline Approve/Reject in Review Edits Page
+**Status**: Complete
+- **What**: Replaced browser popups with inline confirmation
+- **Old Flow**: Click → Browser popup → OK → Banner at bottom
+- **New Flow**: Click → Inline confirm buttons → Success message in card → Auto-remove
+- **Features**:
+  - Double-click pattern (first click shows confirmation, second executes)
+  - Inline success messages per edit
+  - Auto-remove cards after 1.5 seconds
+  - Reject reason input inline
+  - Works for Approve/Reject/Undo
+  - Error messages only at page level
+- **Files**: `frontend/src/pages/ReviewEditsPage.jsx`
+
+#### ✅ Community Requests Text Updates
+**Status**: Complete
+- **Changes**:
+  - "Submit a New Request" → "Record a Request"
+  - "When would you like this request fulfilled?" → "When did you submit this request to VAMA?"
+  - "Submit Request" button → "Record Request"
+  - "Community Queue" → "Known Queue"
+  - Queue timestamps: "Requested for: X" + "Submitted: Y" → "Requested on: X"
+  - My Requests: Removed "Submitted" timestamp, added queue position badge
+- **Files**: `frontend/src/pages/CommunityRequestsPage.jsx`
+
+### 🟢 Easy - Quick Wins (1-2 hours each)
+
+#### 1. Disclaimers Section on Requests Page
+**Difficulty**: 🟢 Easy (15 minutes)
+- **What**: Add a banner/section at the top of Community Requests page
+- **Implementation**: Simple HTML/JSX with styling
+- **Files**: `frontend/src/pages/CommunityRequestsPage.jsx`
+- **Effort**: Add a styled div with lorem ipsum text above the form
+
+#### 2. Sort Direction Toggle (Date)
+**Difficulty**: 🟢 Easy (30 minutes)
+- **What**: Add dropdown/toggle to sort posts by date (newest/oldest first)
+- **Implementation**: 
+  - Add `order` param to search API (already supports this pattern)
+  - Add UI dropdown in SearchPage
+  - Make it extensible for future sort options
+- **Files**: 
+  - `frontend/src/pages/SearchPage.jsx` (UI)
+  - `backend/app/api/posts.py` (add order param if not present)
+- **Effort**: State management + API param passing
+
+### 🟡 Medium - Moderate Effort (2-4 hours each)
+
+#### 3. Show Pending Edits on Posts
+**Difficulty**: 🟡 Medium (2 hours)
+- **What**: Display pending edit suggestions on post detail/search results
+- **Implementation**:
+  - Add API endpoint: `GET /api/edits/pending-for-post/{post_id}`
+  - Show pending edits with visual indicator (e.g., yellow badge)
+  - Display in edit modal or as a section on post card
+- **Files**:
+  - `backend/app/api/edits.py` (new endpoint)
+  - `frontend/src/pages/SearchPage.jsx` (display logic)
+- **Effort**: Backend endpoint + frontend state management + UI
+
+#### 4. Prevent Duplicate Edit Suggestions
+**Difficulty**: 🟡 Medium (1 hour)
+- **What**: Disallow suggesting edits for values that already exist
+- **Implementation**:
+  - Frontend: Disable/hide "Add" for existing values in edit modal
+  - Backend: Validation in `POST /api/edits/suggest` endpoint
+- **Files**:
+  - `backend/app/services/edit_service.py` (validation)
+  - `frontend/src/pages/SearchPage.jsx` (UI logic)
+- **Effort**: Validation logic + UI state checks
+
+#### 5. About Page with Leaderboards
+**Difficulty**: 🟡 Medium (3 hours)
+- **What**: New page with lorem ipsum + user leaderboards
+- **Implementation**:
+  - New API endpoint: `GET /api/users/leaderboard` (top 20 by edits suggested/approved)
+  - Query `edit_history` table for stats
+  - New frontend page with two-column layout
+- **Files**:
+  - `backend/app/api/users.py` (new endpoint)
+  - `frontend/src/pages/AboutPage.jsx` (new page)
+  - `frontend/src/App.jsx` (add route)
+  - `frontend/src/components/Header.jsx` (add nav link)
+- **Effort**: SQL aggregation + new page component
+
+### 🔴 Hard - Significant Effort (4-8 hours)
+
+#### 6. Browse Tab (Character/Series/Tags)
+**Difficulty**: 🔴 Hard (6 hours)
+- **What**: Tabbed interface with Search/Browse tabs, reusing results list
+- **Implementation**:
+  - Add tab UI to SearchPage
+  - New API endpoint: `GET /api/posts/browse/{type}` (type: characters/series/tags)
+    - Returns list with counts: `[{name: "Character", count: 150}, ...]`
+    - Sorted by count descending
+    - Paginated
+  - Click on item → filters posts by that item
+  - Reuse existing results list component
+- **Files**:
+  - `backend/app/api/posts.py` (new browse endpoint)
+  - `backend/app/services/post_service.py` (aggregation queries)
+  - `frontend/src/pages/SearchPage.jsx` (major refactor for tabs)
+- **Effort**: 
+  - Backend: SQL aggregation queries with COUNT/GROUP BY
+  - Frontend: Tab state management, component extraction/reuse
+- **Complexity**: Refactoring SearchPage to support multiple tabs while reusing results list
+
+#### 7. Posts Without Tags Tab/Filter
+**Difficulty**: 🟡 Medium (1 hour)
+- **What**: Show posts that have empty tags array
+- **Implementation**:
+  - Could be a checkbox filter in Browse > Tags tab
+  - Or a separate "Untagged" item at the top of tags list
+  - Backend: Filter where `tags = '{}'` (empty array)
+- **Files**:
+  - `backend/app/services/post_service.py` (add filter)
+  - `frontend/src/pages/SearchPage.jsx` (UI)
+- **Effort**: Simple filter logic + UI toggle
+- **Note**: Easier if done as part of Browse Tab feature
+
+---
+
+## 🎯 Recommended Implementation Order
+
+### Phase 2A: Quick Wins (1 day)
+1. ✅ Disclaimers section (15 min)
+2. ✅ Sort direction toggle (30 min)
+3. ✅ Prevent duplicate edits (1 hour)
+4. ✅ Show pending edits (2 hours)
+
+### Phase 2B: Browse & Leaderboards (2 days)
+5. ✅ Browse tab with character/series/tags (6 hours)
+6. ✅ Posts without tags (1 hour - integrate with browse)
+7. ✅ About page with leaderboards (3 hours)
+
+---
+
+## 📊 Difficulty Assessment Summary
+
+| Feature | Difficulty | Time | Complexity |
+|---------|-----------|------|------------|
+| Disclaimers section | 🟢 Easy | 15 min | HTML/styling only |
+| Sort direction toggle | 🟢 Easy | 30 min | Simple state + API param |
+| Prevent duplicate edits | 🟡 Medium | 1 hour | Validation logic |
+| Show pending edits | 🟡 Medium | 2 hours | New endpoint + UI |
+| About page + leaderboards | 🟡 Medium | 3 hours | SQL aggregation + new page |
+| Posts without tags | 🟡 Medium | 1 hour | Filter logic |
+| Browse tab | 🔴 Hard | 6 hours | Major refactor + aggregation |
+
+**Total estimated effort**: ~14 hours (2 days of focused work)
+
+---
+
+## 🔒 Security & Data Quality
+
+### Data Input Normalization & Security
+**Difficulty**: 🟡 Medium (2-3 hours)
+**Priority**: High (should be done before production)
+
+#### What Needs Normalization
+1. **Whitespace handling**:
+   - Strip leading/trailing whitespace from all text inputs
+   - Normalize multiple spaces to single space
+   - Remove zero-width characters
+
+2. **Character/Series/Tag names**:
+   - Trim whitespace
+   - Normalize unicode (NFD/NFC)
+   - Prevent empty strings after trimming
+   - Case normalization for duplicates (e.g., "Naruto" vs "naruto")
+
+3. **User input fields**:
+   - Request descriptions
+   - Edit suggestions
+   - Post titles (admin import)
+
+#### Security Considerations
+✅ **Already Protected** (using Pydantic + SQLAlchemy):
+- SQL injection (parameterized queries)
+- XSS (React escapes by default)
+- CSRF (JWT tokens)
+
+⚠️ **Need to Add**:
+- Input length limits (prevent DoS)
+- Sanitize special characters in search queries
+- Rate limiting on API endpoints
+- Validate array field sizes (max items)
+
+#### Implementation Plan
+
+**Backend** (`backend/app/services/`):
+```python
+# Create utils/validation.py
+def normalize_text(text: str) -> str:
+    """Normalize text input: trim, normalize unicode, remove extra spaces"""
+    if not text:
+        return ""
+    # Strip whitespace
+    text = text.strip()
+    # Normalize unicode (NFC)
+    import unicodedata
+    text = unicodedata.normalize('NFC', text)
+    # Collapse multiple spaces
+    text = ' '.join(text.split())
+    return text
+
+def normalize_array_field(items: List[str]) -> List[str]:
+    """Normalize array of strings, remove duplicates, filter empty"""
+    normalized = [normalize_text(item) for item in items]
+    # Remove empty strings
+    normalized = [item for item in normalized if item]
+    # Remove duplicates (case-insensitive)
+    seen = set()
+    result = []
+    for item in normalized:
+        lower = item.lower()
+        if lower not in seen:
+            seen.add(lower)
+            result.append(item)
+    return result
+```
+
+**Apply to Services**:
+- `post_service.py` - normalize characters/series/tags on create/update
+- `edit_service.py` - normalize edit values before suggesting
+- `request_service.py` - normalize character/series names
+
+**Frontend** (`frontend/src/utils/validation.js`):
+```javascript
+export const normalizeText = (text) => {
+  if (!text) return '';
+  return text.trim().replace(/\s+/g, ' ');
+};
+
+export const normalizeArrayInput = (items) => {
+  return items
+    .map(item => normalizeText(item))
+    .filter(item => item.length > 0)
+    .filter((item, index, self) => 
+      self.findIndex(i => i.toLowerCase() === item.toLowerCase()) === index
+    );
+};
+```
+
+**Apply to Components**:
+- SearchPage edit modal
+- ImportPostsPage character/series inputs
+- CommunityRequestsPage form
+
+#### Additional Security Measures
+
+**Rate Limiting** (using slowapi):
+```python
+# backend/app/main.py
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Apply to endpoints:
+@limiter.limit("10/minute")  # 10 requests per minute
+async def search_posts(...):
+    ...
+```
+
+**Input Validation** (enhance Pydantic schemas):
+```python
+# backend/app/schemas/post.py
+from pydantic import validator, Field
+
+class PostCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=500)
+    characters: List[str] = Field(default=[], max_items=20)
+    series: List[str] = Field(default=[], max_items=10)
+    tags: List[str] = Field(default=[], max_items=30)
+    
+    @validator('characters', 'series', 'tags', pre=True)
+    def normalize_arrays(cls, v):
+        from app.utils.validation import normalize_array_field
+        return normalize_array_field(v or [])
+    
+    @validator('title')
+    def normalize_title(cls, v):
+        from app.utils.validation import normalize_text
+        return normalize_text(v)
+```
+
+#### Files to Modify
+**Backend**:
+- `backend/app/utils/validation.py` (new file)
+- `backend/app/schemas/post.py` (add validators)
+- `backend/app/schemas/community_request.py` (add validators)
+- `backend/app/schemas/post_edit.py` (add validators)
+- `backend/requirements.txt` (add slowapi for rate limiting)
+
+**Frontend**:
+- `frontend/src/utils/validation.js` (new file)
+- `frontend/src/pages/SearchPage.jsx` (apply normalization)
+- `frontend/src/pages/admin/ImportPostsPage.jsx` (apply normalization)
+- `frontend/src/pages/CommunityRequestsPage.jsx` (apply normalization)
+
+#### Testing Checklist
+- [ ] Test with leading/trailing spaces
+- [ ] Test with multiple consecutive spaces
+- [ ] Test with unicode characters (emoji, accents)
+- [ ] Test with very long inputs (should be rejected)
+- [ ] Test with empty strings after trimming
+- [ ] Test case-insensitive duplicate detection
+- [ ] Test rate limiting (make rapid requests)
+- [ ] Test SQL injection attempts (should be blocked by parameterization)
+- [ ] Test XSS attempts (should be escaped by React)
+
+**Estimated effort**: 2-3 hours
+- 1 hour: Create validation utilities and apply to backend
+- 1 hour: Apply to frontend forms
+- 30 min: Add rate limiting
+- 30 min: Testing
+
+---
+
+## 📝 Additional Feature Requests
+
+### 8. Date of Latest Post on Import Page
+**Difficulty**: 🟢 Easy (15 minutes)
+**Priority**: Low
+
+#### What
+Display the timestamp of the most recent post in the database on the Import Posts page.
+
+#### Implementation
+- Query: `SELECT MAX(timestamp) FROM posts WHERE status = 'published'`
+- Display near the "Fetch New Posts" button
+- Format: "Latest post: January 22, 2026"
+- Helps admin know when last import was
+
+#### Files
+- `backend/app/api/admin.py` - Add to pending-posts endpoint or create new stats endpoint
+- `frontend/src/pages/admin/ImportPostsPage.jsx` - Display the date
+
+**Estimated effort**: 15 minutes
+
+---
+
+### 9. Global Edit Suggestions (Bulk Rename)
+**Difficulty**: 🔴 Hard (8-10 hours)
+**Priority**: Medium-High (very useful for fixing typos)
+
+#### What
+Allow users to suggest renaming a character/series/tag across ALL posts that use it.
+
+**Example use cases**:
+- Fix typo: "Naruto Uzamaki" → "Naruto Uzumaki" (across 50 posts)
+- Standardize: "Fate/Stay Night" → "Fate/stay night" (across 200 posts)
+- Merge duplicates: "Saber (Fate)" → "Artoria Pendragon" (across 100 posts)
+
+#### Implementation Challenges
+
+**1. New Database Table** - `global_edit_suggestions`
+```sql
+CREATE TABLE global_edit_suggestions (
+    id SERIAL PRIMARY KEY,
+    suggester_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    field_name VARCHAR(50) NOT NULL,  -- 'characters', 'series', 'tags'
+    old_value TEXT NOT NULL,          -- Original value to replace
+    new_value TEXT NOT NULL,          -- New value
+    affected_posts_count INTEGER,     -- How many posts will be affected
+    status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'approved', 'rejected'
+    approver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    approved_at TIMESTAMP,
+    UNIQUE(field_name, old_value, new_value, status)  -- Prevent duplicate suggestions
+);
+
+CREATE INDEX idx_global_edits_status ON global_edit_suggestions(status);
+CREATE INDEX idx_global_edits_field ON global_edit_suggestions(field_name);
+```
+
+**2. Backend Logic** - Complex workflow
+```python
+# Step 1: Suggest global edit
+POST /api/edits/suggest-global
+{
+  "field_name": "characters",
+  "old_value": "Naruto Uzamaki",
+  "new_value": "Naruto Uzumaki"
+}
+
+# Response shows affected posts count
+{
+  "id": 123,
+  "affected_posts": 47,
+  "preview": [
+    {"post_id": 1, "title": "Naruto vs Sasuke"},
+    {"post_id": 2, "title": "Naruto training"},
+    ...  # First 5 posts
+  ]
+}
+
+# Step 2: Approve global edit (different user)
+POST /api/edits/approve-global/{id}
+
+# Backend applies to ALL affected posts:
+UPDATE posts 
+SET characters = array_replace(characters, 'Naruto Uzamaki', 'Naruto Uzumaki')
+WHERE 'Naruto Uzamaki' = ANY(characters);
+
+# Log in edit_history for each affected post
+```
+
+**3. UI Components**
+
+**New Page**: `GlobalEditsPage.jsx`
+- Tab 1: "Suggest Global Edit"
+  - Dropdown: Select field (characters/series/tags)
+  - Autocomplete: Select old value (shows count of posts)
+  - Input: Enter new value
+  - Preview: Shows first 10 affected posts
+  - Submit button
+  
+- Tab 2: "Pending Global Edits"
+  - List of pending suggestions
+  - Shows: old → new, affected count, suggester
+  - Preview button (shows all affected posts)
+  - Approve/Reject buttons
+  
+- Tab 3: "History"
+  - Past global edits with timestamps
+  - Shows who suggested/approved
+  - Shows how many posts were affected
+
+**Add to SearchPage**:
+- When viewing a post, add "Suggest Global Edit" option
+- Pre-fills the character/series/tag name
+- Opens modal to enter new value
+
+#### Workflow
+
+**User Flow**:
+1. User notices typo: "Naruto Uzamaki" appears in 47 posts
+2. Goes to Global Edits page (or clicks from search)
+3. Suggests: "Naruto Uzamaki" → "Naruto Uzumaki"
+4. System shows preview of affected posts
+5. Different user reviews and approves
+6. System updates all 47 posts automatically
+7. Logs 47 entries in edit_history
+
+**Safety Measures**:
+- Cannot approve own global edits
+- Shows preview before approval
+- Requires exact match (case-sensitive by default)
+- Option for case-insensitive matching
+- Tracks in audit log
+- Admin can undo (reverts all posts)
+
+#### API Endpoints
+
+**New endpoints**:
+```python
+# Suggest global edit
+POST /api/edits/suggest-global
+Body: {field_name, old_value, new_value}
+Returns: {id, affected_posts, preview[]}
+
+# Get preview of affected posts
+GET /api/edits/global/{id}/preview?limit=50
+Returns: List of posts that will be affected
+
+# List pending global edits
+GET /api/edits/global/pending
+Returns: List of pending global edit suggestions
+
+# Approve global edit
+POST /api/edits/global/{id}/approve
+Returns: {updated_posts: 47, failed: 0}
+
+# Reject global edit
+POST /api/edits/global/{id}/reject
+
+# Get global edit history
+GET /api/edits/global/history
+
+# Undo global edit (admin only)
+POST /api/edits/global/{id}/undo
+```
+
+#### Database Migration
+```sql
+-- 006_add_global_edit_suggestions.sql
+CREATE TABLE global_edit_suggestions (
+    id SERIAL PRIMARY KEY,
+    suggester_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    field_name VARCHAR(50) NOT NULL,
+    old_value TEXT NOT NULL,
+    new_value TEXT NOT NULL,
+    affected_posts_count INTEGER,
+    status VARCHAR(20) DEFAULT 'pending',
+    approver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    approved_at TIMESTAMP,
+    UNIQUE(field_name, old_value, new_value, status)
+);
+
+CREATE INDEX idx_global_edits_status ON global_edit_suggestions(status);
+CREATE INDEX idx_global_edits_field ON global_edit_suggestions(field_name);
+
+-- Add to edit_history to track global edits
+ALTER TABLE edit_history ADD COLUMN global_edit_id INTEGER REFERENCES global_edit_suggestions(id);
+```
+
+#### Files to Create/Modify
+
+**Backend** (new):
+- `backend/app/models/global_edit_suggestion.py`
+- `backend/app/schemas/global_edit.py`
+- `backend/app/services/global_edit_service.py`
+- `backend/alembic/versions/006_add_global_edit_suggestions.sql`
+
+**Backend** (modify):
+- `backend/app/api/edits.py` - Add global edit endpoints
+- `backend/app/models/edit_history.py` - Add global_edit_id column
+
+**Frontend** (new):
+- `frontend/src/pages/GlobalEditsPage.jsx`
+
+**Frontend** (modify):
+- `frontend/src/App.jsx` - Add route
+- `frontend/src/components/Header.jsx` - Add nav link
+- `frontend/src/pages/SearchPage.jsx` - Add "Suggest Global Edit" option
+
+#### Complexity Breakdown
+
+**Why this is Hard**:
+1. **Database complexity**: New table, migration, relationships
+2. **Bulk operations**: Updating potentially hundreds of posts atomically
+3. **Preview logic**: Efficiently finding all affected posts
+4. **UI complexity**: New page with multiple tabs, preview modals
+5. **Safety**: Need robust validation and undo functionality
+6. **Performance**: `array_replace()` on large datasets could be slow
+7. **Edge cases**: 
+   - What if old_value appears multiple times in same post?
+   - What if new_value already exists in post? (creates duplicate)
+   - Case sensitivity handling
+
+**Estimated effort**: 8-10 hours
+- 2 hours: Database schema + migration
+- 2 hours: Backend service logic (suggest, approve, apply)
+- 2 hours: Backend API endpoints + validation
+- 3 hours: Frontend GlobalEditsPage with tabs
+- 1 hour: Integration with SearchPage
+- 1 hour: Testing edge cases
+
+**Recommendation**: 
+- Implement after Phase 2A/2B are complete
+- Consider as Phase 3 feature
+- Very valuable for data quality, but complex
+- Could start with simpler version (admin-only, no preview)
+
+---
+
+### 10. Show Pending Edits in Edit Modal
+**Difficulty**: 🟡 Medium (1-2 hours)
+**Priority**: High (UX issue)
+
+#### Problem
+When user suggests an edit in the SearchPage modal:
+1. Success banner appears: "Added 'tag' to tags"
+2. Banner disappears after 3 seconds
+3. No visual indication that edit is pending approval
+4. User doesn't know if it worked or what the status is
+
+#### Solution
+Show pending edits in the edit modal with visual indicators:
+- Section at top: "Pending Edits for This Post"
+- List pending edits with badges:
+  - `[ADD] Character: "New Character"` (yellow badge, pending)
+  - `[DELETE] Tag: "old-tag"` (yellow badge, pending)
+- Show who suggested it and when
+- If user suggested it themselves, show "Your suggestion (pending approval)"
+- If someone else suggested it, show "Pending approval by @username"
+
+#### Implementation
+**Backend**:
+- Endpoint already exists: `GET /api/edits/pending` (but needs filtering)
+- Add: `GET /api/edits/pending-for-post/{post_id}`
+- Returns list of pending edits for specific post
+
+**Frontend**:
+- Fetch pending edits when opening edit modal
+- Display in collapsible section at top
+- Show status badges (yellow = pending, green = approved recently)
+- Update after suggesting new edit (add to list immediately)
+
+#### Files
+- `backend/app/api/edits.py` - Add `GET /api/edits/pending-for-post/{post_id}`
+- `frontend/src/pages/SearchPage.jsx` - Fetch and display pending edits in modal
+
+**Estimated effort**: 1-2 hours
+
+---
+
+### 11. Inline Approve/Reject in Review Edits Page
+**Difficulty**: 🟢 Easy (30 minutes)
+**Priority**: High (UX annoyance)
+
+#### Problem
+Current flow on ReviewEditsPage:
+1. Click "Approve" button
+2. Browser popup: "Are you sure?"
+3. Click OK
+4. Banner appears at bottom of page
+5. Annoying for bulk approvals
+
+#### Solution
+Replace browser confirm with inline confirmation:
+
+**Before** (current):
+```
+[Edit Card]
+  ADD Character: "Naruto"
+  [Approve] [Reject]
+```
+
+**After** (improved):
+```
+[Edit Card]
+  ADD Character: "Naruto"
+  [Approve] [Reject]
+  
+  (After clicking Approve, button changes to:)
+  [✓ Confirm Approve] [Cancel]
+  
+  (After confirming, shows inline success:)
+  ✓ Approved! (green text, fades after 2 seconds)
+```
+
+#### Implementation
+**State management**:
+- Track which edit is in "confirm mode": `confirmingAction: {editId: 123, action: 'approve'}`
+- First click: Show confirm button
+- Second click: Execute action
+- Cancel: Reset state
+
+**UI changes**:
+- Replace browser `confirm()` with state-based UI
+- Show inline success/error message (not page-level banner)
+- Auto-remove card from pending list after success
+- Keep page-level banner for errors only
+
+#### Files
+- `frontend/src/pages/ReviewEditsPage.jsx` - Replace confirm dialogs with inline confirmation
+
+**Estimated effort**: 30 minutes
+
+---
+
+## 📊 Updated Quick Wins List
+
+### Phase 2A: Quick Wins (Updated - 6 hours)
+1. ✅ Disclaimers section (15 min)
+2. ✅ Sort direction toggle (30 min)
+3. ✅ Prevent duplicate edits (1 hour)
+4. ✅ Show pending edits in modal (1-2 hours) - **NEW**
+5. ✅ Inline approve/reject (30 min) - **NEW**
+6. ✅ Date of latest post (15 min)

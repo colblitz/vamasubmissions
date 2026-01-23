@@ -269,7 +269,7 @@ export default function CommunityRequestsPage() {
           className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50"
         >
           <span className="text-xl font-semibold text-gray-900">
-            {showForm ? "▼" : "▶"} Submit a New Request
+            {showForm ? "▼" : "▶"} Record a Request
           </span>
         </button>
 
@@ -348,7 +348,7 @@ export default function CommunityRequestsPage() {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  When would you like this request fulfilled?
+                  When did you submit this request to VAMA?
                 </p>
               </div>
 
@@ -369,7 +369,7 @@ export default function CommunityRequestsPage() {
                 type="submit"
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Submit Request
+                Record Request
               </button>
             </form>
           </div>
@@ -381,81 +381,82 @@ export default function CommunityRequestsPage() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">My Requests</h2>
           <div className="space-y-3">
-            {myRequests.map((request) => (
-              <div key={request.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900">
-                        {request.characters.join(", ")}
-                      </h3>
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          request.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : request.status === "fulfilled"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                    </div>
+            {myRequests.map((request) => {
+              // Calculate queue position (1-indexed)
+              const queuePosition = requests.findIndex(r => r.id === request.id) + 1;
+              
+              return (
+                <div key={request.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-gray-900">
+                          {request.characters.join(", ")}
+                        </h3>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            request.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : request.status === "fulfilled"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {request.status}
+                        </span>
+                        {request.status === "pending" && queuePosition > 0 && (
+                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                            #{queuePosition} in queue
+                          </span>
+                        )}
+                      </div>
 
-                    <p className="text-gray-600 text-sm mb-1">
-                      Series: {request.series.join(", ")}
-                    </p>
+                      <p className="text-gray-600 text-sm mb-1">
+                        Series: {request.series.join(", ")}
+                      </p>
 
-                    {request.description && (
-                      <p className="text-gray-700 text-sm mb-1">{request.description}</p>
-                    )}
+                      {request.description && (
+                        <p className="text-gray-700 text-sm mb-1">{request.description}</p>
+                      )}
 
-                    <div className="flex gap-3 text-xs text-gray-500">
-                      <span>
-                        Requested for:{" "}
+                      <p className="text-xs text-gray-500">
+                        Requested on:{" "}
                         {request.timestamp
                           ? new Date(request.timestamp).toLocaleDateString()
                           : "Not specified"}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        Submitted:{" "}
-                        {request.created_at
-                          ? new Date(request.created_at).toLocaleDateString()
-                          : "Date unknown"}
-                      </span>
+                      </p>
+
+                      {request.fulfilled_post_id && (
+                        <a
+                          href={`https://www.patreon.com/posts/${request.fulfilled_post_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-block"
+                        >
+                          View fulfilled post →
+                        </a>
+                      )}
                     </div>
 
-                    {request.fulfilled_post_id && (
-                      <a
-                        href={`https://www.patreon.com/posts/${request.fulfilled_post_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-block"
+                    {request.status === "pending" && (
+                      <button
+                        onClick={() => handleDeleteClick(request.id)}
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
                       >
-                        View fulfilled post →
-                      </a>
+                        Delete
+                      </button>
                     )}
                   </div>
-
-                  {request.status === "pending" && (
-                    <button
-                      onClick={() => handleDeleteClick(request.id)}
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
-                    >
-                      Delete
-                    </button>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Community Queue Section */}
+      {/* Known Queue Section */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Community Queue</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Known Queue</h2>
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -479,21 +480,12 @@ export default function CommunityRequestsPage() {
                   <p className="text-gray-700 text-sm mb-1">{request.description}</p>
                 )}
 
-                <div className="flex gap-3 text-xs text-gray-500">
-                  <span>
-                    Requested for:{" "}
-                    {request.timestamp
-                      ? new Date(request.timestamp).toLocaleDateString()
-                      : "Not specified"}
-                  </span>
-                  <span>•</span>
-                  <span>
-                    Submitted:{" "}
-                    {request.created_at
-                      ? new Date(request.created_at).toLocaleDateString()
-                      : "Date unknown"}
-                  </span>
-                </div>
+                <p className="text-xs text-gray-500">
+                  Requested on:{" "}
+                  {request.timestamp
+                    ? new Date(request.timestamp).toLocaleDateString()
+                    : "Not specified"}
+                </p>
               </div>
             ))}
           </div>

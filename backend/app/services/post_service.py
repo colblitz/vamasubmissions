@@ -105,53 +105,96 @@ def search_posts(
     Returns:
         Search results with pagination
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 80)
+    logger.info(f"[SEARCH DEBUG] Starting search_posts")
+    logger.info(f"[SEARCH DEBUG] Parameters:")
+    logger.info(f"  - query: {query!r}")
+    logger.info(f"  - characters: {characters}")
+    logger.info(f"  - series_list: {series_list}")
+    logger.info(f"  - tags: {tags}")
+    logger.info(f"  - page: {page}, limit: {limit}")
+    
     # Start with base query - ONLY PUBLISHED POSTS
     q = db.query(Post).filter(Post.status == "published")
+    
+    # Count base query
+    base_count = q.count()
+    logger.info(f"[SEARCH DEBUG] Base query (published only): {base_count} posts")
 
     # Apply filters
     if query:
         # Full-text search across title, characters, series, tags
         search_term = f"%{query.lower()}%"
+        logger.info(f"[SEARCH DEBUG] Applying query filter with search_term: {search_term!r}")
+        
         q = q.filter(
             or_(
                 func.lower(Post.title).like(search_term),
-                Post.characters.any(func.lower(search_term)),
-                Post.series.any(func.lower(search_term)),
-                Post.tags.any(func.lower(search_term)),
+                text("EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) LIKE :search)").bindparams(search=search_term),
+                text("EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) LIKE :search)").bindparams(search=search_term),
+                text("EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) LIKE :search)").bindparams(search=search_term),
             )
         )
+        
+        after_query_count = q.count()
+        logger.info(f"[SEARCH DEBUG] After query filter: {after_query_count} posts")
 
     if characters:
         # Filter by multiple characters (must have ALL specified characters)
         # Use raw SQL for array comparison since SQLAlchemy's array operations are limited
+        logger.info(f"[SEARCH DEBUG] Applying character filters: {characters}")
         for character in characters:
             q = q.filter(
                 text("EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) = :char)")
             ).params(char=character.lower())
+        after_char_count = q.count()
+        logger.info(f"[SEARCH DEBUG] After character filter: {after_char_count} posts")
 
     if series_list:
         # Filter by multiple series (must have ALL specified series)
+        logger.info(f"[SEARCH DEBUG] Applying series filters: {series_list}")
         for series_name in series_list:
             q = q.filter(
                 text("EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) = :ser)")
             ).params(ser=series_name.lower())
+        after_series_count = q.count()
+        logger.info(f"[SEARCH DEBUG] After series filter: {after_series_count} posts")
 
     if tags:
         # Filter by multiple tags (must have ALL specified tags)
+        logger.info(f"[SEARCH DEBUG] Applying tag filters: {tags}")
         for tag in tags:
             q = q.filter(
                 text("EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) = :tag)")
             ).params(tag=tag.lower())
+        after_tag_count = q.count()
+        logger.info(f"[SEARCH DEBUG] After tag filter: {after_tag_count} posts")
 
     # Get total count
     total = q.count()
+    logger.info(f"[SEARCH DEBUG] Final total count: {total}")
 
     # Apply pagination
     offset = (page - 1) * limit
     posts = q.order_by(Post.timestamp.desc()).offset(offset).limit(limit).all()
+    
+    logger.info(f"[SEARCH DEBUG] Retrieved {len(posts)} posts for page {page}")
+    if posts:
+        logger.info(f"[SEARCH DEBUG] First 3 post titles:")
+        for i, post in enumerate(posts[:3]):
+            logger.info(f"  {i+1}. {post.title!r}")
+            logger.info(f"     Characters: {post.characters}")
+            logger.info(f"     Series: {post.series}")
+            logger.info(f"     Tags: {post.tags}")
 
     # Calculate total pages
     total_pages = (total + limit - 1) // limit if total > 0 else 0
+    
+    logger.info(f"[SEARCH DEBUG] Returning: total={total}, page={page}, total_pages={total_pages}")
+    logger.info("=" * 80)
 
     return PostSearchResult(
         posts=posts,

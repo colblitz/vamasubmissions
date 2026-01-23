@@ -44,12 +44,30 @@ async def search_posts(
     Returns:
         Search results with pagination
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 80)
+    logger.info(f"[API DEBUG] /api/posts/search called")
+    logger.info(f"[API DEBUG] Raw query params:")
+    logger.info(f"  - q: {q!r}")
+    logger.info(f"  - characters: {characters!r}")
+    logger.info(f"  - series: {series!r}")
+    logger.info(f"  - tags: {tags!r}")
+    logger.info(f"  - page: {page}, limit: {limit}")
+    logger.info(f"  - user: {current_user.patreon_username if current_user else 'None'} (tier {current_user.tier if current_user else 'N/A'})")
+    
     # Parse comma-separated values
     character_list = [c.strip() for c in characters.split(",")] if characters else []
     series_list = [s.strip() for s in series.split(",")] if series else []
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
+    
+    logger.info(f"[API DEBUG] Parsed lists:")
+    logger.info(f"  - character_list: {character_list}")
+    logger.info(f"  - series_list: {series_list}")
+    logger.info(f"  - tag_list: {tag_list}")
 
-    return post_service.search_posts(
+    result = post_service.search_posts(
         db,
         query=q,
         characters=character_list,
@@ -58,6 +76,11 @@ async def search_posts(
         page=page,
         limit=limit,
     )
+    
+    logger.info(f"[API DEBUG] Returning result: total={result.total}, posts={len(result.posts)}")
+    logger.info("=" * 80)
+    
+    return result
 
 
 @router.get("/{post_id}", response_model=Post)
