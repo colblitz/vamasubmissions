@@ -261,9 +261,9 @@ def get_user_requests(
     db: Session,
     user_id: int,
     include_fulfilled: bool = False,
-) -> List[CommunityRequest]:
+) -> List[Dict]:
     """
-    Get all requests for a specific user.
+    Get all requests for a specific user with queue positions.
 
     Args:
         db: Database session
@@ -271,14 +271,35 @@ def get_user_requests(
         include_fulfilled: Whether to include fulfilled requests
 
     Returns:
-        List of user's requests
+        List of user's requests with queue positions
     """
     q = db.query(CommunityRequest).filter(CommunityRequest.user_id == user_id)
 
     if not include_fulfilled:
         q = q.filter(CommunityRequest.fulfilled == False)
 
-    return q.order_by(CommunityRequest.timestamp.asc()).all()
+    requests = q.order_by(CommunityRequest.timestamp.asc()).all()
+    
+    # Add queue positions to each request
+    result = []
+    for request in requests:
+        request_dict = {
+            "id": request.id,
+            "user_id": request.user_id,
+            "characters": request.characters,
+            "series": request.series,
+            "timestamp": request.timestamp,
+            "description": request.description,
+            "is_private": request.is_private,
+            "fulfilled": request.fulfilled,
+            "created_at": request.created_at,
+            "updated_at": request.updated_at,
+            "queue_position": get_queue_position(db, request.id) if not request.fulfilled else None,
+            "status": "fulfilled" if request.fulfilled else "pending",
+        }
+        result.append(request_dict)
+    
+    return result
 
 
 def get_queue_position(db: Session, request_id: int) -> Optional[int]:

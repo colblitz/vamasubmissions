@@ -70,14 +70,14 @@ async def get_all_requests(
     )
 
 
-@router.get("/my", response_model=List[CommunityRequest])
+@router.get("/my")
 async def get_my_requests(
     include_fulfilled: bool = Query(False, description="Include fulfilled requests"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Get current user's requests.
+    Get current user's requests with queue positions.
 
     Args:
         include_fulfilled: Whether to include fulfilled requests
@@ -85,7 +85,7 @@ async def get_my_requests(
         db: Database session
 
     Returns:
-        List of user's requests
+        List of user's requests with queue positions
     """
     return request_service.get_user_requests(
         db,

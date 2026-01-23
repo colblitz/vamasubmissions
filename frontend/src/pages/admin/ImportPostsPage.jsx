@@ -6,6 +6,7 @@ export default function ImportPostsPage() {
   const { user } = useAuth();
   const [pendingPosts, setPendingPosts] = useState([]);
   const [totalPendingCount, setTotalPendingCount] = useState(0);
+  const [latestPublishedDate, setLatestPublishedDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
@@ -23,7 +24,17 @@ export default function ImportPostsPage() {
       const response = await api.get("/api/admin/posts/pending", {
         params: { limit: 50 },
       });
-      setPendingPosts(response.data);
+      
+      // Handle new response structure
+      if (response.data.posts) {
+        setPendingPosts(response.data.posts);
+        setTotalPendingCount(response.data.total || response.data.posts.length);
+        setLatestPublishedDate(response.data.latest_published_date);
+      } else {
+        // Fallback for old response format
+        setPendingPosts(response.data);
+        setTotalPendingCount(response.data.length);
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load pending posts");
     } finally {
@@ -188,7 +199,18 @@ export default function ImportPostsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Import Posts</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Import Posts</h1>
+          {latestPublishedDate && (
+            <p className="text-sm text-gray-600 mt-1">
+              Latest published post: {new Date(latestPublishedDate).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          )}
+        </div>
 
         <button
           onClick={handleFetchNew}

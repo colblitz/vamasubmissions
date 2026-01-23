@@ -59,6 +59,26 @@ async def get_pending_edits(
     return edit_service.get_pending_edits(db, page=page, limit=limit)
 
 
+@router.get("/pending-for-post/{post_id}")
+async def get_pending_edits_for_post(
+    post_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get pending edit suggestions for a specific post.
+
+    Args:
+        post_id: Post ID
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of pending edits for the post
+    """
+    return edit_service.get_pending_edits_for_post(db, post_id, current_user.id)
+
+
 @router.post("/{edit_id}/approve", response_model=PostEdit)
 async def approve_edit(
     edit_id: int,

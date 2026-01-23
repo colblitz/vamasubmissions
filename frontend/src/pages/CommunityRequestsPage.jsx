@@ -197,33 +197,34 @@ export default function CommunityRequestsPage() {
     }
   };
 
-  // Delete request - show confirmation first
-  const handleDeleteClick = (requestId) => {
+  // Mark request as done - show confirmation first
+  const handleMarkDoneClick = (requestId) => {
     setDeleteConfirm(requestId);
     setDeleteError("");
     setDeleteSuccess(false);
   };
 
-  // Confirm delete
-  const confirmDelete = async () => {
+  // Confirm mark as done
+  const confirmMarkDone = async () => {
     const requestId = deleteConfirm;
     setDeleteConfirm(null);
     setDeleteError("");
     setDeleteSuccess(false);
 
     try {
-      await api.delete(`/api/requests/${requestId}`);
+      await api.patch(`/api/requests/${requestId}/fulfill`);
       fetchMyRequests();
+      fetchQueue(); // Refresh queue to remove the fulfilled request
       setDeleteSuccess(true);
       setTimeout(() => setDeleteSuccess(false), 3000);
     } catch (err) {
-      setDeleteError(err.response?.data?.detail || "Failed to delete request");
+      setDeleteError(err.response?.data?.detail || "Failed to mark request as done");
       setTimeout(() => setDeleteError(""), 5000);
     }
   };
 
-  // Cancel delete
-  const cancelDelete = () => {
+  // Cancel mark as done
+  const cancelMarkDone = () => {
     setDeleteConfirm(null);
   };
 
@@ -262,7 +263,7 @@ export default function CommunityRequestsPage() {
 
       {deleteSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-          Request deleted successfully!
+          Request marked as done and removed from queue!
         </div>
       )}
 
@@ -399,9 +400,6 @@ export default function CommunityRequestsPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">My Requests</h2>
           <div className="space-y-3">
             {myRequests.map((request) => {
-              // Calculate queue position (1-indexed)
-              const queuePosition = requests.findIndex(r => r.id === request.id) + 1;
-              
               return (
                 <div key={request.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
@@ -421,9 +419,9 @@ export default function CommunityRequestsPage() {
                         >
                           {request.status}
                         </span>
-                        {request.status === "pending" && queuePosition > 0 && (
+                        {request.status === "pending" && request.queue_position && (
                           <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                            #{queuePosition} in queue
+                            #{request.queue_position} in queue
                           </span>
                         )}
                       </div>
@@ -457,10 +455,10 @@ export default function CommunityRequestsPage() {
 
                     {request.status === "pending" && (
                       <button
-                        onClick={() => handleDeleteClick(request.id)}
-                        className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
+                        onClick={() => handleMarkDoneClick(request.id)}
+                        className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm"
                       >
-                        Delete
+                        Mark as Done
                       </button>
                     )}
                   </div>
@@ -509,21 +507,21 @@ export default function CommunityRequestsPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Banner */}
+      {/* Mark as Done Confirmation Banner */}
       {deleteConfirm && (
         <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
           <p className="text-gray-900 font-medium mb-3">
-            Are you sure you want to delete this request?
+            Mark this request as done? It will be removed from the queue.
           </p>
           <div className="flex gap-2">
             <button
-              onClick={confirmDelete}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              onClick={confirmMarkDone}
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
-              Delete
+              Mark as Done
             </button>
             <button
-              onClick={cancelDelete}
+              onClick={cancelMarkDone}
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
             >
               Cancel

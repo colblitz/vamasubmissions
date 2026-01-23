@@ -16,6 +16,7 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [resultsPendingEdits, setResultsPendingEdits] = useState({}); // Map of post_id -> pending edits
 
   // Edit suggestion modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -118,13 +119,37 @@ export default function SearchPage() {
       const response = await api.get("/api/posts/search", { params });
 
       // Backend returns 'posts' not 'results'
-      setResults(response.data.posts || []);
+      const posts = response.data.posts || [];
+      setResults(posts);
       setTotal(response.data.total || 0);
+
+      // Fetch pending edits for all posts in results
+      fetchPendingEditsForResults(posts);
     } catch (err) {
       setError(err.response?.data?.detail || "Search failed");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch pending edits for all posts in search results
+  const fetchPendingEditsForResults = async (posts) => {
+    const pendingEditsMap = {};
+    
+    // Fetch pending edits for each post
+    await Promise.all(
+      posts.map(async (post) => {
+        try {
+          const response = await api.get(`/api/edits/pending-for-post/${post.id}`);
+          pendingEditsMap[post.id] = response.data || [];
+        } catch (err) {
+          console.error(`Failed to fetch pending edits for post ${post.id}:`, err);
+          pendingEditsMap[post.id] = [];
+        }
+      })
+    );
+
+    setResultsPendingEdits(pendingEditsMap);
   };
 
   // Add filter chip
@@ -192,6 +217,22 @@ export default function SearchPage() {
     setCharacterModalSuggestions([]);
     setSeriesModalSuggestions([]);
     setTagModalSuggestions([]);
+  };
+
+  // Get pending edits for a specific field and post
+  const getPendingEditsForField = (postId, fieldName) => {
+    const edits = resultsPendingEdits[postId] || [];
+    return edits.filter(edit => edit.field_name === fieldName);
+  };
+
+  // Get pending additions for a field
+  const getPendingAdditions = (postId, fieldName) => {
+    return getPendingEditsForField(postId, fieldName).filter(edit => edit.action === "ADD");
+  };
+
+  // Get pending deletions for a field
+  const getPendingDeletions = (postId, fieldName) => {
+    return getPendingEditsForField(postId, fieldName).filter(edit => edit.action === "DELETE");
   };
 
   // Fetch suggestions for modal (for each field type)
@@ -562,30 +603,99 @@ export default function SearchPage() {
                   </div>
 
                   <div className="space-y-2 flex-1">
-                    {post.characters?.length > 0 && (
+                    {/* Characters with pending edits */}
+                    {(post.characters?.length > 0 || getPendingAdditions(post.id, "characters").length > 0) && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Characters: </span>
-                        <span className="text-sm text-gray-900">{post.characters.join(", ")}</span>
+                        <span className="text-sm text-gray-900">
+                          {post.characters?.map((char, idx) => {
+                            const isPendingDeletion = getPendingDeletions(post.id, "characters").some(e => e.value === char);
+                            return (
+                              <span key={idx}>
+                                {idx > 0 && ", "}
+                                {isPendingDeletion ? (
+                                  <span className="line-through text-gray-400">{char} <span className="text-xs text-amber-600">(pending removal)</span></span>
+                                ) : (
+                                  char
+                                )}
+                              </span>
+                            );
+                          })}
+                          {getPendingAdditions(post.id, "characters").length > 0 && (
+                            <>
+                              {post.characters?.length > 0 && ", "}
+                              {getPendingAdditions(post.id, "characters").map((edit, idx) => (
+                                <span key={`pending-${idx}`}>
+                                  {idx > 0 && ", "}
+                                  <span className="text-amber-600">{edit.value} <span className="text-xs">(pending)</span></span>
+                                </span>
+                              ))}
+                            </>
+                          )}
+                        </span>
                       </div>
                     )}
 
-                    {post.series?.length > 0 && (
+                    {/* Series with pending edits */}
+                    {(post.series?.length > 0 || getPendingAdditions(post.id, "series").length > 0) && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Series: </span>
-                        <span className="text-sm text-gray-900">{post.series.join(", ")}</span>
+                        <span className="text-sm text-gray-900">
+                          {post.series?.map((s, idx) => {
+                            const isPendingDeletion = getPendingDeletions(post.id, "series").some(e => e.value === s);
+                            return (
+                              <span key={idx}>
+                                {idx > 0 && ", "}
+                                {isPendingDeletion ? (
+                                  <span className="line-through text-gray-400">{s} <span className="text-xs text-amber-600">(pending removal)</span></span>
+                                ) : (
+                                  s
+                                )}
+                              </span>
+                            );
+                          })}
+                          {getPendingAdditions(post.id, "series").length > 0 && (
+                            <>
+                              {post.series?.length > 0 && ", "}
+                              {getPendingAdditions(post.id, "series").map((edit, idx) => (
+                                <span key={`pending-${idx}`}>
+                                  {idx > 0 && ", "}
+                                  <span className="text-amber-600">{edit.value} <span className="text-xs">(pending)</span></span>
+                                </span>
+                              ))}
+                            </>
+                          )}
+                        </span>
                       </div>
                     )}
 
-                    {post.tags?.length > 0 && (
+                    {/* Tags with pending edits */}
+                    {(post.tags?.length > 0 || getPendingAdditions(post.id, "tags").length > 0) && (
                       <div>
                         <span className="text-sm font-medium text-gray-600">Tags: </span>
                         <div className="inline-flex flex-wrap gap-1">
-                          {post.tags.map((tag, idx) => (
+                          {post.tags?.map((tag, idx) => {
+                            const isPendingDeletion = getPendingDeletions(post.id, "tags").some(e => e.value === tag);
+                            return (
+                              <span
+                                key={idx}
+                                className={`px-2 py-1 rounded text-xs ${
+                                  isPendingDeletion
+                                    ? "bg-gray-200 text-gray-400 line-through"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {tag}
+                                {isPendingDeletion && <span className="ml-1 text-amber-600 no-underline">(pending removal)</span>}
+                              </span>
+                            );
+                          })}
+                          {getPendingAdditions(post.id, "tags").map((edit, idx) => (
                             <span
-                              key={idx}
-                              className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                              key={`pending-${idx}`}
+                              className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs"
                             >
-                              {tag}
+                              {edit.value} <span className="text-xs">(pending)</span>
                             </span>
                           ))}
                         </div>

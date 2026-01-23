@@ -568,7 +568,7 @@ async def fetch_new_posts(
     }
 
 
-@router.get("/posts/pending", response_model=List[PostSchema])
+@router.get("/posts/pending")
 async def get_pending_posts(
     page: int = 1,
     limit: int = 20,
@@ -585,10 +585,11 @@ async def get_pending_posts(
         db: Database session
 
     Returns:
-        List of pending posts
+        Dict with posts list, pagination info, and latest published post date
     """
     offset = (page - 1) * limit
 
+    # Get pending posts
     posts = (
         db.query(Post)
         .filter(Post.status == "pending")
@@ -598,7 +599,26 @@ async def get_pending_posts(
         .all()
     )
 
-    return posts
+    # Get total count of pending posts
+    total_pending = db.query(Post).filter(Post.status == "pending").count()
+
+    # Get latest published post date
+    latest_post = (
+        db.query(Post.timestamp)
+        .filter(Post.status == "published")
+        .order_by(Post.timestamp.desc())
+        .first()
+    )
+
+    latest_post_date = latest_post[0] if latest_post else None
+
+    return {
+        "posts": posts,
+        "total": total_pending,
+        "page": page,
+        "limit": limit,
+        "latest_published_date": latest_post_date,
+    }
 
 
 @router.patch("/posts/{post_id}", response_model=PostSchema)

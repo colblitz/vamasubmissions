@@ -257,6 +257,56 @@ def reject_edit(
     return edit
 
 
+def get_pending_edits_for_post(
+    db: Session,
+    post_id: int,
+    current_user_id: int,
+) -> List[dict]:
+    """
+    Get pending edit suggestions for a specific post.
+
+    Args:
+        db: Database session
+        post_id: Post ID
+        current_user_id: Current user ID (to mark own suggestions)
+
+    Returns:
+        List of pending edits for the post
+    """
+    # Query pending edits for this post
+    edits = (
+        db.query(PostEdit)
+        .filter(PostEdit.post_id == post_id, PostEdit.status == "pending")
+        .order_by(PostEdit.created_at.asc())
+        .all()
+    )
+
+    # Build response with user info
+    result = []
+    for edit in edits:
+        suggester = (
+            db.query(User).filter(User.id == edit.suggester_id).first()
+            if edit.suggester_id
+            else None
+        )
+
+        edit_dict = {
+            "id": edit.id,
+            "post_id": edit.post_id,
+            "suggester_id": edit.suggester_id,
+            "field_name": edit.field_name,
+            "action": edit.action,
+            "value": edit.value,
+            "status": edit.status,
+            "created_at": edit.created_at,
+            "suggester_username": suggester.patreon_username if suggester else "Unknown",
+            "is_own_suggestion": edit.suggester_id == current_user_id,
+        }
+        result.append(edit_dict)
+
+    return result
+
+
 def get_pending_edits(
     db: Session,
     page: int = 1,

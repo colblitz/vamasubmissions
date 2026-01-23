@@ -967,8 +967,25 @@ Current priority: **Phase 1 Frontend - Hide Legacy Pages & Build New UI**
 
 ---
 
-*Last Updated: 2026-01-22 20:55*
-*Status: Phase 1 + Post Import System COMPLETE ✅ - Production Ready!*
+## 🔄 Development Workflow
+
+### Testing Protocol
+1. **Goose makes changes** - Implements features, fixes bugs, updates code
+2. **Goose notifies user** - "Changes are ready for testing"
+3. **User tests locally** - Runs frontend/backend, verifies functionality
+4. **User confirms** - "Looks good" or reports issues
+5. **Goose commits** - Only after user approval, with descriptive commit message
+
+### Important Notes
+- **User runs servers**: User will start backend (`./start_server.sh`) and frontend (`npm run dev`) for testing
+- **No auto-commits**: Goose will NEVER commit without explicit user approval
+- **User tests first**: All changes must be manually tested before committing
+- **Clear communication**: Goose will clearly state when changes are ready and what to test
+
+---
+
+*Last Updated: 2026-01-22 23:12*
+*Status: Phase 1 + Post Import System COMPLETE ✅ + About Page & Latest Post Date COMPLETE ✅*
 
 ## Phase 1 + Post Import Progress Summary
 

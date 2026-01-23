@@ -11,6 +11,7 @@ import CallbackPage from "./pages/CallbackPage";
 import SearchPage from "./pages/SearchPage";
 import CommunityRequestsPage from "./pages/CommunityRequestsPage";
 import ReviewEditsPage from "./pages/ReviewEditsPage";
+import AboutPage from "./pages/AboutPage";
 
 // Admin pages
 import ImportPostsPage from "./pages/admin/ImportPostsPage";
@@ -69,6 +70,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ReviewEditsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/about"
+              element={
+                <ProtectedRoute>
+                  <AboutPage />
                 </ProtectedRoute>
               }
             />
