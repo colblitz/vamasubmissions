@@ -9,6 +9,8 @@ export default function SearchPage() {
     tags: [],
     page: 1,
     limit: 20,
+    sortBy: "date",
+    sortOrder: "desc",
   });
   const [results, setResults] = useState([]);
   const [total, setTotal] = useState(0);
@@ -490,8 +492,26 @@ export default function SearchPage() {
       ) : (
         <>
           {results.length > 0 && (
-            <div className="mb-4 text-gray-600">
-              Found {total} post{total !== 1 ? "s" : ""}
+            <div className="mb-4 flex justify-between items-center">
+              <div className="text-gray-600">
+                Found {total} post{total !== 1 ? "s" : ""}
+              </div>
+              
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Sort by:</label>
+                <select
+                  value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
+                  onChange={(e) => {
+                    const [sortBy, sortOrder] = e.target.value.split('-');
+                    setSearchParams((prev) => ({ ...prev, sortBy, sortOrder, page: 1 }));
+                  }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="date-desc">Date (Newest First)</option>
+                  <option value="date-asc">Date (Oldest First)</option>
+                </select>
+              </div>
             </div>
           )}
 
