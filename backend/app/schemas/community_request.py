@@ -1,8 +1,9 @@
 """Community Request schemas."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
+from app.utils.validation import normalize_text, normalize_array_field
 
 
 class CommunityRequestBase(BaseModel):
@@ -20,7 +21,20 @@ class CommunityRequestBase(BaseModel):
 class CommunityRequestCreate(CommunityRequestBase):
     """Schema for creating a community request."""
 
-    pass
+    @field_validator("characters", "series")
+    @classmethod
+    def normalize_arrays(cls, v: List[str]) -> List[str]:
+        """Normalize array fields."""
+        normalized = normalize_array_field(v)
+        if not normalized:
+            raise ValueError("List cannot be empty after normalization")
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_description(cls, v: Optional[str]) -> Optional[str]:
+        """Normalize description field."""
+        return normalize_text(v)
 
 
 class CommunityRequestUpdate(BaseModel):
@@ -31,6 +45,23 @@ class CommunityRequestUpdate(BaseModel):
     timestamp: Optional[datetime] = None
     description: Optional[str] = None
     is_private: Optional[bool] = None
+
+    @field_validator("characters", "series")
+    @classmethod
+    def normalize_arrays(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Normalize array fields."""
+        if v is None:
+            return None
+        normalized = normalize_array_field(v)
+        if not normalized:
+            raise ValueError("List cannot be empty after normalization")
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_description(cls, v: Optional[str]) -> Optional[str]:
+        """Normalize description field."""
+        return normalize_text(v)
 
 
 class CommunityRequest(CommunityRequestBase):

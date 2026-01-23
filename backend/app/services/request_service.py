@@ -14,6 +14,7 @@ from app.schemas.community_request import (
     CommunityRequestPublic,
     CommunityRequestList,
 )
+from app.utils.validation import normalize_text, normalize_array_field
 
 
 def get_request_by_id(db: Session, request_id: int) -> Optional[CommunityRequest]:
@@ -37,12 +38,29 @@ def create_request(
     Returns:
         Created request
     """
+    # Normalize input data
+    normalized_characters = normalize_array_field(request_data.characters)
+    normalized_series = normalize_array_field(request_data.series)
+    normalized_description = normalize_text(request_data.description)
+    
+    # Validate required fields
+    if not normalized_characters:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one character is required",
+        )
+    if not normalized_series:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one series is required",
+        )
+    
     request = CommunityRequest(
         user_id=user_id,
-        characters=request_data.characters,
-        series=request_data.series,
+        characters=normalized_characters,
+        series=normalized_series,
         timestamp=request_data.timestamp,
-        description=request_data.description,
+        description=normalized_description,
         is_private=request_data.is_private,
         fulfilled=False,
     )

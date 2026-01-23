@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Literal
 from datetime import datetime
+from app.utils.validation import normalize_text
 
 
 class PostEditBase(BaseModel):
@@ -21,11 +22,11 @@ class PostEditCreate(PostEditBase):
     @field_validator("value")
     @classmethod
     def validate_value(cls, v: str) -> str:
-        """Validate that value is not empty after stripping."""
-        v = v.strip()
-        if not v:
+        """Validate and normalize value."""
+        normalized = normalize_text(v)
+        if not normalized:
             raise ValueError("Value cannot be empty")
-        return v
+        return normalized
 
 
 class PostEditUpdate(BaseModel):

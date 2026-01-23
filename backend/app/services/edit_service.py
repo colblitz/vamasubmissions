@@ -17,6 +17,7 @@ from app.schemas.post_edit import (
     EditHistoryEntry,
     EditHistoryList,
 )
+from app.utils.validation import normalize_text
 
 
 def get_edit_by_id(db: Session, edit_id: int) -> Optional[PostEdit]:
@@ -48,10 +49,17 @@ def suggest_edit(
             detail="Post not found",
         )
 
-    # Validate the edit
+    # Validate and normalize the edit
     field_name = edit_data.field_name
     action = edit_data.action
-    value = edit_data.value.strip()
+    value = normalize_text(edit_data.value)
+    
+    # Reject empty values after normalization
+    if not value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Value cannot be empty or whitespace only",
+        )
 
     # Get current field value
     current_values = getattr(post, field_name, [])

@@ -1,8 +1,11 @@
 """Main FastAPI application."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 import logging
 
@@ -44,12 +47,19 @@ Base.metadata.create_all(bind=engine)
 # Create upload directory if it doesn't exist
 os.makedirs(settings.upload_dir, exist_ok=True)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["100 per minute"])
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Patreon Character Submission API",
     description="API for managing character commission requests from Patreon supporters",
     version="1.0.0",
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS
 app.add_middleware(

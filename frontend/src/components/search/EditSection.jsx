@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
+import { normalizeText } from "../../utils/validation";
 
 /**
  * EditSection component - Inline expandable section for suggesting edits to a post
@@ -103,15 +104,25 @@ export default function EditSection({ post, onClose, onSuccess }) {
     setErrorMessage("");
     setSuccessMessage("");
 
+    // Normalize the value
+    const normalizedValue = normalizeText(value);
+    
+    // Validate normalized value
+    if (!normalizedValue) {
+      setErrorMessage("Value cannot be empty or whitespace only");
+      setTimeout(() => setErrorMessage(""), 5000);
+      return;
+    }
+
     try {
       await api.post("/api/edits/suggest", {
         post_id: post.id,
         field_name: fieldName,
         action: action,
-        value: value.trim(),
+        value: normalizedValue,
       });
 
-      const message = `${action === "ADD" ? "Added" : "Removed"} "${value}" ${
+      const message = `${action === "ADD" ? "Added" : "Removed"} "${normalizedValue}" ${
         action === "ADD" ? "to" : "from"
       } ${fieldName}`;
       setSuccessMessage(message);
@@ -128,8 +139,11 @@ export default function EditSection({ post, onClose, onSuccess }) {
 
   // Handle adding a new item
   const handleAdd = (fieldType, value, clearFunc, clearSuggestionsFunc) => {
-    if (!value.trim()) return;
-    submitEdit(fieldType, "ADD", value);
+    // Normalize before checking
+    const normalizedValue = normalizeText(value);
+    if (!normalizedValue) return;
+    
+    submitEdit(fieldType, "ADD", normalizedValue);
     clearFunc("");
     clearSuggestionsFunc([]);
   };

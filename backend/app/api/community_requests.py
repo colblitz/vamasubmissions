@@ -1,8 +1,10 @@
 """Community Request API endpoints."""
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.database import get_db
 from app.schemas.community_request import (
@@ -17,6 +19,7 @@ from app.services.user_service import get_current_user, get_current_admin_user
 from app.models.user import User
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/", response_model=CommunityRequest, status_code=status.HTTP_201_CREATED)

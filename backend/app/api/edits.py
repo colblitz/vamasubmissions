@@ -1,7 +1,9 @@
 """Post Edit API endpoints."""
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.database import get_db
 from app.schemas.post_edit import (
@@ -15,18 +17,23 @@ from app.services.user_service import get_current_user, get_current_admin_user
 from app.models.user import User
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/suggest", response_model=PostEdit, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def suggest_edit(
+    request: Request,
     edit_data: PostEditCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Suggest an edit to a post.
+    Rate limited to 10 requests per minute.
 
     Args:
+        request: FastAPI request object
         edit_data: Edit suggestion data
         current_user: Current authenticated user
         db: Database session

@@ -18,6 +18,7 @@ from app.models.submission import Submission
 from app.models.post import Post
 from app.models.admin_settings import AdminSettings
 from app.core.config import settings
+from app.utils.validation import normalize_array_field, normalize_text
 
 router = APIRouter()
 
@@ -645,15 +646,15 @@ async def update_pending_post(
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
-    # Update fields if provided
+    # Update fields if provided (with normalization)
     if update_data.characters is not None:
-        post.characters = update_data.characters
+        post.characters = normalize_array_field(update_data.characters)
     if update_data.series is not None:
-        post.series = update_data.series
+        post.series = normalize_array_field(update_data.series)
     if update_data.tags is not None:
-        post.tags = update_data.tags
+        post.tags = normalize_array_field(update_data.tags)
     if update_data.title is not None:
-        post.title = update_data.title
+        post.title = normalize_text(update_data.title)
 
     post.updated_at = datetime.utcnow()
     db.commit()
