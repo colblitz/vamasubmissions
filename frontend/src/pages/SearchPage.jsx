@@ -88,6 +88,8 @@ export default function SearchPage() {
       const params = {
         page: searchParams.page,
         limit: searchParams.limit,
+        sort_by: searchParams.sortBy,
+        sort_order: searchParams.sortOrder,
       };
 
       if (searchParams.query?.trim()) {
@@ -218,10 +220,10 @@ export default function SearchPage() {
         </button>
       </div>
 
-      {/* Search Tab */}
-      {activeTab === "search" && (
-        <>
-          {/* Search Filters */}
+      {/* Fixed height container for Search/Browse sections */}
+      <div className="h-[600px] overflow-y-auto mb-6 border border-gray-200 rounded-lg p-4 bg-white">
+        {/* Search Filters (only show on Search tab) */}
+        {activeTab === "search" && (
           <SearchFilters
             searchParams={searchParams}
             onSearchParamsChange={setSearchParams}
@@ -242,27 +244,27 @@ export default function SearchPage() {
               setTagSuggestions,
             }}
           />
+        )}
 
-          {/* Search Results */}
-          <SearchResults
-            results={results}
-            total={total}
-            loading={loading}
-            error={error}
-            pendingEditsMap={resultsPendingEdits}
-            pagination={{ page: searchParams.page, limit: searchParams.limit }}
-            onPageChange={handlePageChange}
-            onEditSuccess={handleEditSuccess}
-            sortParams={{ sortBy: searchParams.sortBy, sortOrder: searchParams.sortOrder }}
-            onSortChange={handleSortChange}
-          />
-        </>
-      )}
+        {/* Browse Section (only show on Browse tab) */}
+        {activeTab === "browse" && (
+          <BrowseTab onSelectItem={handleBrowseItemSelect} />
+        )}
+      </div>
 
-      {/* Browse Tab */}
-      {activeTab === "browse" && (
-        <BrowseTab onSelectItem={handleBrowseItemSelect} />
-      )}
+      {/* Shared Results Section */}
+      <SearchResults
+        results={results}
+        total={total}
+        loading={loading}
+        error={error}
+        pendingEditsMap={resultsPendingEdits}
+        pagination={{ page: searchParams.page, limit: searchParams.limit }}
+        onPageChange={handlePageChange}
+        onEditSuccess={handleEditSuccess}
+        sortParams={{ sortBy: searchParams.sortBy, sortOrder: searchParams.sortOrder }}
+        onSortChange={handleSortChange}
+      />
     </div>
   );
 }

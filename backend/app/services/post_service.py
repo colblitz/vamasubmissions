@@ -88,6 +88,8 @@ def search_posts(
     tags: Optional[List[str]] = None,
     page: int = 1,
     limit: int = 20,
+    sort_by: str = "date",
+    sort_order: str = "desc",
 ) -> PostSearchResult:
     """
     Search posts with filters.
@@ -177,9 +179,18 @@ def search_posts(
     total = q.count()
     logger.info(f"[SEARCH DEBUG] Final total count: {total}")
 
+    # Apply sorting
+    if sort_by == "date":
+        if sort_order == "asc":
+            q = q.order_by(Post.timestamp.asc())
+        else:
+            q = q.order_by(Post.timestamp.desc())
+    
+    logger.info(f"[SEARCH DEBUG] Sorting by: {sort_by} {sort_order}")
+
     # Apply pagination
     offset = (page - 1) * limit
-    posts = q.order_by(Post.timestamp.desc()).offset(offset).limit(limit).all()
+    posts = q.offset(offset).limit(limit).all()
     
     logger.info(f"[SEARCH DEBUG] Retrieved {len(posts)} posts for page {page}")
     if posts:

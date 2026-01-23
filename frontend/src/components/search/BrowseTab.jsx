@@ -14,7 +14,7 @@ export default function BrowseTab({ onSelectItem }) {
     page: 1,
     total: 0,
     totalPages: 0,
-    limit: 100,
+    limit: 32, // 8 rows x 4 columns on large screens
   });
 
   // Fetch browse data when sub-tab changes
@@ -62,9 +62,9 @@ export default function BrowseTab({ onSelectItem }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Sub-tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-gray-200 -mt-2">
         <button
           onClick={() => {
             setActiveSubTab("characters");
@@ -128,7 +128,7 @@ export default function BrowseTab({ onSelectItem }) {
               <button
                 key={idx}
                 onClick={() => handleItemClick(item.name)}
-                className={`p-3 rounded-lg border-2 transition-all hover:shadow-md text-left ${
+                className={`px-3 py-2 rounded-lg border-2 transition-all hover:shadow-md text-left ${
                   activeSubTab === "characters"
                     ? "border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100"
                     : activeSubTab === "series"
@@ -136,11 +136,13 @@ export default function BrowseTab({ onSelectItem }) {
                     : "border-purple-200 hover:border-purple-400 bg-purple-50 hover:bg-purple-100"
                 }`}
               >
-                <div className="font-medium text-gray-900 truncate" title={item.name}>
-                  {item.name}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {item.count} {item.count === 1 ? "post" : "posts"}
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-medium text-gray-900 truncate" title={item.name}>
+                    {item.name}
+                  </span>
+                  <span className="text-sm text-gray-600 flex-shrink-0">
+                    ({item.count})
+                  </span>
                 </div>
               </button>
             ))}
@@ -148,21 +150,21 @@ export default function BrowseTab({ onSelectItem }) {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
+            <div className="flex justify-center items-center gap-2 mt-4">
               <button
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
-                className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 Previous
               </button>
-              <span className="text-gray-700">
+              <span className="text-gray-700 text-sm">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <button
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page === pagination.totalPages}
-                className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 Next
               </button>
@@ -170,7 +172,7 @@ export default function BrowseTab({ onSelectItem }) {
           )}
 
           {/* Total Count */}
-          <div className="text-center text-sm text-gray-600 mt-2">
+          <div className="text-center text-xs text-gray-500 mt-2">
             Total: {pagination.total} {activeSubTab}
           </div>
         </>

@@ -25,6 +25,8 @@ async def search_posts(
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Results per page"),
+    sort_by: str = Query("date", description="Sort field (date)"),
+    sort_order: str = Query("desc", description="Sort order (asc or desc)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -75,6 +77,8 @@ async def search_posts(
         tags=tag_list,
         page=page,
         limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
     
     logger.info(f"[API DEBUG] Returning result: total={result.total}, posts={len(result.posts)}")
