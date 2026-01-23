@@ -981,11 +981,17 @@ Current priority: **Phase 1 Frontend - Hide Legacy Pages & Build New UI**
 - **No auto-commits**: Goose will NEVER commit without explicit user approval
 - **User tests first**: All changes must be manually tested before committing
 - **Clear communication**: Goose will clearly state when changes are ready and what to test
+- **Update PROJECT_PLAN.md**: Always update this file as part of commits (not as separate commits)
+  - Mark completed features with ✅
+  - Update "Last Updated" timestamp
+  - Update "Status" line
+  - Add to "Recent Achievements" section
+  - Update "Next Priority" if priorities change
 
 ---
 
-*Last Updated: 2026-01-22 23:12*
-*Status: Phase 1 + Post Import System COMPLETE ✅ + About Page & Latest Post Date COMPLETE ✅*
+*Last Updated: 2026-01-22 23:48*
+*Status: Phase 1 + Post Import System COMPLETE ✅ + About Page & Latest Post Date COMPLETE ✅ + Pending Edits Display COMPLETE ✅*
 
 ## Phase 1 + Post Import Progress Summary
 
@@ -1008,6 +1014,8 @@ Current priority: **Phase 1 Frontend - Hide Legacy Pages & Build New UI**
 - **UI/UX**: Zero disruptive popups! All feedback via non-blocking banners
 
 ### 🎉 Key Achievements (2026-01-22)
+
+**Morning Session** (Post Import System):
 - ✅ **Post Import System**: Full workflow from Patreon → pending → published/skipped
 - ✅ **gallery-dl Integration**: Automated post fetching with metadata
 - ✅ **Skip Feature**: Mark non-character posts (announcements) as skipped
@@ -1019,7 +1027,67 @@ Current priority: **Phase 1 Frontend - Hide Legacy Pages & Build New UI**
 - ✅ **Unsaved Changes Indicator**: Visual feedback for pending changes
 - ✅ **Security Fix**: Removed exposed credentials from Git history
 
-### 🎯 Next Priority: End-to-End Testing & Deployment
+**Evening Session** (Quick Wins + Pending Edits):
+- ✅ **About Page with Leaderboards**: New page showing top suggesters/approvers
+- ✅ **Latest Post Date on Import Page**: Shows most recent published post date
+- ✅ **Pending Edits Display**: Inline display in search results with visual indicators
+  - Pending additions: amber color "(pending)"
+  - Pending deletions: strikethrough "~~value~~ (pending removal)"
+  - Works for characters, series, and tags
+- ✅ **Bug Fixes**: Queue position display, successMessage error on ReviewEditsPage
+- ✅ **UX Improvements**: "Mark as Done" button, branding updates (VAMA Posts)
+
+### 🎯 Next Priority: SearchPage Refactoring
+
+**Current Status**: SearchPage.jsx is 1066 lines and becoming unwieldy
+
+**Goal**: Refactor SearchPage into smaller, maintainable components
+
+**Planned Refactoring** (estimated 4-6 hours):
+
+1. **Modal → Dropdown** (2-3 hours)
+   - Change "Suggest Edit" from modal to expandable section under each post
+   - Allows editing multiple posts without opening/closing modals
+   - Better UX for bulk editing
+
+2. **Component Extraction** (2-3 hours)
+   - Extract `SearchFilters.jsx` (~200 lines) - All filter inputs
+   - Extract `AutocompleteInput.jsx` (~80 lines) - Reusable autocomplete
+   - Extract `SearchResults.jsx` (~150 lines) - Results display + pagination
+   - Extract `PostCard.jsx` (~100 lines) - Individual post display
+   - Extract `EditSection.jsx` (~200 lines) - Expandable edit section (replaces modal)
+   - Keep `SearchPage.jsx` as orchestrator (~150 lines)
+
+**Benefits**:
+- Each component has single responsibility
+- Easier to test and maintain
+- Reusable AutocompleteInput component
+- Better performance (can optimize re-renders per component)
+- Cleaner code organization
+
+**Files to Create**:
+- `frontend/src/components/search/SearchFilters.jsx`
+- `frontend/src/components/search/AutocompleteInput.jsx`
+- `frontend/src/components/search/SearchResults.jsx`
+- `frontend/src/components/search/PostCard.jsx`
+- `frontend/src/components/search/EditSection.jsx`
+
+**Files to Modify**:
+- `frontend/src/pages/SearchPage.jsx` - Simplified orchestrator
+
+**Testing Checklist After Refactor**:
+- [ ] Search functionality works
+- [ ] Autocomplete works for all fields
+- [ ] Filter chips work
+- [ ] Pagination works
+- [ ] Edit section expands/collapses correctly
+- [ ] Edit suggestions submit successfully
+- [ ] Pending edits display correctly
+- [ ] No console errors
+
+---
+
+### 🧪 Testing & Deployment (After Refactor)
 1. Test the new Skip feature on announcement posts
 2. Test bulk operations (select multiple posts)
 3. Verify published posts appear in Search page

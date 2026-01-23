@@ -114,7 +114,7 @@ async def get_post(
 @router.get("/autocomplete/characters", response_model=List[str])
 async def autocomplete_characters(
     q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(10, ge=1, le=50, description="Max results"),
+    limit: int = Query(10, ge=1, le=100, description="Max results"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -136,7 +136,7 @@ async def autocomplete_characters(
 @router.get("/autocomplete/characters-with-series")
 async def autocomplete_characters_with_series(
     q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(10, ge=1, le=50, description="Max results"),
+    limit: int = Query(10, ge=1, le=100, description="Max results"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -158,7 +158,7 @@ async def autocomplete_characters_with_series(
 @router.get("/autocomplete/series", response_model=List[str])
 async def autocomplete_series(
     q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(10, ge=1, le=50, description="Max results"),
+    limit: int = Query(10, ge=1, le=100, description="Max results"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -180,7 +180,7 @@ async def autocomplete_series(
 @router.get("/autocomplete/tags", response_model=List[str])
 async def autocomplete_tags(
     q: str = Query(..., min_length=1, description="Search query"),
-    limit: int = Query(10, ge=1, le=50, description="Max results"),
+    limit: int = Query(10, ge=1, le=100, description="Max results"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
