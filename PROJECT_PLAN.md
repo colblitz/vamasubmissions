@@ -285,6 +285,16 @@ When using subagents, they must follow the same workflow:
 - Do NOT commit without user approval
 - Return summary of changes for user review
 
+**Database Migrations**:
+When adding new database columns/tables:
+1. Create migration file in `backend/alembic/versions/`
+2. Number it sequentially (e.g., `007_description.sql`)
+3. Document in commit message
+4. User must run migration: `psql vamasubmissions < backend/alembic/versions/XXX_file.sql`
+5. Common errors:
+   - `column X does not exist` → Migration not run yet
+   - `relation X does not exist` → Earlier migrations missing
+
 ## UI/UX Design Guidelines
 
 **Accessibility & Contrast**:

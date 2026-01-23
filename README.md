@@ -56,16 +56,39 @@ createdb vamasubmissions
 # Run schema
 psql vamasubmissions < schema.sql
 
-# Run Phase 1 migrations
+# Run Phase 1 migrations (in order!)
 psql vamasubmissions < backend/alembic/versions/002_add_phase1_tables.sql
 psql vamasubmissions < backend/alembic/versions/003_add_post_status_and_raw_json.sql
 psql vamasubmissions < backend/alembic/versions/004_create_admin_settings.sql
 psql vamasubmissions < backend/alembic/versions/005_add_skipped_status.sql
+psql vamasubmissions < backend/alembic/versions/006_add_tier_name.sql
 
 # Import posts (requires vama_posts_initial.csv and all-post-api/)
 cd backend && source venv/bin/activate && cd ..
 DATABASE_URL='postgresql://yourusername@localhost/vamasubmissions' python3 backend/import_posts.py
 ```
+
+**⚠️ Important: Database Migrations**
+
+When you pull new code that adds database columns/tables, you need to run the new migration files:
+
+```bash
+# Check for new migration files
+ls backend/alembic/versions/
+
+# Run any new migrations (replace XXX with the migration number)
+psql vamasubmissions < backend/alembic/versions/XXX_migration_name.sql
+
+# Or run all migrations in order (safe to re-run)
+for file in backend/alembic/versions/*.sql; do
+  echo "Running $file..."
+  psql vamasubmissions < "$file"
+done
+```
+
+Common migration errors:
+- `column X does not exist` → Run the migration that adds that column
+- `relation X does not exist` → Run earlier migrations first (check numbering)
 
 ### Backend Setup
 
