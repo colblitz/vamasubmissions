@@ -10,6 +10,14 @@ export default function CallbackPage() {
 
   useEffect(() => {
     const token = searchParams.get("token");
+    const errorParam = searchParams.get("error");
+
+    // Check for error from backend (e.g., tier 1 restriction)
+    if (errorParam) {
+      // Redirect to login with error message
+      navigate(`/login?error=${encodeURIComponent(errorParam)}`);
+      return;
+    }
 
     if (!token) {
       setError("No token received from authentication");

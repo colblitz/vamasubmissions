@@ -19,77 +19,65 @@ A community-driven web application for VAMA's Patreon subscribers to search exis
 - **Bulk Operations** - Save, publish, or delete multiple posts at once
 - **Character-Series Autocomplete** - Smart suggestions with auto-association
 
-### Hidden Features (Future)
-- Credit-based submission system
-- Dual queue system (paid/free)
-- Voting system
-- Admin dashboard for completions
+---
 
-## Tech Stack
+## Quick Start (Local Development)
 
-- **Backend**: FastAPI (Python 3.11+)
-- **Frontend**: React + Vite
-- **Database**: PostgreSQL 14+
-- **Authentication**: Patreon OAuth 2.0 + JWT
-- **Deployment**: Self-hosted on Linode (planned)
+### Start Development (2 Commands)
 
-## Project Structure
+```bash
+# Terminal 1: Backend
+cd backend && source venv/bin/activate && ./start_server.sh
 
-```
-vamasubmissions/
-├── backend/           # FastAPI application
-│   ├── app/
-│   │   ├── api/      # API routes
-│   │   ├── core/     # Config, security, dependencies
-│   │   ├── models/   # SQLAlchemy models
-│   │   ├── schemas/  # Pydantic schemas
-│   │   ├── services/ # Business logic
-│   │   └── main.py   # Application entry point
-│   ├── alembic/      # Database migrations
-│   ├── tests/
-│   └── requirements.txt
-├── frontend/         # React application
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── App.jsx
-│   └── package.json
-├── docs/            # Documentation
-├── schema.sql       # Database schema
-└── README.md
+# Terminal 2: Frontend  
+cd frontend && npm run dev
 ```
 
-## Setup Instructions
+Then open: http://localhost:5173
+
+**API Docs**: http://localhost:8000/docs
+
+---
+
+## First Time Setup
 
 ### Prerequisites
-
 - Python 3.11+
 - Node.js 18+
 - PostgreSQL 14+
-- Patreon Developer Account
+- Patreon Developer Account (for OAuth)
+
+### Database Setup
+
+```bash
+# Create database
+createdb vamasubmissions
+
+# Run schema
+psql vamasubmissions < schema.sql
+
+# Run Phase 1 migrations
+psql vamasubmissions < backend/alembic/versions/002_add_phase1_tables.sql
+psql vamasubmissions < backend/alembic/versions/003_add_post_status_and_raw_json.sql
+psql vamasubmissions < backend/alembic/versions/004_create_admin_settings.sql
+psql vamasubmissions < backend/alembic/versions/005_add_skipped_status.sql
+
+# Import posts (requires vama_posts_initial.csv and all-post-api/)
+cd backend && source venv/bin/activate && cd ..
+DATABASE_URL='postgresql://yourusername@localhost/vamasubmissions' python3 backend/import_posts.py
+```
 
 ### Backend Setup
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env with your Patreon OAuth credentials and database URL
-
-# Initialize database
-psql -U postgres -c "CREATE DATABASE vamasubmissions;"
-psql -U postgres -d vamasubmissions -f ../schema.sql
-
-# Run migrations
-alembic upgrade head
-
-# Start development server
-uvicorn app.main:app --reload
+# Edit .env with your configuration (see Environment Setup below)
 ```
 
 ### Frontend Setup
@@ -99,48 +87,261 @@ cd frontend
 npm install
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your API URL
-
-# Start development server
-npm run dev
+echo "VITE_API_URL=http://localhost:8000" > .env
+echo "VITE_USE_MOCK_AUTH=true" >> .env
 ```
 
-## Configuration
+---
 
-### Patreon OAuth Setup
+## Mock Authentication
+
+With `VITE_USE_MOCK_AUTH=true` in frontend `.env`, you can test as different users without Patreon OAuth:
+
+**Available Mock Users:**
+- **tier1** - Free tier user
+- **tier2** - $5 tier user
+- **tier3** - $10 tier user
+- **tier4** - $20 tier user
+- **admin** - Admin access (can import posts)
+
+Just enter the username on the login page (no password needed).
+
+---
+
+## Environment Setup
+
+### Backend Environment Variables (`.env`)
+
+```bash
+# Database
+DATABASE_URL=postgresql://postgres:password@localhost/vamasubmissions
+
+# Patreon OAuth
+PATREON_CLIENT_ID=your_patreon_client_id
+PATREON_CLIENT_SECRET=your_patreon_client_secret
+PATREON_REDIRECT_URI=http://localhost:8000/api/auth/callback
+PATREON_CREATOR_ID=your_patreon_creator_id
+
+# Security
+SECRET_KEY=generate-with-openssl-rand-hex-32
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_DAYS=30
+
+# File uploads
+UPLOAD_DIR=./uploads
+MAX_IMAGE_SIZE_MB=10
+MAX_IMAGES_PER_SUBMISSION=20
+
+# Application
+ENVIRONMENT=development
+FRONTEND_URL=http://localhost:5173
+
+# Admin (your Patreon user ID)
+ADMIN_PATREON_ID=your_patreon_id
+```
+
+### Frontend Environment Variables (`.env`)
+
+```bash
+VITE_API_URL=http://localhost:8000
+VITE_USE_MOCK_AUTH=true  # Set to false for real Patreon OAuth
+```
+
+---
+
+## Useful Commands
+
+### Backend
+```bash
+# Start backend
+cd backend && source venv/bin/activate && uvicorn app.main:app --reload
+
+# Or use the start script
+cd backend && source venv/bin/activate && ./start_server.sh
+
+# Generate secret key
+openssl rand -hex 32
+
+# Run tests
+pytest
+```
+
+### Frontend
+```bash
+# Start frontend
+cd frontend && npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Database
+```bash
+# Connect to database
+psql vamasubmissions
+
+# Check post count
+psql vamasubmissions -c "SELECT COUNT(*) FROM posts;"  # Should show 2691+
+
+# Backup database
+pg_dump vamasubmissions > backup.sql
+
+# Restore database
+psql vamasubmissions < backup.sql
+
+# Reset database (WARNING: Deletes all data)
+dropdb vamasubmissions && createdb vamasubmissions
+psql vamasubmissions < schema.sql
+psql vamasubmissions < backend/alembic/versions/002_add_phase1_tables.sql
+# ... run other migrations ...
+
+# Reimport posts
+DATABASE_URL='postgresql://yourusername@localhost/vamasubmissions' python3 backend/import_posts.py
+```
+
+---
+
+## Deployment Checklist
+
+### Pre-Deployment
+- [ ] Update Patreon OAuth redirect URI to production URL
+- [ ] Generate secure SECRET_KEY for production (`openssl rand -hex 32`)
+- [ ] Set `ENVIRONMENT=production` in backend `.env`
+- [ ] Update `FRONTEND_URL` to production domain
+- [ ] Set `ADMIN_PATREON_ID` to your actual Patreon ID
+- [ ] Set `VITE_USE_MOCK_AUTH=false` in frontend `.env`
+
+### Server Setup
+- [ ] Install PostgreSQL 14+
+- [ ] Install Python 3.11+
+- [ ] Install Node.js 18+
+- [ ] Install nginx
+- [ ] Set up firewall (allow ports 80, 443, SSH)
+
+### Database
+- [ ] Create production database
+- [ ] Run `schema.sql`
+- [ ] Run all migrations in `backend/alembic/versions/`
+- [ ] Import posts using `import_posts.py`
+- [ ] Set up automated backups (pg_dump cron job)
+- [ ] Configure connection pooling
+
+### Backend Deployment
+- [ ] Clone repository to server
+- [ ] Set up Python virtual environment
+- [ ] Install dependencies (`pip install -r requirements.txt`)
+- [ ] Create systemd service for uvicorn
+- [ ] Configure nginx reverse proxy
+- [ ] Set up SSL with certbot/Let's Encrypt
+
+### Frontend Deployment
+- [ ] Build production bundle (`npm run build`)
+- [ ] Copy `dist/` to nginx static directory
+- [ ] Configure nginx to serve frontend
+- [ ] Set up SPA routing (fallback to `index.html`)
+
+### Post-Deployment
+- [ ] Test OAuth flow with production URLs
+- [ ] Test all user flows (search, requests, edits)
+- [ ] Test admin flows (import posts)
+- [ ] Set up monitoring (uptime, errors)
+- [ ] Set up log rotation
+- [ ] Create image cleanup cron job (for uploads directory)
+
+---
+
+## Tech Stack
+
+- **Backend**: FastAPI (Python 3.11+)
+- **Frontend**: React + Vite
+- **Database**: PostgreSQL 14+
+- **Authentication**: Patreon OAuth 2.0 + JWT
+- **Styling**: Tailwind CSS
+- **Deployment**: Self-hosted on Linode (planned)
+
+---
+
+## Project Structure
+
+```
+vamasubmissions/
+├── backend/                 # FastAPI application
+│   ├── app/
+│   │   ├── api/            # API route handlers
+│   │   │   ├── auth.py     # Patreon OAuth, login/logout
+│   │   │   ├── users.py    # User endpoints
+│   │   │   ├── posts.py    # Post search & autocomplete
+│   │   │   ├── community_requests.py  # Request queue
+│   │   │   ├── edits.py    # Edit suggestions
+│   │   │   └── admin.py    # Admin endpoints (import posts)
+│   │   ├── core/           # Core utilities
+│   │   │   ├── config.py   # Settings management
+│   │   │   ├── database.py # DB connection
+│   │   │   └── security.py # JWT, hashing
+│   │   ├── models/         # SQLAlchemy models
+│   │   ├── schemas/        # Pydantic schemas
+│   │   ├── services/       # Business logic
+│   │   └── main.py         # Application entry point
+│   ├── alembic/            # Database migrations
+│   ├── tests/              # Backend tests
+│   ├── uploads/            # Image storage
+│   ├── requirements.txt    # Python dependencies
+│   └── .env.example        # Environment template
+├── frontend/               # React application
+│   ├── src/
+│   │   ├── components/     # Reusable components
+│   │   ├── pages/          # Page components
+│   │   │   ├── SearchPage.jsx
+│   │   │   ├── CommunityRequestsPage.jsx
+│   │   │   ├── ReviewEditsPage.jsx
+│   │   │   └── admin/ImportPostsPage.jsx
+│   │   ├── services/       # API client
+│   │   ├── contexts/       # React contexts
+│   │   ├── App.jsx         # Main app component
+│   │   └── main.jsx        # Entry point
+│   ├── public/             # Static assets
+│   ├── package.json
+│   └── vite.config.js
+├── schema.sql              # Database schema
+├── PROJECT_PLAN.md         # Development plan & status
+├── PROJECT_LOG.md          # Historical development log
+└── README.md               # This file
+```
+
+---
+
+## Patreon OAuth Setup
 
 1. Go to https://www.patreon.com/portal/registration/register-clients
 2. Create a new client
-3. Set redirect URI to `http://localhost:8000/api/auth/callback` (development)
+3. Set redirect URI to:
+   - Development: `http://localhost:8000/api/auth/callback`
+   - Production: `https://yourdomain.com/api/auth/callback`
 4. Copy Client ID and Client Secret to backend `.env`
+5. Get your Creator ID from Patreon API or profile URL
+6. Get your Patreon User ID for `ADMIN_PATREON_ID`
 
-### Environment Variables
-
-**Backend (.env)**
-```
-DATABASE_URL=postgresql://user:password@localhost/vamasubmissions
-PATREON_CLIENT_ID=your_client_id
-PATREON_CLIENT_SECRET=your_client_secret
-PATREON_REDIRECT_URI=http://localhost:8000/api/auth/callback
-SECRET_KEY=your_secret_key_for_jwt
-UPLOAD_DIR=./uploads
-```
-
-**Frontend (.env)**
-```
-VITE_API_URL=http://localhost:8000
-```
-
-## Deployment
-
-See [docs/deployment.md](docs/deployment.md) for production deployment instructions.
+---
 
 ## Development
 
-- Backend runs on http://localhost:8000
-- Frontend runs on http://localhost:5173
-- API docs available at http://localhost:8000/docs
+- **Backend**: http://localhost:8000
+- **Frontend**: http://localhost:5173
+- **API Docs**: http://localhost:8000/docs (Swagger UI)
+- **API Redoc**: http://localhost:8000/redoc (Alternative docs)
+
+---
+
+## Documentation
+
+- **PROJECT_PLAN.md** - Current development plan, business rules, API reference
+- **PROJECT_LOG.md** - Historical development log and completed features
+- **README.md** - This file (setup and quick reference)
+
+---
 
 ## License
 

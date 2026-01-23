@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import api from "../services/api";
 import SearchFilters from "../components/search/SearchFilters";
 import SearchResults from "../components/search/SearchResults";
-import EditModal from "../components/search/EditModal";
 
 export default function SearchPage() {
   // Search parameters
@@ -23,10 +22,6 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [resultsPendingEdits, setResultsPendingEdits] = useState({});
-
-  // Edit modal state
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
 
   // Autocomplete states for filters
   const [characterInput, setCharacterInput] = useState("");
@@ -169,17 +164,6 @@ export default function SearchPage() {
     setSearchParams((prev) => ({ ...prev, sortBy, sortOrder, page: 1 }));
   };
 
-  // Handle edit modal
-  const openEditModal = (post) => {
-    setSelectedPost(post);
-    setEditModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setEditModalOpen(false);
-    setSelectedPost(null);
-  };
-
   // Refresh pending edits after successful edit submission
   const handleEditSuccess = () => {
     if (results.length > 0) {
@@ -222,17 +206,9 @@ export default function SearchPage() {
         pendingEditsMap={resultsPendingEdits}
         pagination={{ page: searchParams.page, limit: searchParams.limit }}
         onPageChange={handlePageChange}
-        onEditClick={openEditModal}
+        onEditSuccess={handleEditSuccess}
         sortParams={{ sortBy: searchParams.sortBy, sortOrder: searchParams.sortOrder }}
         onSortChange={handleSortChange}
-      />
-
-      {/* Edit Modal */}
-      <EditModal
-        isOpen={editModalOpen}
-        onClose={closeEditModal}
-        post={selectedPost}
-        onSuccess={handleEditSuccess}
       />
     </div>
   );

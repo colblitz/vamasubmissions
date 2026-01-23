@@ -232,6 +232,13 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Check tier access - block tier 1 users (unless admin)
+    if user.tier == 1 and user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your subscription is required to access this site. Please renew your VAMA Patreon subscription.",
+        )
+
     # Refresh credits if needed
     refresh_user_credits(db, user)
 

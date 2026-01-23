@@ -10,7 +10,7 @@ import PostCard from "./PostCard";
  * @param {object} pendingEditsMap - Map of post_id -> pending edits array
  * @param {object} pagination - Pagination state {page, limit}
  * @param {function} onPageChange - Callback when page changes
- * @param {function} onEditClick - Callback when edit button is clicked
+ * @param {function} onEditSuccess - Callback when edit is successfully submitted
  * @param {object} sortParams - Sort parameters {sortBy, sortOrder}
  * @param {function} onSortChange - Callback when sort changes
  */
@@ -22,7 +22,7 @@ export default function SearchResults({
   pendingEditsMap = {},
   pagination,
   onPageChange,
-  onEditClick,
+  onEditSuccess,
   sortParams,
   onSortChange,
 }) {
@@ -81,7 +81,7 @@ export default function SearchResults({
             key={post.post_id}
             post={post}
             pendingEdits={pendingEditsMap[post.id] || []}
-            onEditClick={onEditClick}
+            onEditSuccess={onEditSuccess}
           />
         ))}
       </div>

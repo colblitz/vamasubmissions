@@ -38,7 +38,7 @@ export default function Header() {
                 <div className="text-sm">
                   <div className="font-semibold">{user.patreon_username}</div>
                   <div className="text-gray-400">
-                    Tier {user.tier} {user.tier > 1 && `• ${user.credits} credits`}
+                    {user.tier_name || 'Free Tier'}
                   </div>
                 </div>
                 <button onClick={logout} className="text-sm hover:text-red-400 transition-colors">

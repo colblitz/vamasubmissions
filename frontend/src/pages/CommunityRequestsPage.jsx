@@ -462,6 +462,29 @@ export default function CommunityRequestsPage() {
                       </button>
                     )}
                   </div>
+
+                  {/* Inline Confirmation Section */}
+                  {deleteConfirm === request.id && (
+                    <div className="border-t border-blue-300 bg-blue-100 pt-3 mt-3 transition-all duration-300 ease-in-out">
+                      <p className="text-gray-900 font-medium mb-3">
+                        Mark this request as fulfilled? It will be removed from the queue.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={confirmMarkDone}
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Yes, Mark as Done
+                        </button>
+                        <button
+                          onClick={cancelMarkDone}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -507,28 +530,6 @@ export default function CommunityRequestsPage() {
         )}
       </div>
 
-      {/* Mark as Done Confirmation Banner */}
-      {deleteConfirm && (
-        <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
-          <p className="text-gray-900 font-medium mb-3">
-            Mark this request as done? It will be removed from the queue.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={confirmMarkDone}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Mark as Done
-            </button>
-            <button
-              onClick={cancelMarkDone}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

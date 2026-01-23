@@ -19,12 +19,13 @@ router = APIRouter()
 
 
 @router.get("/login")
-async def login(username: Optional[str] = None, db: Session = Depends(get_db)):
+async def login(username: Optional[str] = None, tier: Optional[int] = None, db: Session = Depends(get_db)):
     """
     Development mode: Mock login for testing.
     Production mode: Redirect to Patreon OAuth authorization page.
 
     If username is provided, creates/returns a mock user for development.
+    tier parameter can be used to set the user's tier (1-5), defaults to tier from username or 2.
     Otherwise, redirects to Patreon OAuth.
     """
     # Development mode: Mock auth
@@ -33,18 +34,38 @@ async def login(username: Optional[str] = None, db: Session = Depends(get_db)):
         user = user_service.get_user_by_patreon_id(db, f"mock_{username}")
 
         if not user:
+            # Determine tier from username or parameter
+            if tier is None:
+                # Try to extract tier from username (e.g., "tier1", "tier2")
+                if username.startswith("tier") and len(username) >= 5:
+                    try:
+                        tier = int(username[4:5])  # Get just the digit after "tier"
+                    except (ValueError, IndexError):
+                        tier = 2  # Default to tier 2
+                else:
+                    tier = 2  # Default to tier 2 for testing
+            
             # Create mock user
             user = user_service.create_user(
                 db,
                 patreon_id=f"mock_{username}",
                 patreon_username=username,
                 email=f"{username}@example.com",
-                tier=2,  # Default to tier 2 for testing
+                tier=tier,
             )
 
-        # Update last login
+        # Update last login and tier_name if not set
         user.last_login = datetime.utcnow()
+        if not user.tier_name:
+            user.tier_name = get_tier_name(user.tier)
         db.commit()
+
+        # Check tier access - block tier 1 users (unless admin)
+        if user.tier == 1 and user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This site is only accessible to VAMA Patreon subscribers. Please subscribe to access.",
+            )
 
         # Create JWT token
         jwt_token = create_access_token(data={"user_id": user.id, "patreon_id": user.patreon_id})
@@ -67,9 +88,7 @@ async def login(username: Optional[str] = None, db: Session = Depends(get_db)):
                 "patreon_username": user.patreon_username,
                 "email": user.email,
                 "tier": user.tier,
-                "credits": user.credits,
-                "max_credits": user.max_credits,
-                "credits_per_month": user.credits_per_month,
+                "tier_name": user.tier_name,
                 "role": user.role,
             },
         }
@@ -182,8 +201,9 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 patreon_token_expires_at=token_expires_at,
             )
 
-        # Update last login
+        # Update last login and tier_name
         user.last_login = datetime.utcnow()
+        user.tier_name = get_tier_name(user.tier)
 
         # If user is admin, store Patreon tokens in admin_settings
         if user.is_admin:
@@ -201,6 +221,13 @@ async def callback(code: str, db: Session = Depends(get_db)):
             admin_settings.updated_at = datetime.utcnow()
 
         db.commit()
+
+        # Check tier access - block tier 1 users (unless admin)
+        if user.tier == 1 and user.role != "admin":
+            # Redirect to frontend with error instead of token
+            error_message = "This site is only accessible to VAMA Patreon subscribers. Please subscribe to access."
+            frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+            return RedirectResponse(url=frontend_redirect)
 
         # Create JWT token
         jwt_token = create_access_token(data={"user_id": user.id, "patreon_id": user.patreon_id})
@@ -315,6 +342,26 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
         )
 
 
+def get_tier_name(tier: int) -> str:
+    """
+    Get the display name for a tier.
+
+    Args:
+        tier: Tier number (1-5)
+
+    Returns:
+        Tier display name
+    """
+    tier_names = {
+        1: "Free Tier",
+        2: "NSFW Art! Tier 1",
+        3: "NSFW Art! Tier 2",
+        4: "NSFW Art! Tier 3",
+        5: "NSFW Art! Support",
+    }
+    return tier_names.get(tier, "Free Tier")
+
+
 def determine_tier_from_amount(amount_cents: int) -> int:
     """
     Determine tier based on VAMA's Patreon pledge amounts.
@@ -357,15 +404,16 @@ async def get_current_user_info(
     Returns:
         User information
     """
+    # Ensure tier_name is set
+    tier_name = current_user.tier_name or get_tier_name(current_user.tier)
+    
     return {
         "id": current_user.id,
         "patreon_id": current_user.patreon_id,
         "patreon_username": current_user.patreon_username,
         "email": current_user.email,
         "tier": current_user.tier,
-        "credits": current_user.credits,
-        "max_credits": current_user.max_credits,
-        "credits_per_month": current_user.credits_per_month,
+        "tier_name": tier_name,
         "role": current_user.role,
         "can_submit_multiple": current_user.can_submit_multiple,
     }

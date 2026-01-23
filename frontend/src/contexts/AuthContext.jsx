@@ -69,6 +69,11 @@ export const AuthProvider = ({ children }) => {
         );
 
         if (!response.ok) {
+          // Check for 403 (tier restriction)
+          if (response.status === 403) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Access denied");
+          }
           throw new Error("Mock login failed");
         }
 

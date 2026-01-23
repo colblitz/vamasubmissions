@@ -1,11 +1,15 @@
+import { useState } from "react";
+import EditSection from "./EditSection";
+
 /**
  * PostCard component - Displays a single post with metadata and pending edits
  * 
  * @param {object} post - Post object with title, characters, series, tags, etc.
  * @param {array} pendingEdits - Array of pending edit suggestions for this post
- * @param {function} onEditClick - Callback when "Suggest Edit" button is clicked
+ * @param {function} onEditSuccess - Callback when edit is successfully submitted
  */
-export default function PostCard({ post, pendingEdits = [], onEditClick }) {
+export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
+  const [editSectionOpen, setEditSectionOpen] = useState(false);
   // Helper to get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {
     return pendingEdits.filter(edit => edit.field_name === fieldName);
@@ -27,7 +31,8 @@ export default function PostCard({ post, pendingEdits = [], onEditClick }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow flex overflow-hidden">
+    <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+      <div className="flex">
       {/* Thumbnail */}
       {post.thumbnail_urls?.[0] ? (
         <img
@@ -205,13 +210,28 @@ export default function PostCard({ post, pendingEdits = [], onEditClick }) {
           </a>
 
           <button
-            onClick={() => onEditClick(post)}
+            onClick={() => setEditSectionOpen(!editSectionOpen)}
             className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium"
           >
-            Suggest Edit
+            {editSectionOpen ? "Close Edit" : "Suggest Edit"}
           </button>
         </div>
       </div>
+      </div>
+
+      {/* Edit Section */}
+      {editSectionOpen && (
+        <EditSection
+          post={post}
+          onClose={() => setEditSectionOpen(false)}
+          onSuccess={(message) => {
+            setEditSectionOpen(false);
+            if (onEditSuccess) {
+              onEditSuccess(message);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

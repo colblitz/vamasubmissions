@@ -16,6 +16,7 @@ class User(Base):
     patreon_username = Column(String(255))
     email = Column(String(255))
     tier = Column(Integer, nullable=False, default=1, index=True)  # 1=free, 2/3/4/5=paid
+    tier_name = Column(String(100), nullable=True)  # Display name for tier
     credits = Column(Integer, nullable=False, default=0)
     role = Column(String(50), nullable=False, default="patron")  # patron, creator, admin
     last_credit_refresh = Column(DateTime)

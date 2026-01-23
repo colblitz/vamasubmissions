@@ -33,6 +33,12 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";
+    } else if (error.response?.status === 403) {
+      // Forbidden - likely tier restriction
+      const errorMessage = error.response?.data?.detail || "Your subscription is required to access this site. Please renew your VAMA Patreon subscription.";
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = `/login?error=${encodeURIComponent(errorMessage)}`;
     }
     return Promise.reject(error);
   }

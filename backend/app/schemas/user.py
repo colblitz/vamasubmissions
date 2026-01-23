@@ -34,6 +34,7 @@ class User(UserBase):
     id: int
     patreon_id: str
     tier: int
+    tier_name: Optional[str] = None
     credits: int
     role: str
     max_credits: int
