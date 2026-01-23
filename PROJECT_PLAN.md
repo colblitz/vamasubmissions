@@ -259,17 +259,31 @@ CREATE TABLE admin_settings (
 
 ## Development Workflow
 
-1. Goose makes changes
-2. Goose notifies: "Changes ready for testing"
-3. User tests locally (runs servers)
-4. User confirms: "Looks good" or reports issues
-5. Goose commits with descriptive message
+**CRITICAL RULES (applies to Goose AND all subagents):**
 
-**Notes**:
-- User runs servers: `./start_server.sh` (backend), `npm run dev` (frontend)
-- No auto-commits without user approval
+1. **Make changes** to code/files
+2. **Notify user**: "Changes ready for testing"
+3. **STOP and WAIT** - User tests locally (runs servers)
+4. **User confirms**: "Looks good" or reports issues
+5. **Only then commit** with descriptive message
+
+**Testing Protocol**:
+- **User runs servers**: `./start_server.sh` (backend), `npm run dev` (frontend)
+- **User does all testing** - never assume code works
+- **No auto-commits** without explicit user approval
+- **No auto-testing** - let user verify functionality
+
+**Documentation**:
 - Update PROJECT_PLAN.md as part of commits (not separate)
 - Mark completed features with ✅, update timestamps
+- Keep PROJECT_PLAN.md current with latest status
+
+**Subagent Instructions**:
+When using subagents, they must follow the same workflow:
+- Make changes, notify completion
+- Do NOT test or run servers
+- Do NOT commit without user approval
+- Return summary of changes for user review
 
 ## UI/UX Design Guidelines
 
