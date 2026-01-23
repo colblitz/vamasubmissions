@@ -63,12 +63,47 @@ def suggest_edit(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Value '{value}' already exists in {field_name}",
             )
+        
+        # Check if there's already a pending ADD suggestion for this value
+        existing_pending = db.query(PostEdit).filter(
+            and_(
+                PostEdit.post_id == edit_data.post_id,
+                PostEdit.field_name == field_name,
+                PostEdit.action == "ADD",
+                func.lower(PostEdit.value) == value.lower(),
+                PostEdit.status == "pending",
+            )
+        ).first()
+        
+        if existing_pending:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"There is already a pending suggestion to add '{value}' to {field_name}",
+            )
+            
     elif action == "DELETE":
         # Check if value exists to delete (case-insensitive)
         if not any(v.lower() == value.lower() for v in current_values):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Value '{value}' not found in {field_name}",
+            )
+        
+        # Check if there's already a pending DELETE suggestion for this value
+        existing_pending = db.query(PostEdit).filter(
+            and_(
+                PostEdit.post_id == edit_data.post_id,
+                PostEdit.field_name == field_name,
+                PostEdit.action == "DELETE",
+                func.lower(PostEdit.value) == value.lower(),
+                PostEdit.status == "pending",
+            )
+        ).first()
+        
+        if existing_pending:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"There is already a pending suggestion to remove '{value}' from {field_name}",
             )
 
     # Create edit suggestion
