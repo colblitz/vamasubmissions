@@ -80,7 +80,9 @@ def export_production_data(
             if value is None:
                 values.append("NULL")
             elif isinstance(value, str):
-                values.append(f"'{value.replace(\"'\", \"''\")}'")
+                # Escape single quotes by doubling them
+                escaped = value.replace("'", "''")
+                values.append(f"'{escaped}'")
             elif isinstance(value, bool):
                 values.append("TRUE" if value else "FALSE")
             else:
@@ -138,36 +140,50 @@ def export_production_data(
             f.write(f"'{post['timestamp']}', ")
             
             # url
-            f.write(f"'{post['url'].replace(\"'\", \"''\")}', ")
+            url_escaped = post['url'].replace("'", "''")
+            f.write(f"'{url_escaped}', ")
             
             # title
-            f.write(f"'{post['title'].replace(\"'\", \"''\")}', ")
+            title_escaped = post['title'].replace("'", "''")
+            f.write(f"'{title_escaped}', ")
             
             # characters (array)
             if post['characters']:
-                chars = [f"'{c.replace(\"'\", \"''\")}'" for c in post['characters']]
-                f.write(f"ARRAY[{', '.join(chars)}]::text[], ")
+                chars_escaped = []
+                for c in post['characters']:
+                    escaped = c.replace("'", "''")
+                    chars_escaped.append(f"'{escaped}'")
+                f.write(f"ARRAY[{', '.join(chars_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
             
             # series (array)
             if post['series']:
-                series = [f"'{s.replace(\"'\", \"''\")}'" for s in post['series']]
-                f.write(f"ARRAY[{', '.join(series)}]::text[], ")
+                series_escaped = []
+                for s in post['series']:
+                    escaped = s.replace("'", "''")
+                    series_escaped.append(f"'{escaped}'")
+                f.write(f"ARRAY[{', '.join(series_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
             
             # tags (array)
             if post['tags']:
-                tags = [f"'{t.replace(\"'\", \"''\")}'" for t in post['tags']]
-                f.write(f"ARRAY[{', '.join(tags)}]::text[], ")
+                tags_escaped = []
+                for t in post['tags']:
+                    escaped = t.replace("'", "''")
+                    tags_escaped.append(f"'{escaped}'")
+                f.write(f"ARRAY[{', '.join(tags_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
             
             # image_urls (array)
             if post['image_urls']:
-                imgs = [f"'{i.replace(\"'\", \"''\")}'" for i in post['image_urls']]
-                f.write(f"ARRAY[{', '.join(imgs)}]::text[], ")
+                imgs_escaped = []
+                for i in post['image_urls']:
+                    escaped = i.replace("'", "''")
+                    imgs_escaped.append(f"'{escaped}'")
+                f.write(f"ARRAY[{', '.join(imgs_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
             
