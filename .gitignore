@@ -96,11 +96,14 @@ test_uploads/
 *.mp4
 *.mov
 
-# Backups
+# Backups and Database Dumps
 backups/
-*.sql
 *.sql.gz
 *.dump
+# Ignore production data dumps but keep schema and migrations
+production_data.sql
+*_backup.sql
+backup_*.sql
 
 # SSL Certificates
 *.pem
@@ -182,6 +185,12 @@ all-post-api/
 all-post-api.zip
 posts.csv
 vama_posts_initial.csv
-*.csv
+# Ignore CSV data files but keep any CSV that might be needed for config
+*_data.csv
+*_export.csv
+*_dump.csv
 backend/test_patreon_api.py
 cleanup.sh
+# Ignore downloaded thumbnails
+all-thumbnails/
+all-thumbnails*.zip
