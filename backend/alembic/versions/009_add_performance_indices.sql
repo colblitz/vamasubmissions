@@ -4,11 +4,14 @@
 -- Enable pg_trgm extension for trigram-based text search
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Text search indices using GIN (Generalized Inverted Index) with trigram operators
--- These enable fast LIKE, ILIKE, and similarity searches on text columns
+-- Text search indices using GIN (Generalized Inverted Index)
+-- Title uses trigram operators for LIKE/ILIKE searches
 CREATE INDEX IF NOT EXISTS idx_posts_title_trgm ON posts USING gin(title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_posts_characters_trgm ON posts USING gin(characters gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_posts_series_trgm ON posts USING gin(series gin_trgm_ops);
+
+-- Characters and series are arrays, so use standard GIN (not trigram)
+-- These enable fast array containment searches (@>, &&, etc.)
+CREATE INDEX IF NOT EXISTS idx_posts_characters_gin ON posts USING gin(characters);
+CREATE INDEX IF NOT EXISTS idx_posts_series_gin ON posts USING gin(series);
 
 -- Sorting index for timestamp-based queries (DESC for most recent first)
 CREATE INDEX IF NOT EXISTS idx_posts_timestamp_desc ON posts(timestamp DESC);
