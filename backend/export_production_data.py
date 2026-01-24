@@ -116,8 +116,7 @@ def export_production_data(
                 tags,
                 image_urls,
                 thumbnail_urls,
-                status,
-                raw_patreon_json
+                status
             FROM posts
             ORDER BY timestamp DESC
         """)
@@ -133,7 +132,7 @@ def export_production_data(
             # Build INSERT statement
             f.write("INSERT INTO posts (")
             f.write("post_id, timestamp, url, title, characters, series, tags, ")
-            f.write("image_urls, thumbnail_urls, status, raw_patreon_json")
+            f.write("image_urls, thumbnail_urls, status")
             f.write(") VALUES (")
             
             # post_id
@@ -196,15 +195,8 @@ def export_production_data(
             # thumbnail_urls (array) - USE STATIC URL
             f.write(f"ARRAY['{static_thumbnail_url}']::text[], ")
             
-            # status
-            f.write(f"'{post['status']}', ")
-            
-            # raw_patreon_json
-            if post['raw_patreon_json']:
-                json_str = str(post['raw_patreon_json']).replace("'", "''")
-                f.write(f"'{json_str}'::jsonb")
-            else:
-                f.write("NULL")
+            # status (last field, no comma)
+            f.write(f"'{post['status']}'")
             
             f.write(")\n")
             f.write("ON CONFLICT (post_id) DO UPDATE SET\n")
