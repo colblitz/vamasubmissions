@@ -16,6 +16,7 @@ slowapi==0.1.9
 
 # HTTP client for Patreon API
 httpx==0.26.0
+requests==2.31.0
 
 # Validation
 pydantic==2.5.3
