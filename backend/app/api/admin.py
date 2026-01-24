@@ -418,6 +418,66 @@ async def adjust_user_credits(
 # ============================================================================
 
 
+@router.patch("/settings/session-id")
+async def update_session_id(
+    session_id: str,
+    current_user: User = Depends(user_service.get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update admin's Patreon session_id for gallery-dl authentication.
+    
+    Args:
+        session_id: Patreon session_id cookie value
+        current_user: Current admin user
+        db: Database session
+    
+    Returns:
+        Success message
+    """
+    # Get or create admin settings
+    admin_settings = (
+        db.query(AdminSettings).filter(AdminSettings.user_id == current_user.id).first()
+    )
+    
+    if not admin_settings:
+        admin_settings = AdminSettings(user_id=current_user.id)
+        db.add(admin_settings)
+    
+    admin_settings.patreon_session_id = session_id
+    admin_settings.updated_at = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Session ID updated successfully"}
+
+
+@router.get("/settings/session-id")
+async def get_session_id_status(
+    current_user: User = Depends(user_service.get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Check if admin has a session_id configured.
+    
+    Args:
+        current_user: Current admin user
+        db: Database session
+    
+    Returns:
+        Status of session_id configuration
+    """
+    admin_settings = (
+        db.query(AdminSettings).filter(AdminSettings.user_id == current_user.id).first()
+    )
+    
+    has_session_id = bool(admin_settings and admin_settings.patreon_session_id)
+    
+    return {
+        "has_session_id": has_session_id,
+        "message": "Session ID is configured" if has_session_id else "Session ID not configured"
+    }
+
+
 @router.post("/posts/fetch-new")
 async def fetch_new_posts(
     creator_username: str = "vama",
@@ -494,12 +554,19 @@ async def fetch_new_posts(
             f"[FETCH-NEW-POSTS] No existing posts, using fallback: {since_days} days ago = {since_date}"
         )
 
-    # Fetch posts using gallery-dl (with browser cookies for authentication)
+    # Check if admin has session_id configured
+    if not admin_settings.patreon_session_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Patreon session_id not configured. Please add your session_id in admin settings.",
+        )
+
+    # Fetch posts using gallery-dl (with session_id cookie for authentication)
     try:
         posts_metadata = patreon.fetch_posts_with_gallery_dl(
             creator_username=creator_username,
             since_date=since_date,
-            session_id=True,  # Signal to use browser cookies
+            session_id=admin_settings.patreon_session_id,
         )
     except PatreonAPIError as e:
         raise HTTPException(

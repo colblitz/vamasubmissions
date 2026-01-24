@@ -254,31 +254,16 @@ class PatreonService:
 
             # Add session cookie if provided
             if session_id:
-                # Auto-detect which Chrome profile has Patreon cookies
-                chrome_profile = find_chrome_profile_with_patreon_cookies()
-
-                if chrome_profile:
-                    browser_spec = (
-                        f"chrome:{chrome_profile}" if chrome_profile != "Default" else "chrome"
-                    )
-                    cmd.extend(
-                        [
-                            "--cookies-from-browser",
-                            browser_spec,
-                        ]
-                    )
-                    print(f"[GALLERY-DL] Using cookies from Chrome {chrome_profile}")
-                else:
-                    # Fallback: try default Chrome profile anyway
-                    cmd.extend(
-                        [
-                            "--cookies-from-browser",
-                            "chrome",
-                        ]
-                    )
-                    print(
-                        f"[GALLERY-DL] WARNING: No Patreon cookies detected, trying default Chrome profile"
-                    )
+                # Create temporary cookie file with session_id
+                cookie_file = temp_path / "cookies.txt"
+                cookie_content = f"""# Netscape HTTP Cookie File
+.patreon.com	TRUE	/	TRUE	0	session_id	{session_id}
+"""
+                with open(cookie_file, 'w') as f:
+                    f.write(cookie_content)
+                
+                cmd.extend(["--cookies", str(cookie_file)])
+                print(f"[GALLERY-DL] Using session_id cookie from parameter")
 
             # Add date filter if provided
             if since_date:
@@ -418,7 +403,7 @@ class PatreonService:
     def extract_post_data_from_gallery_dl(self, gallery_dl_metadata: Dict) -> Dict:
         """
         Extract post data from gallery-dl metadata format.
-        Only extracts metadata - no image downloads.
+        Downloads thumbnail and archives JSON.
 
         Args:
             gallery_dl_metadata: Metadata dict from gallery-dl JSON
@@ -431,8 +416,8 @@ class PatreonService:
         title = gallery_dl_metadata.get("title", "Untitled")
         url = gallery_dl_metadata.get("url", "")
 
-        # Parse date
-        date_str = gallery_dl_metadata.get("date")
+        # Parse date (use published_at if available, fallback to date)
+        date_str = gallery_dl_metadata.get("published_at") or gallery_dl_metadata.get("date")
         timestamp = None
         if date_str:
             try:
@@ -444,36 +429,58 @@ class PatreonService:
             except:
                 timestamp = datetime.now()
 
-        # TEMPORARY: Use test/placeholder thumbnails for development
-        # TODO: For production, extract real thumbnail URLs and download them
-        # thumbnail_url = gallery_dl_metadata.get('thumbnail', {}).get('thumbnail_large')
+        # Download thumbnail from image.thumb_square_url
+        thumbnail_url = gallery_dl_metadata.get("image", {}).get("thumb_square_url")
+        thumbnail_local_path = None
+        
+        if thumbnail_url:
+            try:
+                # Determine file extension from URL
+                from urllib.parse import urlparse
+                parsed = urlparse(thumbnail_url)
+                # Extract extension from path, default to .png
+                ext = os.path.splitext(parsed.path)[1] or ".png"
+                
+                # Download thumbnail
+                response = requests.get(thumbnail_url, timeout=10)
+                response.raise_for_status()
+                
+                # Save to backend/static/thumbnails/
+                thumbnails_dir = Path(__file__).parent.parent.parent / "static" / "thumbnails"
+                thumbnails_dir.mkdir(parents=True, exist_ok=True)
+                
+                thumbnail_filename = f"{post_id}-thumbnail-square{ext}"
+                thumbnail_path = thumbnails_dir / thumbnail_filename
+                
+                with open(thumbnail_path, "wb") as f:
+                    f.write(response.content)
+                
+                # Store relative path for database
+                thumbnail_local_path = f"/static/thumbnails/{thumbnail_filename}"
+                print(f"[THUMBNAIL] Downloaded thumbnail for post {post_id}: {thumbnail_filename}")
+                
+            except Exception as e:
+                print(f"[THUMBNAIL] ERROR downloading thumbnail for post {post_id}: {e}")
+                thumbnail_local_path = None
 
-        # Use League of Legends placeholder thumbnails (random selection)
-        import random
+        # Archive JSON file
+        try:
+            archive_dir = Path(__file__).parent.parent.parent / "static" / "archive"
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            
+            archive_filename = f"{post_id}-metadata.json"
+            archive_path = archive_dir / archive_filename
+            
+            with open(archive_path, "w") as f:
+                json.dump(gallery_dl_metadata, f, indent=2, default=str)
+            
+            print(f"[ARCHIVE] Saved JSON for post {post_id}: {archive_filename}")
+        except Exception as e:
+            print(f"[ARCHIVE] ERROR saving JSON for post {post_id}: {e}")
 
-        placeholder_thumbnails = [
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Jinx_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Lux_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/MissFortune_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Akali_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ashe_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Caitlyn_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Evelynn_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Janna_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Katarina_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/KaiSa_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/LeeSin_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Riven_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Sona_0.jpg",
-            "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Syndra_0.jpg",
-        ]
-
-        # Randomly choose a placeholder thumbnail
-        placeholder_url = random.choice(placeholder_thumbnails)
-
-        thumbnail_urls = [placeholder_url]
-        image_urls = thumbnail_urls  # For now, just use thumbnail
+        # Use local thumbnail path if available, otherwise empty
+        thumbnail_urls = [thumbnail_local_path] if thumbnail_local_path else []
+        image_urls = []  # Not storing full image URLs for now
 
         return {
             "post_id": post_id,

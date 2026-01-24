@@ -25,6 +25,9 @@ class AdminSettings(Base):
     patreon_access_token = Column(Text, nullable=True)
     patreon_refresh_token = Column(Text, nullable=True)
     patreon_token_expires_at = Column(DateTime, nullable=True)
+    
+    # Patreon session cookie (for gallery-dl authentication)
+    patreon_session_id = Column(Text, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.now, nullable=False)

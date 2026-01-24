@@ -73,12 +73,10 @@ app.add_middleware(
 # Mount static files for uploads
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
-# Mount static files for test thumbnails
-thumbnails_dir = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_thumbnails"
-)
-if os.path.exists(thumbnails_dir):
-    app.mount("/static/thumbnails", StaticFiles(directory=thumbnails_dir), name="thumbnails")
+# Mount static files (thumbnails and archives)
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
