@@ -1,196 +1,168 @@
-# Python
+# ============================================
+# VAMA Submissions - Project-Specific Ignores
+# ============================================
+
+# ----------------
+# Python / Backend
+# ----------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
 # Virtual Environment
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
 
+# Python Build
+build/
+dist/
+*.egg-info/
+
+# ----------------
+# Node.js / Frontend
+# ----------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Frontend Build Output
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+
+# ----------------
+# Environment & Config
+# ----------------
+.env
+.env.local
+.env.production
+.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# ----------------
+# Database
+# ----------------
+*.db
+*.sqlite
+*.sqlite3
+
+# Database Dumps (but keep schema and migrations)
+production_data.sql
+*_backup.sql
+backup_*.sql
+*.sql.gz
+*.dump
+
+# ----------------
+# User Uploads & Media
+# ----------------
+uploads/
+backend/uploads/
+backend/static/thumbnails/*.jpg
+backend/static/thumbnails/*.jpeg
+backend/static/thumbnails/*.png
+backend/static/thumbnails/*.webp
+backend/static/thumbnails/*.gif
+
+# Test thumbnails
+test_thumbnails/
+
+# ----------------
+# Data Files
+# ----------------
+# Patreon API data
+all-post-api/
+all-post-api.zip
+
+# CSV data exports (but keep any config CSVs if needed)
+posts.csv
+vama_posts_initial.csv
+*_data.csv
+*_export.csv
+*_dump.csv
+
+# Downloaded thumbnail archives
+all-thumbnails/
+all-thumbnails*.zip
+
+# ----------------
+# IDEs & Editors
+# ----------------
 # PyCharm
 .idea/
 
 # VS Code
 .vscode/
 
-# Environment Variables
-.env
-.env.local
-.env.production
-.env.*.local
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Alembic
-alembic/versions/*.pyc
-
-# Node.js / Frontend
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Frontend Build
-frontend/dist/
-frontend/dist-ssr/
-frontend/.vite/
-frontend/.cache/
-
-# Frontend Environment
-frontend/.env
-frontend/.env.local
-frontend/.env.production
-frontend/.env.*.local
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# OS Files
-.DS_Store
-Thumbs.db
+# Vim
 *.swp
 *.swo
 *~
 
-# Uploads & User Content
-uploads/
-backend/uploads/
-test_uploads/
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.webp
-*.mp4
-*.mov
-
-# Backups and Database Dumps
-backups/
-*.sql.gz
-*.dump
-# Ignore production data dumps but keep schema and migrations
-production_data.sql
-*_backup.sql
-backup_*.sql
-
-# SSL Certificates
-*.pem
-*.key
-*.crt
-*.csr
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.hypothesis/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath
-*.sage.py
-
-# Spyder
-.spyderproject
-.spyproject
-
-# Rope
-.ropeproject
-
-# mkdocs
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre
-.pyre/
-
-# Editor backups
-*~
-*.bak
-*.tmp
-
-# Deployment
-deployment-scripts/*.log
-deployment-scripts/.env
-
-# Local development
-local_config.py
-local_settings.py
-
+# ----------------
+# OS Files
+# ----------------
 # macOS
+.DS_Store
 .AppleDouble
 .LSOverride
-Icon
 ._*
 .DocumentRevisions-V100
 .fseventsd
 .Spotlight-V100
 .TemporaryItems
 .Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
 
-# Test data and temporary files
-all-post-api/
-all-post-api.zip
-posts.csv
-vama_posts_initial.csv
-# Ignore CSV data files but keep any CSV that might be needed for config
-*_data.csv
-*_export.csv
-*_dump.csv
+# Windows
+Thumbs.db
+Desktop.ini
+
+# ----------------
+# Logs
+# ----------------
+logs/
+*.log
+deployment-scripts/*.log
+
+# ----------------
+# SSL/Certificates
+# ----------------
+*.pem
+*.key
+*.crt
+*.csr
+
+# ----------------
+# Testing
+# ----------------
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# ----------------
+# Temporary & Backup Files
+# ----------------
+*.bak
+*.tmp
+backups/
+
+# ----------------
+# Project-Specific
+# ----------------
+# Test/development scripts
 backend/test_patreon_api.py
 cleanup.sh
-# Ignore downloaded thumbnails
-all-thumbnails/
-all-thumbnails*.zip
+download_thumbnails.sh
+
+# Deployment environment files
+deployment-scripts/.env
+
+# Local development overrides
+local_config.py
+local_settings.py
