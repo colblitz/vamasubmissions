@@ -85,6 +85,9 @@ def export_production_data(
                 values.append(f"'{escaped}'")
             elif isinstance(value, bool):
                 values.append("TRUE" if value else "FALSE")
+            elif hasattr(value, 'isoformat'):
+                # Handle datetime/date objects
+                values.append(f"'{value.isoformat()}'")
             else:
                 values.append(str(value))
         
@@ -137,7 +140,10 @@ def export_production_data(
             f.write(f"'{post['post_id']}', ")
             
             # timestamp
-            f.write(f"'{post['timestamp']}', ")
+            if hasattr(post['timestamp'], 'isoformat'):
+                f.write(f"'{post['timestamp'].isoformat()}', ")
+            else:
+                f.write(f"'{post['timestamp']}', ")
             
             # url
             url_escaped = post['url'].replace("'", "''")
