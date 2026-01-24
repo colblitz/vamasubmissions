@@ -83,8 +83,10 @@ def load_json_data(post_id: str, json_dir: Path) -> Optional[Dict]:
                 thumbnail_urls.append(image_url_obj['thumbnail_large'])
         
         # Override with static thumbnail URL if configured
+        # Note: We don't specify extension here - nginx will serve whatever exists
+        # (could be .jpg, .png, .webp, etc.)
         if STATIC_THUMBNAIL_BASE:
-            thumbnail_urls = [f"{STATIC_THUMBNAIL_BASE}/{post_id}-thumbnail.jpg"]
+            thumbnail_urls = [f"{STATIC_THUMBNAIL_BASE}/{post_id}-thumbnail-square.jpg"]
         
         return {
             'url': url,

@@ -6,7 +6,7 @@ This script:
 1. Reads all JSON files from all-post-api/
 2. Extracts thumbnail URLs
 3. Downloads thumbnails to backend/static/thumbnails/
-4. Names them as {post_id}-thumbnail.jpg
+4. Names them as {post_id}-thumbnail-square.{ext}
 """
 import json
 import requests
@@ -40,12 +40,10 @@ def download_thumbnails(json_dir: Path, output_dir: Path, dry_run: bool = False)
             errors += 1
             continue
         
-        # Output filename
-        output_file = output_dir / f"{post_id}-thumbnail.jpg"
-        
-        # Skip if already exists
-        if output_file.exists():
-            print(f"[{i}/{len(json_files)}] SKIP {post_id} (already exists)")
+        # Check if thumbnail already exists (any extension)
+        existing_files = list(output_dir.glob(f"{post_id}-thumbnail-square.*"))
+        if existing_files:
+            print(f"[{i}/{len(json_files)}] SKIP {post_id} (already exists: {existing_files[0].name})")
             skipped += 1
             continue
         
@@ -77,8 +75,15 @@ def download_thumbnails(json_dir: Path, output_dir: Path, dry_run: bool = False)
             errors += 1
             continue
         
+        # Detect file extension from URL
+        url_ext = thumbnail_url.split('.')[-1].split('?')[0].lower()
+        if url_ext not in ['jpg', 'jpeg', 'png', 'webp', 'gif']:
+            url_ext = 'jpg'  # Default to jpg
+        
+        output_file = output_dir / f"{post_id}-thumbnail-square.{url_ext}"
+        
         if dry_run:
-            print(f"[{i}/{len(json_files)}] WOULD DOWNLOAD {post_id} from {thumbnail_url[:60]}...")
+            print(f"[{i}/{len(json_files)}] WOULD DOWNLOAD {post_id} → {output_file.name}")
             continue
         
         # Download thumbnail
@@ -90,7 +95,7 @@ def download_thumbnails(json_dir: Path, output_dir: Path, dry_run: bool = False)
                 f.write(response.content)
             
             file_size = len(response.content) / 1024  # KB
-            print(f"[{i}/{len(json_files)}] DOWNLOADED {post_id} ({file_size:.1f} KB)")
+            print(f"[{i}/{len(json_files)}] DOWNLOADED {post_id} → {output_file.name} ({file_size:.1f} KB)")
             downloaded += 1
             
             # Be nice to Patreon's servers

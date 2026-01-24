@@ -12,11 +12,15 @@ This guide explains how to download thumbnails from Patreon and serve them stati
 backend/
 ├── static/
 │   └── thumbnails/
-│       ├── 129090487-thumbnail.jpg
-│       ├── 130938449-thumbnail.jpg
-│       ├── 148782465-thumbnail.jpg
+│       ├── 129090487-thumbnail-square.jpg
+│       ├── 130938449-thumbnail-square.png
+│       ├── 148782465-thumbnail-square.jpg
 │       └── ... (one file per post)
 ```
+
+**Naming Convention:** `{post_id}-thumbnail-square.{ext}`
+- Extension can be: `.jpg`, `.png`, `.webp`, `.gif` (detected from source URL)
+- The `-square` suffix indicates these are square/cropped thumbnails
 
 ### Database URLs
 
@@ -25,7 +29,7 @@ backend/
 thumbnail_urls = ["https://c10.patreonusercontent.com/.../thumb.jpg?token=..."]
 
 -- Use your own static URLs:
-thumbnail_urls = ["https://vamarequests.com/static/thumbnails/129090487-thumbnail.jpg"]
+thumbnail_urls = ["https://vamarequests.com/static/thumbnails/129090487-thumbnail-square.jpg"]
 ```
 
 ### Nginx Configuration
@@ -86,79 +90,28 @@ gallery-dl --config gallery-dl.conf \
   "https://www.patreon.com/vama_art/posts"
 ```
 
-### Option B: Manual Download Script
+### Option B: Use Provided Script (Recommended)
 
-If you already have the JSON files with Patreon URLs, you can download them:
-
-```python
-# download_thumbnails.py
-import json
-import requests
-from pathlib import Path
-import time
-
-JSON_DIR = Path('all-post-api')
-OUTPUT_DIR = Path('backend/static/thumbnails')
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-# Get all JSON files
-json_files = list(JSON_DIR.glob('*.json'))
-print(f"Found {len(json_files)} JSON files")
-
-for i, json_file in enumerate(json_files, 1):
-    # Extract post ID from filename
-    post_id = json_file.name.split(' - ')[0]
-    
-    # Load JSON
-    with open(json_file, 'r') as f:
-        data = json.load(f)
-    
-    # Find first thumbnail URL
-    thumbnail_url = None
-    for item in data.get('included', []):
-        if item.get('type') == 'media':
-            img_urls = item.get('attributes', {}).get('image_urls', {})
-            if 'thumbnail' in img_urls:
-                thumbnail_url = img_urls['thumbnail']
-                break
-            elif 'thumbnail_large' in img_urls:
-                thumbnail_url = img_urls['thumbnail_large']
-                break
-    
-    if not thumbnail_url:
-        print(f"[{i}/{len(json_files)}] No thumbnail for {post_id}")
-        continue
-    
-    # Download thumbnail
-    output_file = OUTPUT_DIR / f"{post_id}-thumbnail.jpg"
-    
-    if output_file.exists():
-        print(f"[{i}/{len(json_files)}] Skip {post_id} (already exists)")
-        continue
-    
-    try:
-        response = requests.get(thumbnail_url, timeout=10)
-        response.raise_for_status()
-        
-        with open(output_file, 'wb') as f:
-            f.write(response.content)
-        
-        print(f"[{i}/{len(json_files)}] Downloaded {post_id}")
-        
-        # Be nice to Patreon's servers
-        time.sleep(0.5)
-    
-    except Exception as e:
-        print(f"[{i}/{len(json_files)}] Error downloading {post_id}: {e}")
-
-print("\nDone!")
-```
+The project includes `backend/download_thumbnails.py` which automatically:
+- Extracts thumbnail URLs from JSON files
+- Detects file extension from URL (jpg, png, webp, etc.)
+- Names files as `{post_id}-thumbnail-square.{ext}`
+- Skips already downloaded files
+- Shows progress and errors
 
 **Run the script:**
 
 ```bash
 cd /path/to/vamasubmissions
-python3 download_thumbnails.py
+
+# Test first (dry run)
+python3 backend/download_thumbnails.py --dry-run
+
+# Download all thumbnails
+python3 backend/download_thumbnails.py
+
+# Custom directories
+python3 backend/download_thumbnails.py --json-dir /path/to/json --output-dir /path/to/output
 ```
 
 ### Option C: Copy from Existing Downloads
@@ -170,7 +123,7 @@ If you've already downloaded thumbnails elsewhere:
 for file in /path/to/downloads/*.jpg; do
     # Extract post ID from filename (adjust pattern as needed)
     post_id=$(basename "$file" | grep -oE '[0-9]+')
-    cp "$file" "backend/static/thumbnails/${post_id}-thumbnail.jpg"
+    cp "$file" "backend/static/thumbnails/${post_id}-thumbnail-square.jpg"
 done
 ```
 
@@ -200,11 +153,11 @@ updated = 0
 missing = 0
 
 for db_id, post_id in posts:
-    thumbnail_file = THUMBNAIL_DIR / f"{post_id}-thumbnail.jpg"
+    thumbnail_file = THUMBNAIL_DIR / f"{post_id}-thumbnail-square.jpg"
     
     if thumbnail_file.exists():
         # Update database with static URL
-        static_url = f"{BASE_URL}/{post_id}-thumbnail.jpg"
+        static_url = f"{BASE_URL}/{post_id}-thumbnail-square.jpg"
         cursor.execute(
             "UPDATE posts SET thumbnail_urls = %s WHERE id = %s",
             ([static_url], db_id)
@@ -295,7 +248,7 @@ sudo systemctl reload nginx
 psql vamasubmissions -c "SELECT post_id FROM posts LIMIT 1;"
 
 # Test the URL (replace POST_ID)
-curl -I https://vamarequests.com/static/thumbnails/POST_ID-thumbnail.jpg
+curl -I https://vamarequests.com/static/thumbnails/POST_ID-thumbnail-square.jpg
 # Should return: HTTP/1.1 200 OK
 ```
 
@@ -418,7 +371,7 @@ def load_json_data(post_id: str, json_dir: Path) -> Optional[Dict]:
                 image_urls.append(image_url_obj['url'])
         
         # CHANGED: Use static thumbnail URL instead of Patreon URL
-        thumbnail_urls = [f"https://vamarequests.com/static/thumbnails/{post_id}-thumbnail.jpg"]
+        thumbnail_urls = [f"https://vamarequests.com/static/thumbnails/{post_id}-thumbnail-square.jpg"]
         
         return {
             'url': url,
@@ -443,7 +396,7 @@ STATIC_THUMBNAIL_BASE = os.environ.get(
 )
 
 # In load_json_data function:
-thumbnail_urls = [f"{STATIC_THUMBNAIL_BASE}/{post_id}-thumbnail.jpg"]
+thumbnail_urls = [f"{STATIC_THUMBNAIL_BASE}/{post_id}-thumbnail-square.jpg"]
 ```
 
 ---
@@ -536,7 +489,7 @@ psql vamasubmissions -c "SELECT COUNT(*) FROM posts;"
 psql vamasubmissions -c "SELECT post_id, thumbnail_urls[1] FROM posts LIMIT 3;"
 
 # Test URL
-curl -I https://vamarequests.com/static/thumbnails/129090487-thumbnail.jpg
+curl -I https://vamarequests.com/static/thumbnails/129090487-thumbnail-square.jpg
 ```
 
 ---
@@ -547,7 +500,7 @@ curl -I https://vamarequests.com/static/thumbnails/129090487-thumbnail.jpg
 
 When you import new posts:
 
-1. Download the new thumbnail: `{post_id}-thumbnail.jpg`
+1. Download the new thumbnail: `{post_id}-thumbnail-square.jpg`
 2. Place in `backend/static/thumbnails/`
 3. Import post with static URL
 4. Thumbnail is immediately available
@@ -581,12 +534,12 @@ done
 
 ```
 backend/static/thumbnails/
-├── 129090487-thumbnail.jpg  (your static file)
-├── 130938449-thumbnail.jpg
+├── 129090487-thumbnail-square.jpg  (your static file)
+├── 130938449-thumbnail-square.jpg
 └── ...
 
 Database:
-thumbnail_urls = ["https://vamarequests.com/static/thumbnails/129090487-thumbnail.jpg"]
+thumbnail_urls = ["https://vamarequests.com/static/thumbnails/129090487-thumbnail-square.jpg"]
 
 Nginx:
 /static/thumbnails/ → /path/to/backend/static/thumbnails/
