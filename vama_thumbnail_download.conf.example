@@ -1,0 +1,52 @@
+# Patreon-DL Configuration for Thumbnail Download
+# This config downloads ONLY post info, no media files
+#
+# Copy this to: $HOME/patreon-test/vama_thumbnail_download.conf
+# And add your session cookie
+
+# ============================================================================
+# AUTHENTICATION
+# ============================================================================
+
+# Your Patreon session cookie
+# Get this from your browser after logging into Patreon
+# In Chrome/Firefox: Developer Tools > Application/Storage > Cookies > patreon.com > session_id
+cookie.session_id = YOUR_SESSION_COOKIE_HERE
+
+# ============================================================================
+# DOWNLOAD SETTINGS
+# ============================================================================
+
+# Download only post info, no media files
+include.postsInAllTiers = false
+include.lockedContent = false
+include.postsWithMediaType = none
+include.campaignInfo = false
+include.contentMedia = false
+
+# Content types - disable all media downloads
+content.images.include = false
+content.videos.include = false
+content.audio.include = false
+content.attachments.include = false
+
+# Post info
+content.postInfo.include = true
+
+# ============================================================================
+# FILE NAMING AND ORGANIZATION
+# ============================================================================
+
+# Output directory structure
+outDir = {out_dir}/{creator.vanity} - {creator.name}/posts/{post.id} - {post.title}/post_info
+
+# Filename format for post info
+filenameFormat.postInfo = post-api.json
+
+# ============================================================================
+# REQUEST SETTINGS
+# ============================================================================
+
+request.maxRetries = 3
+request.maxRedirects = 5
+request.maxConcurrent = 1
