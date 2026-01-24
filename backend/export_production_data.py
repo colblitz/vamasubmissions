@@ -126,8 +126,9 @@ def export_production_data(
         posts_exported = 0
         for post in cursor:
             # Update thumbnail URLs to static format
-            # Format: https://vamarequests.com/static/thumbnails/{post_id}-thumbnail-square.jpg
-            static_thumbnail_url = f"{static_thumbnail_base}/{post['post_id']}-thumbnail-square.jpg"
+            # Format: https://vamarequests.com/static/thumbnails/{post_id}-thumbnail-square.webp
+            # Note: Patreon serves thumbnails as .webp format
+            static_thumbnail_url = f"{static_thumbnail_base}/{post['post_id']}-thumbnail-square.webp"
             
             # Build INSERT statement
             f.write("INSERT INTO posts (")
