@@ -267,8 +267,8 @@ Examples:
     
     parser.add_argument(
         '--static-thumbnail-base',
-        default='https://api.vamarequests.com/static/thumbnails',
-        help='Base URL for static thumbnails (default: https://api.vamarequests.com/static/thumbnails)'
+        default='https://vamarequests.com/static/thumbnails',
+        help='Base URL for static thumbnails (default: https://vamarequests.com/static/thumbnails)'
     )
     
     parser.add_argument(

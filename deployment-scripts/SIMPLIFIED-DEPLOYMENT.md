@@ -34,7 +34,7 @@ python3 backend/export_production_data.py --user-email your@email.com
 **What this does:**
 - Exports your user account (only yours, no test users)
 - Exports all posts from local database
-- Updates thumbnail URLs to use static format: `https://api.vamarequests.com/static/thumbnails/{post_id}-thumbnail-square.jpg`
+- Updates thumbnail URLs to use static format: `https://vamarequests.com/static/thumbnails/{post_id}-thumbnail-square.jpg`
 - Creates clean SQL ready to import
 
 **Output:** `production_data.sql` (~5-10 MB)
@@ -173,7 +173,7 @@ EOF
 **Expected output:**
 - Posts: ~2700
 - Users: 1 (you)
-- Thumbnail URL: `https://api.vamarequests.com/static/thumbnails/129090487-thumbnail-square.jpg`
+- Thumbnail URL: `https://vamarequests.com/static/thumbnails/129090487-thumbnail-square.jpg`
 
 ---
 
@@ -268,27 +268,18 @@ sudo nano /etc/nginx/sites-available/vamarequests
 - `api.vamarequests.com` - Backend API (port 8000)
 - `vamarequests.com` - Frontend (static files)
 
-**Add this location block to the `api.vamarequests.com` server block** (after the `/test_images/` location):
+**Add this location block to the `vamarequests.com` server block** (the main frontend server, after the root location):
 
 ```nginx
-# API subdomain
+# Main frontend
 server {
-    server_name api.vamarequests.com;
+    server_name vamarequests.com www.vamarequests.com;
 
-    client_max_body_size 20M;
+    root /var/www/vamarequests;
+    index index.html;
 
     location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /test_images/ {
-        alias /home/deploy/vamasubmissions/backend/test_uploads/test_images/;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
+        try_files $uri $uri/ /index.html;
     }
 
     # ADD THIS NEW BLOCK FOR STATIC THUMBNAILS
@@ -296,12 +287,16 @@ server {
         alias /home/deploy/vamasubmissions/backend/static/thumbnails/;
         expires 30d;
         add_header Cache-Control "public, immutable";
-        add_header Access-Control-Allow-Origin *;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
     }
 
     listen 443 ssl;
-    ssl_certificate /etc/letsencrypt/live/api.vamarequests.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.vamarequests.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/vamarequests.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/vamarequests.com/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 }
@@ -314,7 +309,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-**Note:** Your thumbnails will be served from `https://api.vamarequests.com/static/thumbnails/` (not the main domain).
+**Note:** Thumbnails are served from `https://vamarequests.com/static/thumbnails/` (the main domain, matching your data URLs).
 
 ---
 
@@ -370,7 +365,7 @@ curl http://localhost:8000/docs  # Should return HTML
 sudo -u postgres psql vamasubmissions -c "SELECT post_id FROM posts LIMIT 1;"
 
 # Test thumbnail (replace POST_ID with actual post_id from above)
-curl -I https://api.vamarequests.com/static/thumbnails/POST_ID-thumbnail-square.jpg
+curl -I https://vamarequests.com/static/thumbnails/POST_ID-thumbnail-square.jpg
 
 # Should return: HTTP/1.1 200 OK
 ```
