@@ -3,11 +3,10 @@ import PostCard from "./PostCard";
 /**
  * SearchResults component - Displays search results with pagination
  * 
- * @param {array} results - Array of post objects
+ * @param {array} results - Array of post objects (each with pending_edits array)
  * @param {number} total - Total number of results
  * @param {boolean} loading - Loading state
  * @param {string} error - Error message
- * @param {object} pendingEditsMap - Map of post_id -> pending edits array
  * @param {object} pagination - Pagination state {page, limit}
  * @param {function} onPageChange - Callback when page changes
  * @param {function} onEditSuccess - Callback when edit is successfully submitted
@@ -19,7 +18,6 @@ export default function SearchResults({
   total,
   loading,
   error,
-  pendingEditsMap = {},
   pagination,
   onPageChange,
   onEditSuccess,
@@ -80,7 +78,7 @@ export default function SearchResults({
           <PostCard
             key={post.post_id}
             post={post}
-            pendingEdits={pendingEditsMap[post.id] || []}
+            pendingEdits={post.pending_edits || []}
             onEditSuccess={onEditSuccess}
           />
         ))}

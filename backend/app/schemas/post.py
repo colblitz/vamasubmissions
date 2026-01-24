@@ -74,6 +74,29 @@ class Post(PostBase):
     updated_at: datetime
     character_count: int
     has_multiple_characters: bool
+    pending_edits: List[Dict[str, Any]] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+class PostSearchItem(BaseModel):
+    """Optimized schema for individual posts in search results.
+    
+    Only includes fields needed for search display to reduce payload size.
+    Excludes: image_urls, raw_patreon_json, status, created_at, updated_at.
+    """
+
+    id: int
+    post_id: str
+    title: str
+    characters: List[str]
+    series: List[str]
+    tags: List[str]
+    thumbnail_urls: List[str]
+    timestamp: datetime
+    url: str
+    pending_edits: List[Dict[str, Any]] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -83,6 +106,16 @@ class PostSearchResult(BaseModel):
     """Schema for post search results."""
 
     posts: List[Post]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+class PostSearchResultOptimized(BaseModel):
+    """Optimized schema for post search results with minimal data."""
+
+    posts: List[PostSearchItem]
     total: int
     page: int
     limit: int

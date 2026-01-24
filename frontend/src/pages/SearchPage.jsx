@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { debounce } from "lodash";
 import api from "../services/api";
 import SearchFilters from "../components/search/SearchFilters";
 import SearchResults from "../components/search/SearchResults";
@@ -25,7 +26,6 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [resultsPendingEdits, setResultsPendingEdits] = useState({});
 
   // Autocomplete states for filters
   const [characterInput, setCharacterInput] = useState("");
@@ -57,27 +57,46 @@ export default function SearchPage() {
     }
   };
 
-  // Debounced autocomplete
+  // Create stable debounced functions using useMemo
+  const debouncedFetchCharacters = useMemo(
+    () => debounce((query) => fetchAutocomplete("characters", query), 300),
+    []
+  );
+
+  const debouncedFetchSeries = useMemo(
+    () => debounce((query) => fetchAutocomplete("series", query), 300),
+    []
+  );
+
+  const debouncedFetchTags = useMemo(
+    () => debounce((query) => fetchAutocomplete("tags", query), 300),
+    []
+  );
+
+  // Debounced autocomplete using lodash debounce
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (characterInput) fetchAutocomplete("characters", characterInput);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [characterInput]);
+    if (characterInput) {
+      debouncedFetchCharacters(characterInput);
+    } else {
+      setCharacterSuggestions([]);
+    }
+  }, [characterInput, debouncedFetchCharacters]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (seriesInput) fetchAutocomplete("series", seriesInput);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [seriesInput]);
+    if (seriesInput) {
+      debouncedFetchSeries(seriesInput);
+    } else {
+      setSeriesSuggestions([]);
+    }
+  }, [seriesInput, debouncedFetchSeries]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (tagInput) fetchAutocomplete("tags", tagInput);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [tagInput]);
+    if (tagInput) {
+      debouncedFetchTags(tagInput);
+    } else {
+      setTagSuggestions([]);
+    }
+  }, [tagInput, debouncedFetchTags]);
 
   // Search posts
   const handleSearch = async () => {
@@ -111,33 +130,11 @@ export default function SearchPage() {
       const posts = response.data.posts || [];
       setResults(posts);
       setTotal(response.data.total || 0);
-
-      // Fetch pending edits for all posts in results
-      fetchPendingEditsForResults(posts);
     } catch (err) {
       setError(err.response?.data?.detail || "Search failed");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Fetch pending edits for all posts in search results
-  const fetchPendingEditsForResults = async (posts) => {
-    const pendingEditsMap = {};
-
-    await Promise.all(
-      posts.map(async (post) => {
-        try {
-          const response = await api.get(`/api/edits/pending-for-post/${post.id}`);
-          pendingEditsMap[post.id] = response.data || [];
-        } catch (err) {
-          console.error(`Failed to fetch pending edits for post ${post.id}:`, err);
-          pendingEditsMap[post.id] = [];
-        }
-      })
-    );
-
-    setResultsPendingEdits(pendingEditsMap);
   };
 
   // Auto-search when filters or sort changes
@@ -170,11 +167,9 @@ export default function SearchPage() {
     setSearchParams((prev) => ({ ...prev, sortBy, sortOrder, page: 1 }));
   };
 
-  // Refresh pending edits after successful edit submission
+  // Refresh search results after successful edit submission
   const handleEditSuccess = () => {
-    if (results.length > 0) {
-      fetchPendingEditsForResults(results);
-    }
+    handleSearch();
   };
 
   // Handle browse item selection
@@ -258,7 +253,6 @@ export default function SearchPage() {
         total={total}
         loading={loading}
         error={error}
-        pendingEditsMap={resultsPendingEdits}
         pagination={{ page: searchParams.page, limit: searchParams.limit }}
         onPageChange={handlePageChange}
         onEditSuccess={handleEditSuccess}

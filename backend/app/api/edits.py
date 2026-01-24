@@ -86,6 +86,45 @@ async def get_pending_edits_for_post(
     return edit_service.get_pending_edits_for_post(db, post_id, current_user.id)
 
 
+@router.get("/pending-for-posts")
+async def get_pending_edits_for_posts(
+    post_ids: str = Query(..., description="Comma-separated post IDs"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get pending edit suggestions for multiple posts (batch query).
+    
+    This endpoint solves the N+1 query problem by fetching pending edits
+    for multiple posts in a single database query.
+
+    Args:
+        post_ids: Comma-separated list of post IDs (e.g., "1,2,3,4,5")
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Dict mapping post_id to list of pending edits
+        Example: {"1": [...], "2": [...], "3": [...]}
+    """
+    # Parse post IDs
+    try:
+        ids = [int(id.strip()) for id in post_ids.split(",") if id.strip()]
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid post_ids format. Expected comma-separated integers."
+        )
+    
+    if len(ids) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 100 post IDs per request"
+        )
+    
+    return edit_service.get_pending_edits_for_posts(db, ids, current_user.id)
+
+
 @router.post("/{edit_id}/approve", response_model=PostEdit)
 async def approve_edit(
     edit_id: int,

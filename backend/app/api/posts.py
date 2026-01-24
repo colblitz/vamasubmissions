@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from app.core.database import get_db
-from app.schemas.post import Post, PostSearchResult, PostDetail
+from app.schemas.post import Post, PostSearchResult, PostSearchResultOptimized, PostDetail
 from app.services import post_service
 from app.services.user_service import get_current_user
 from app.models.user import User
@@ -13,7 +13,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.get("/search", response_model=PostSearchResult)
+@router.get("/search", response_model=PostSearchResultOptimized)
 async def search_posts(
     q: Optional[str] = Query(
         None, description="Search query (searches title, characters, series, tags)"
@@ -79,6 +79,7 @@ async def search_posts(
         limit=limit,
         sort_by=sort_by,
         sort_order=sort_order,
+        current_user_id=current_user.id if current_user else None,
     )
     
     logger.info(f"[API DEBUG] Returning result: total={result.total}, posts={len(result.posts)}")

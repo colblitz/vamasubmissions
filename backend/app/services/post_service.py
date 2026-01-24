@@ -90,6 +90,7 @@ def search_posts(
     limit: int = 20,
     sort_by: str = "date",
     sort_order: str = "desc",
+    current_user_id: Optional[int] = None,
 ) -> PostSearchResult:
     """
     Search posts with filters.
@@ -103,6 +104,7 @@ def search_posts(
         tags: Filter by tags (must match ALL)
         page: Page number (1-indexed)
         limit: Results per page
+        current_user_id: Optional current user ID for pending edits
 
     Returns:
         Search results with pagination
@@ -200,6 +202,22 @@ def search_posts(
             logger.info(f"     Characters: {post.characters}")
             logger.info(f"     Series: {post.series}")
             logger.info(f"     Tags: {post.tags}")
+
+    # Fetch pending edits for all posts in batch if user is authenticated
+    if current_user_id and posts:
+        from app.services import edit_service
+        post_ids = [post.id for post in posts]
+        pending_edits_map = edit_service.get_pending_edits_for_posts(
+            db, post_ids, current_user_id
+        )
+        
+        # Attach pending edits to each post
+        for post in posts:
+            post.pending_edits = pending_edits_map.get(post.id, [])
+    else:
+        # Set empty pending_edits for unauthenticated users
+        for post in posts:
+            post.pending_edits = []
 
     # Calculate total pages
     total_pages = (total + limit - 1) // limit if total > 0 else 0

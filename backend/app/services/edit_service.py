@@ -315,6 +315,72 @@ def get_pending_edits_for_post(
     return result
 
 
+def get_pending_edits_for_posts(
+    db: Session,
+    post_ids: List[int],
+    current_user_id: int,
+) -> dict:
+    """
+    Get pending edit suggestions for multiple posts (batch query).
+    
+    This function solves the N+1 query problem by fetching pending edits
+    for multiple posts in a single database query.
+
+    Args:
+        db: Database session
+        post_ids: List of post IDs
+        current_user_id: Current user ID (to mark own suggestions)
+
+    Returns:
+        Dict mapping post_id to list of pending edits
+        Example: {1: [...], 2: [...], 3: [...]}
+    """
+    if not post_ids:
+        return {}
+    
+    # Query all pending edits for these posts in one query
+    edits = (
+        db.query(PostEdit)
+        .filter(
+            PostEdit.post_id.in_(post_ids),
+            PostEdit.status == "pending"
+        )
+        .order_by(PostEdit.post_id.asc(), PostEdit.created_at.asc())
+        .all()
+    )
+    
+    # Get all unique suggester IDs
+    suggester_ids = list(set(edit.suggester_id for edit in edits if edit.suggester_id))
+    
+    # Batch fetch all suggesters
+    suggesters = {}
+    if suggester_ids:
+        suggester_list = db.query(User).filter(User.id.in_(suggester_ids)).all()
+        suggesters = {user.id: user for user in suggester_list}
+    
+    # Group edits by post_id
+    result = {post_id: [] for post_id in post_ids}
+    
+    for edit in edits:
+        suggester = suggesters.get(edit.suggester_id)
+        
+        edit_dict = {
+            "id": edit.id,
+            "post_id": edit.post_id,
+            "suggester_id": edit.suggester_id,
+            "field_name": edit.field_name,
+            "action": edit.action,
+            "value": edit.value,
+            "status": edit.status,
+            "created_at": edit.created_at,
+            "suggester_username": suggester.patreon_username if suggester else "Unknown",
+            "is_own_suggestion": edit.suggester_id == current_user_id,
+        }
+        result[edit.post_id].append(edit_dict)
+    
+    return result
+
+
 def get_pending_edits(
     db: Session,
     page: int = 1,
