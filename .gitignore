@@ -162,6 +162,9 @@ download_thumbnails.sh
 
 # Deployment environment files
 deployment-scripts/.env
+production_backend.env
+production_frontend.env
+create_production_env.sh
 
 # Local development overrides
 local_config.py
