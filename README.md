@@ -360,9 +360,34 @@ vamasubmissions/
 
 ## Documentation
 
-- **PROJECT_PLAN.md** - Current development plan, business rules, API reference
-- **PROJECT_LOG.md** - Historical development log and completed features
 - **README.md** - This file (setup and quick reference)
+- **docs/PROJECT_PLAN.md** - Current development plan, business rules, API reference
+- **docs/PROJECT_LOG.md** - Historical development log and completed features
+- **docs/CDN.md** - CDN implementation guide (Cloudflare, R2, latency analysis)
+- **deployment-scripts/deploy.sh** - Production deployment script (with full docs in header)
+
+---
+
+## Production Deployment
+
+To deploy to production:
+
+```bash
+ssh deploy@45.33.94.21
+cd ~/vamasubmissions
+bash deployment-scripts/deploy.sh
+```
+
+The script automatically:
+- Backs up database
+- Pulls latest code
+- Runs all migrations
+- Updates dependencies
+- Rebuilds frontend
+- Restarts backend
+- Verifies deployment
+
+See `deployment-scripts/deploy.sh` header for full documentation.
 
 ---
 

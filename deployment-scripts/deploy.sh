@@ -1,8 +1,45 @@
 #!/bin/bash
 
+# ============================================
 # VAMA Requests - Production Deployment Script
-# This script updates an existing deployment to the latest code
-# Run as: bash deployment-scripts/deploy.sh
+# ============================================
+#
+# USAGE:
+#   ssh deploy@45.33.94.21
+#   cd ~/vamasubmissions
+#   bash deployment-scripts/deploy.sh
+#
+# WHAT IT DOES:
+#   1. Backs up database to ~/vamasubmissions-backups/
+#   2. Pulls latest code from origin/master
+#   3. Runs all database migrations (idempotent, safe to re-run)
+#   4. Updates Python dependencies
+#   5. Rebuilds frontend (npm install + build)
+#   6. Deploys frontend to /var/www/vamarequests
+#   7. Restarts backend service (vamasubmissions-backend)
+#   8. Verifies deployment health
+#
+# ROLLBACK (if something goes wrong):
+#   cd ~/vamasubmissions
+#   git reset --hard PREVIOUS_COMMIT_HASH
+#   sudo -u postgres psql vamasubmissions < ~/vamasubmissions-backups/vamasubmissions-TIMESTAMP.sql
+#   bash deployment-scripts/deploy.sh
+#
+# LOGS:
+#   View backend logs: sudo journalctl -u vamasubmissions-backend -f
+#   Check service status: sudo systemctl status vamasubmissions-backend
+#
+# PRODUCTION SETUP:
+#   - Server: Linode (45.33.94.21)
+#   - User: deploy
+#   - App directory: /home/deploy/vamasubmissions
+#   - Database: PostgreSQL (vamasubmissions)
+#   - Backend: FastAPI + Uvicorn (systemd service)
+#   - Frontend: React + Vite (served by nginx)
+#   - Nginx root: /var/www/vamarequests
+#   - Domain: https://vamarequests.com
+#
+# ============================================
 
 set -e  # Exit on error
 

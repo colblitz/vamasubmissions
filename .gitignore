@@ -130,6 +130,11 @@ logs/
 deployment-scripts/*.log
 
 # ----------------
+# Debug Files
+# ----------------
+*.har
+
+# ----------------
 # SSL/Certificates
 # ----------------
 *.pem
