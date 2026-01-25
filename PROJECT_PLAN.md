@@ -281,16 +281,6 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 - **Complexity**: High - complex UI component or library integration
 - **Options**: Build custom or use library (react-image-lightbox, yet-another-react-lightbox)
 
-### Future Enhancements (Lower Priority)
-- Email notifications
-- Discord integration
-- Rush queue (skip positions for credits)
-- Request templates
-- Batch submissions
-- Gift credits
-- Public gallery
-- Favorites system
-
 ---
 
 ## Legacy Features (Hidden)

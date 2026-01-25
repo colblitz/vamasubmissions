@@ -15,7 +15,7 @@ export default function CommunityRequestsPage() {
     characters: "",
     series: "",
     description: "",
-    timestamp: "", // Date when user wants this fulfilled
+    requested_timestamp: "", // Date when user wants this fulfilled
     is_private: false, // Whether request is private (only visible to user and admins)
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -167,8 +167,8 @@ export default function CommunityRequestsPage() {
 
     try {
       // Convert date string to ISO datetime
-      const timestamp = formData.timestamp
-        ? new Date(formData.timestamp).toISOString()
+      const requested_timestamp = formData.requested_timestamp
+        ? new Date(formData.requested_timestamp).toISOString()
         : new Date().toISOString();
 
       await api.post("/api/requests/", {
@@ -181,7 +181,7 @@ export default function CommunityRequestsPage() {
           .map((s) => s.trim())
           .filter(Boolean),
         description: formData.description,
-        timestamp: timestamp,
+        requested_timestamp: requested_timestamp,
         is_private: formData.is_private,
       });
 
@@ -189,7 +189,7 @@ export default function CommunityRequestsPage() {
         characters: "",
         series: "",
         description: "",
-        timestamp: "",
+        requested_timestamp: "",
         is_private: false,
       });
       setSubmitSuccess(true);
@@ -394,9 +394,9 @@ export default function CommunityRequestsPage() {
                 </label>
                 <input
                   type="date"
-                  value={formData.timestamp}
+                  value={formData.requested_timestamp}
                   onChange={(e) =>
-                    setFormData({ ...formData, timestamp: e.target.value })
+                    setFormData({ ...formData, requested_timestamp: e.target.value })
                   }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
@@ -439,8 +439,7 @@ export default function CommunityRequestsPage() {
                     Private Request
                   </label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Private requests are only visible to you and admins. They
-                    will not appear in the public queue.
+                    Private requests will appear in the public queue, but the character and series details will be hidden from other users (shown as "[Private Request]"). Only you and admins can see the full details.
                   </p>
                 </div>
               </div>
@@ -504,8 +503,8 @@ export default function CommunityRequestsPage() {
 
                       <p className="text-xs text-gray-500">
                         Requested on:{" "}
-                        {request.timestamp
-                          ? new Date(request.timestamp).toLocaleDateString()
+                        {request.requested_timestamp
+                          ? new Date(request.requested_timestamp).toLocaleDateString()
                           : "Not specified"}
                       </p>
 
@@ -593,8 +592,8 @@ export default function CommunityRequestsPage() {
 
                 <p className="text-xs text-gray-500">
                   Requested on:{" "}
-                  {request.timestamp
-                    ? new Date(request.timestamp).toLocaleDateString()
+                  {request.requested_timestamp
+                    ? new Date(request.requested_timestamp).toLocaleDateString()
                     : "Not specified"}
                 </p>
               </div>
