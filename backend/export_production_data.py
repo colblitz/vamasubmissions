@@ -227,8 +227,8 @@ def export_production_data(
     print(f"File size: {output_file.stat().st_size / 1024 / 1024:.2f} MB")
     print()
     print("To import on production server:")
-    print(f"  1. Upload file: rsync -avz {output_file} deploy@45.33.94.21:~/")
-    print(f"  2. SSH to server: ssh deploy@45.33.94.21")
+    print(f"  1. Upload file: rsync -avz {output_file} deploy@YOUR_SERVER_IP:~/")
+    print(f"  2. SSH to server: ssh deploy@YOUR_SERVER_IP")
     print(f"  3. Import: sudo -u postgres psql vamasubmissions < ~/{output_file.name}")
     print()
 

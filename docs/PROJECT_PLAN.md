@@ -403,7 +403,7 @@ When adding new database columns/tables:
 **Deployment**:
 To deploy to production:
 1. Commit and push all changes to `origin/master`
-2. SSH to production server: `ssh deploy@45.33.94.21`
+2. SSH to production server: `ssh deploy@YOUR_SERVER_IP`
 3. Run deployment script: `cd ~/vamasubmissions && bash deployment-scripts/deploy.sh`
 
 The deployment script automatically:
