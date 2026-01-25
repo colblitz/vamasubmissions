@@ -5,7 +5,7 @@
 # ============================================
 #
 # USAGE:
-#   ssh deploy@45.33.94.21
+#   ssh deploy@YOUR_SERVER_IP
 #   cd ~/vamasubmissions
 #   bash deployment-scripts/deploy.sh
 #
@@ -30,7 +30,7 @@
 #   Check service status: sudo systemctl status vamasubmissions-backend
 #
 # PRODUCTION SETUP:
-#   - Server: Linode (45.33.94.21)
+#   - Server: Linode
 #   - User: deploy
 #   - App directory: /home/deploy/vamasubmissions
 #   - Database: PostgreSQL (vamasubmissions)
