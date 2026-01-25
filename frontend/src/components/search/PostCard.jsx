@@ -223,6 +223,7 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
       {editSectionOpen && (
         <EditSection
           post={post}
+          pendingEdits={pendingEdits}
           onClose={() => setEditSectionOpen(false)}
           onSuccess={(message) => {
             setEditSectionOpen(false);

@@ -57,7 +57,7 @@ async def search_posts(
     logger.info(f"  - series: {series!r}")
     logger.info(f"  - tags: {tags!r}")
     logger.info(f"  - page: {page}, limit: {limit}")
-    logger.info(f"  - user: {current_user.patreon_username if current_user else 'None'} (tier {current_user.tier if current_user else 'N/A'})")
+    logger.info(f"  - user: {current_user.patreon_username if current_user else 'None'} (tier {current_user.tier_id if current_user else 'N/A'})")
     
     # Parse comma-separated values
     character_list = [c.strip() for c in characters.split(",")] if characters else []

@@ -9,22 +9,24 @@ class UserBase(BaseModel):
     """Base user schema."""
 
     patreon_username: Optional[str] = None
-    email: Optional[str] = None
+    tier_id: Optional[str] = None
+    campaign_id: Optional[str] = None
+    patron_status: Optional[str] = None
 
 
 class UserCreate(UserBase):
     """Schema for creating a user."""
 
     patreon_id: str
-    tier: int = Field(default=1, ge=1, le=4)
 
 
 class UserUpdate(BaseModel):
     """Schema for updating a user."""
 
     patreon_username: Optional[str] = None
-    email: Optional[str] = None
-    tier: Optional[int] = Field(None, ge=1, le=4)
+    tier_id: Optional[str] = None
+    campaign_id: Optional[str] = None
+    patron_status: Optional[str] = None
     credits: Optional[int] = Field(None, ge=0)
 
 
@@ -33,8 +35,6 @@ class User(UserBase):
 
     id: int
     patreon_id: str
-    tier: int
-    tier_name: Optional[str] = None
     credits: int
     role: str
     max_credits: int
@@ -62,7 +62,6 @@ class UserStats(BaseModel):
 
     user_id: int
     patreon_username: Optional[str]
-    tier: int
     credits: int
     pending_submissions: int
     completed_submissions: int

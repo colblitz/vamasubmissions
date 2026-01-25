@@ -92,7 +92,7 @@ def create_submission(
         HTTPException: If user doesn't have enough credits or permissions
     """
     # Check if tier 1 user already has a pending submission
-    if user.tier == 1:
+    if user.tier_id == 1:
         pending_count = get_pending_submissions_count(db, user.id)
         if pending_count >= 1:
             raise HTTPException(
@@ -108,7 +108,7 @@ def create_submission(
         credit_cost += 1
 
     # Check if user has enough credits (tier 2+)
-    if user.tier > 1:
+    if user.tier_id > 1:
         if user.credits < credit_cost:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -116,7 +116,7 @@ def create_submission(
             )
 
     # Determine queue type
-    queue_type = "paid" if user.tier > 1 else "free"
+    queue_type = "paid" if user.tier_id > 1 else "free"
 
     # Get next queue position
     queue_position = get_next_queue_position(db, queue_type)
@@ -144,7 +144,7 @@ def create_submission(
     db.flush()  # Get submission ID
 
     # Deduct credits for paid tiers
-    if user.tier > 1:
+    if user.tier_id > 1:
         user.credits -= credit_cost
         credit_service.spend_credits(
             db,
@@ -227,7 +227,7 @@ def update_submission(
         new_cost += 1
 
     # Handle credit difference for paid tiers
-    if user.tier > 1 and new_cost != old_cost:
+    if user.tier_id > 1 and new_cost != old_cost:
         credit_diff = new_cost - old_cost
 
         if credit_diff > 0:  # Need more credits
@@ -316,7 +316,7 @@ def cancel_submission(
         )
 
     # Refund credits for paid tiers
-    if user.tier > 1:
+    if user.tier_id > 1:
         user.credits = min(user.credits + submission.credit_cost, user.max_credits)
         credit_service.refund_credits(
             db,

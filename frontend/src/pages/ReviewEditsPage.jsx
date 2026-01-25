@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import SuggestGlobalEditForm from "../components/edits/SuggestGlobalEditForm";
+import PendingGlobalEdits from "../components/edits/PendingGlobalEdits";
 
 export default function ReviewEditsPage() {
   const [pendingEdits, setPendingEdits] = useState([]);
+  const [globalEdits, setGlobalEdits] = useState([]);
   const [history, setHistory] = useState([]);
+  const [globalHistory, setGlobalHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("pending"); // 'pending' or 'history'
+  const [activeTab, setActiveTab] = useState("pending"); // 'pending', 'global', or 'history'
   
   // Banner messages (only for errors)
   const [errorMessage, setErrorMessage] = useState("");
@@ -33,16 +37,33 @@ export default function ReviewEditsPage() {
     }
   };
 
-  // Fetch edit history
+  // Fetch pending global edits
+  const fetchGlobalEdits = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get("/api/global-edits/pending");
+      setGlobalEdits(response.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to load global edits");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch edit history (both per-post and global)
   const fetchHistory = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.get("/api/edits/history", {
-        params: { limit: 50 },
-      });
-      setHistory(response.data.history);
+      const [perPostResponse, globalResponse] = await Promise.all([
+        api.get("/api/edits/history", { params: { limit: 50 } }),
+        api.get("/api/global-edits/history", { params: { limit: 50 } }),
+      ]);
+      setHistory(perPostResponse.data.history);
+      setGlobalHistory(globalResponse.data);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load history");
     } finally {
@@ -119,6 +140,8 @@ export default function ReviewEditsPage() {
   useEffect(() => {
     if (activeTab === "pending") {
       fetchPending();
+    } else if (activeTab === "global") {
+      fetchGlobalEdits();
     } else {
       fetchHistory();
     }
@@ -163,6 +186,16 @@ export default function ReviewEditsPage() {
           Pending ({pendingEdits?.length || 0})
         </button>
         <button
+          onClick={() => setActiveTab("global")}
+          className={`px-4 py-2 font-medium ${
+            activeTab === "global"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-800"
+          }`}
+        >
+          Global Edits ({globalEdits?.length || 0})
+        </button>
+        <button
           onClick={() => setActiveTab("history")}
           className={`px-4 py-2 font-medium ${
             activeTab === "history"
@@ -196,6 +229,7 @@ export default function ReviewEditsPage() {
       ) : (
         <div className="space-y-3">
           {activeTab === "pending" ? (
+            /* PENDING TAB */
             <>
               {!pendingEdits || pendingEdits.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">No pending edits to review</div>
@@ -321,18 +355,49 @@ export default function ReviewEditsPage() {
                 ))
               )}
             </>
-          ) : (
+          ) : activeTab === "global" ? (
+            /* GLOBAL EDITS TAB */
             <>
-              {!history || history.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">No edit history yet</div>
-              ) : (
-                history.map((item) => (
+              <SuggestGlobalEditForm onSuccess={fetchGlobalEdits} />
+              <PendingGlobalEdits globalEdits={globalEdits} onRefresh={fetchGlobalEdits} />
+            </>
+          ) : (
+            /* HISTORY TAB */
+            <>
+              {/* Combine and sort per-post and global history */}
+              {(() => {
+                const combinedHistory = [
+                  ...(history || []).map(item => ({ ...item, type: 'per-post' })),
+                  ...(globalHistory || []).map(item => ({ ...item, type: 'global' }))
+                ].sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at));
+
+                if (combinedHistory.length === 0) {
+                  return <div className="text-center py-12 text-gray-500">No edit history yet</div>;
+                }
+
+                return combinedHistory.map((item) => (
                   <div
-                    key={item.id}
+                    key={`${item.type}-${item.id}`}
                     className="bg-white rounded-lg shadow p-4 flex gap-4 items-start"
                   >
-                    {/* Thumbnail */}
-                    {item.post_thumbnail ? (
+                    {/* Icon/Thumbnail */}
+                    {item.type === 'global' ? (
+                      <div className="w-12 h-12 flex-shrink-0 bg-purple-100 rounded flex items-center justify-center">
+                        <svg
+                          className="w-6 h-6 text-purple-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                    ) : item.post_thumbnail ? (
                       <img
                         src={item.post_thumbnail}
                         alt={item.post_title}
@@ -358,22 +423,47 @@ export default function ReviewEditsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{item.post_title}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        {renderActionBadge(item.action)}
-                        <span className="text-sm text-gray-600">
-                          {formatFieldName(item.field_name)}:
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${item.action === "ADD" ? "text-green-700" : "text-red-700"}`}
-                        >
-                          {item.value}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Approved by {item.approver_username} •{" "}
-                        {new Date(item.applied_at).toLocaleDateString()}
-                      </p>
+                      {item.type === 'global' ? (
+                        <>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">
+                              GLOBAL
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              {formatFieldName(item.field_name)}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-900 mb-1">
+                            <span className="font-medium text-red-600">"{item.old_value}"</span>
+                            {" → "}
+                            <span className="font-medium text-green-600">"{item.new_value}"</span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {item.affected_count} post{item.affected_count !== 1 ? 's' : ''} affected •{" "}
+                            Approved by {item.approver_username} •{" "}
+                            {new Date(item.applied_at).toLocaleDateString()}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="font-semibold text-gray-900 truncate">{item.post_title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            {renderActionBadge(item.action)}
+                            <span className="text-sm text-gray-600">
+                              {formatFieldName(item.field_name)}:
+                            </span>
+                            <span
+                              className={`text-sm font-medium ${item.action === "ADD" ? "text-green-700" : "text-red-700"}`}
+                            >
+                              {item.value}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Approved by {item.approver_username} •{" "}
+                            {new Date(item.applied_at).toLocaleDateString()}
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -409,8 +499,8 @@ export default function ReviewEditsPage() {
                       )}
                     </div>
                   </div>
-                ))
-              )}
+                ));
+              })()}
             </>
           )}
         </div>

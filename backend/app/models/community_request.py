@@ -18,7 +18,7 @@ class CommunityRequest(Base):
     )
     characters = Column(ARRAY(Text), nullable=False, default=[])
     series = Column(ARRAY(Text), nullable=False, default=[])
-    timestamp = Column(DateTime, nullable=False, index=True)  # When user made the request to VAMA
+    requested_timestamp = Column(DateTime, nullable=False, index=True)  # When user made the request to VAMA
     description = Column(Text)
     is_private = Column(Boolean, nullable=False, default=False)
     fulfilled = Column(Boolean, nullable=False, default=False, index=True)
@@ -43,7 +43,7 @@ class CommunityRequest(Base):
                 "id": self.id,
                 "characters": ["[Private Request]"],
                 "series": ["[Private]"],
-                "timestamp": self.timestamp,
+                "requested_timestamp": self.requested_timestamp,
                 "is_private": True,
                 "fulfilled": self.fulfilled,
             }
@@ -51,7 +51,7 @@ class CommunityRequest(Base):
             "id": self.id,
             "characters": self.characters,
             "series": self.series,
-            "timestamp": self.timestamp,
+            "requested_timestamp": self.requested_timestamp,
             "description": self.description,
             "is_private": False,
             "fulfilled": self.fulfilled,

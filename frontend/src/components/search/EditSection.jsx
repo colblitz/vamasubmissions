@@ -6,10 +6,11 @@ import { normalizeText } from "../../utils/validation";
  * EditSection component - Inline expandable section for suggesting edits to a post
  * 
  * @param {object} post - Post object being edited
+ * @param {array} pendingEdits - Array of pending edits for this post
  * @param {function} onClose - Callback to close the section
  * @param {function} onSuccess - Callback when edit is successfully submitted
  */
-export default function EditSection({ post, onClose, onSuccess }) {
+export default function EditSection({ post, pendingEdits = [], onClose, onSuccess }) {
   // Input states for each field
   const [newCharacter, setNewCharacter] = useState("");
   const [newSeries, setNewSeries] = useState("");
@@ -23,27 +24,6 @@ export default function EditSection({ post, onClose, onSuccess }) {
   // Success/error messages
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Pending edits state
-  const [pendingEdits, setPendingEdits] = useState([]);
-
-  // Fetch pending edits when component mounts
-  useEffect(() => {
-    if (post) {
-      fetchPendingEdits();
-    }
-  }, [post]);
-
-  const fetchPendingEdits = async () => {
-    if (!post) return;
-    try {
-      const response = await api.get(`/api/edits/pending-for-post/${post.id}`);
-      setPendingEdits(response.data || []);
-    } catch (err) {
-      console.error("Failed to fetch pending edits:", err);
-      setPendingEdits([]);
-    }
-  };
 
   // Get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {

@@ -13,19 +13,18 @@ from app.core.security import create_access_token
 from app.schemas.auth import PatreonUserInfo
 from app.services import user_service, session_service
 from app.models.user import User
-from app.models.admin_settings import AdminSettings
 
 router = APIRouter()
 
 
 @router.get("/login")
-async def login(username: Optional[str] = None, tier: Optional[int] = None, db: Session = Depends(get_db)):
+async def login(username: Optional[str] = None, tier_id: Optional[str] = None, db: Session = Depends(get_db)):
     """
     Development mode: Mock login for testing.
     Production mode: Redirect to Patreon OAuth authorization page.
 
     If username is provided, creates/returns a mock user for development.
-    tier parameter can be used to set the user's tier (1-5), defaults to tier from username or 2.
+    tier_id parameter can be used to set the user's tier_id for testing.
     Otherwise, redirects to Patreon OAuth.
     """
     # Development mode: Mock auth
@@ -34,34 +33,26 @@ async def login(username: Optional[str] = None, tier: Optional[int] = None, db: 
         user = user_service.get_user_by_patreon_id(db, f"mock_{username}")
 
         if not user:
-            # Determine tier from username or parameter
-            if tier is None:
-                # Try to extract tier from username (e.g., "tier1", "tier2")
-                if username.startswith("tier") and len(username) >= 5:
-                    try:
-                        tier = int(username[4:5])  # Get just the digit after "tier"
-                    except (ValueError, IndexError):
-                        tier = 2  # Default to tier 2
-                else:
-                    tier = 2  # Default to tier 2 for testing
+            # Use provided tier_id or default to "mock_tier_1" for testing
+            if tier_id is None:
+                tier_id = "mock_tier_1"
             
-            # Create mock user
+            # Create mock user with active patron status
             user = user_service.create_user(
                 db,
                 patreon_id=f"mock_{username}",
                 patreon_username=username,
-                email=f"{username}@example.com",
-                tier=tier,
+                tier_id=tier_id,
+                campaign_id=settings.patreon_creator_id,
+                patron_status="active_patron",
             )
 
-        # Update last login and tier_name if not set
+        # Update last login
         user.last_login = datetime.utcnow()
-        if not user.tier_name:
-            user.tier_name = get_tier_name(user.tier)
         db.commit()
 
-        # Check tier access - block tier 1 users (unless admin)
-        if user.tier == 1 and user.role != "admin":
+        # Check access - block non-active patrons (unless admin)
+        if user.patron_status != "active_patron" and user.role != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="This site is only accessible to VAMA Patreon subscribers. Please subscribe to access.",
@@ -86,9 +77,9 @@ async def login(username: Optional[str] = None, tier: Optional[int] = None, db: 
                 "id": user.id,
                 "patreon_id": user.patreon_id,
                 "patreon_username": user.patreon_username,
-                "email": user.email,
-                "tier": user.tier,
-                "tier_name": user.tier_name,
+                "tier_id": user.tier_id,
+                "campaign_id": user.campaign_id,
+                "patron_status": user.patron_status,
                 "role": user.role,
             },
         }
@@ -127,11 +118,6 @@ async def callback(code: str, db: Session = Depends(get_db)):
             "redirect_uri": settings.patreon_redirect_uri,
         }
 
-        print(f"DEBUG: Exchanging code for token")
-        print(f"DEBUG: Token URL: {token_url}")
-        print(f"DEBUG: Redirect URI: {settings.patreon_redirect_uri}")
-        print(f"DEBUG: Code: {code[:10]}...")
-
         try:
             token_response = await client.post(
                 token_url,
@@ -139,26 +125,18 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
 
-            print(f"DEBUG: Token response status: {token_response.status_code}")
-            print(f"DEBUG: Token response headers: {dict(token_response.headers)}")
-            print(f"DEBUG: Token response text: {token_response.text}")
-
             if token_response.status_code != 200:
                 error_detail = token_response.text
-                print(f"ERROR: Patreon token exchange failed: {token_response.status_code}")
-                print(f"ERROR: Response body: {error_detail}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Failed to exchange authorization code: {error_detail}",
                 )
         except httpx.HTTPError as e:
-            print(f"ERROR: HTTP error during token exchange: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"HTTP error during token exchange: {str(e)}",
             )
         except Exception as e:
-            print(f"ERROR: Unexpected error during token exchange: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Unexpected error during token exchange: {str(e)}",
@@ -182,8 +160,9 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 db,
                 patreon_id=user_info.patreon_id,
                 patreon_username=user_info.username,
-                email=user_info.email,
-                tier=user_info.tier,
+                tier_id=user_info.tier_id,
+                campaign_id=user_info.campaign_id,
+                patron_status=user_info.patron_status,
                 patreon_access_token=access_token,
                 patreon_refresh_token=refresh_token,
                 patreon_token_expires_at=token_expires_at,
@@ -194,40 +173,38 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 db,
                 user.id,
                 patreon_username=user_info.username,
-                email=user_info.email,
-                tier=user_info.tier,
+                tier_id=user_info.tier_id,
+                campaign_id=user_info.campaign_id,
+                patron_status=user_info.patron_status,
                 patreon_access_token=access_token,
                 patreon_refresh_token=refresh_token,
                 patreon_token_expires_at=token_expires_at,
             )
 
-        # Update last login and tier_name
+        # Update last login
         user.last_login = datetime.utcnow()
-        user.tier_name = get_tier_name(user.tier)
-
-        # If user is admin, store Patreon tokens in admin_settings
-        if user.is_admin:
-            admin_settings = (
-                db.query(AdminSettings).filter(AdminSettings.user_id == user.id).first()
-            )
-
-            if not admin_settings:
-                admin_settings = AdminSettings(user_id=user.id)
-                db.add(admin_settings)
-
-            admin_settings.patreon_access_token = access_token
-            admin_settings.patreon_refresh_token = refresh_token
-            admin_settings.patreon_token_expires_at = token_expires_at
-            admin_settings.updated_at = datetime.utcnow()
-
         db.commit()
 
-        # Check tier access - block tier 1 users (unless admin)
-        if user.tier == 1 and user.role != "admin":
-            # Redirect to frontend with error instead of token
-            error_message = "This site is only accessible to VAMA Patreon subscribers. Please subscribe to access."
-            frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
-            return RedirectResponse(url=frontend_redirect)
+        # Two-step access control (skip for admins)
+        if user.role != "admin":
+            # Step 1: Check if user is patron of VAMA's campaign
+            if user_info.campaign_id != settings.patreon_creator_id:
+                error_message = "This site is only accessible to VAMA Patreon subscribers. Please subscribe to access."
+                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+                return RedirectResponse(url=frontend_redirect)
+
+            # Step 2: Check if user is active patron
+            if user_info.patron_status != "active_patron":
+                error_message = "Your subscription is required to access this site. Please renew your VAMA Patreon subscription."
+                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+                return RedirectResponse(url=frontend_redirect)
+
+            # Step 3: Check if user's tier is in the allowed whitelist
+            allowed_tier_ids = settings.allowed_patreon_tier_ids.split(',')
+            if user_info.tier_id not in allowed_tier_ids:
+                error_message = "Your subscription tier does not have access to this site. Please upgrade your VAMA Patreon subscription."
+                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+                return RedirectResponse(url=frontend_redirect)
 
         # Create JWT token
         jwt_token = create_access_token(data={"user_id": user.id, "patreon_id": user.patreon_id})
@@ -279,27 +256,19 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
     """
     async with httpx.AsyncClient() as client:
         # Fetch user identity
-        print(f"DEBUG: Fetching user info from Patreon")
-        print(f"DEBUG: API URL: {settings.patreon_api_url}/identity")
-        
         identity_response = await client.get(
             f"{settings.patreon_api_url}/identity",
             params={
-                "include": "memberships.campaign",
+                "include": "memberships.campaign,memberships.currently_entitled_tiers",
                 "fields[user]": "email,full_name",
                 "fields[member]": "patron_status,currently_entitled_amount_cents,pledge_relationship_start",
+                "fields[tier]": "title,amount_cents",
             },
             headers={"Authorization": f"Bearer {access_token}"},
         )
 
-        print(f"DEBUG: Identity response status: {identity_response.status_code}")
-        print(f"DEBUG: Identity response text: {identity_response.text}")
-
         if identity_response.status_code != 200:
             error_detail = identity_response.text
-            print(f"ERROR: Failed to fetch user info from Patreon")
-            print(f"ERROR: Status code: {identity_response.status_code}")
-            print(f"ERROR: Response: {error_detail}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Failed to fetch user info from Patreon: {error_detail}",
@@ -314,81 +283,62 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
         username = attributes.get("full_name")
         email = attributes.get("email")
 
-        # Determine tier based on membership
-        tier = 1  # Default to free tier
+        # Extract membership information for VAMA's campaign specifically
+        tier_id = None
+        campaign_id = None
+        patron_status = None
+        
+        target_campaign_id = settings.patreon_creator_id
 
-        # Find membership to the creator
+        # Find membership to VAMA's campaign (not just any campaign)
         for item in included:
             if item.get("type") == "member":
-                member_attrs = item.get("attributes", {})
-                patron_status = member_attrs.get("patron_status")
+                # Get campaign_id from relationships
+                campaign_rel = item.get("relationships", {}).get("campaign", {}).get("data", {})
+                item_campaign_id = campaign_rel.get("id")
+                
+                # Only process if this is VAMA's campaign
+                if item_campaign_id == target_campaign_id:
+                    member_attrs = item.get("attributes", {})
+                    patron_status = member_attrs.get("patron_status")
+                    campaign_id = item_campaign_id
 
-                # Check if they're an active patron
-                if patron_status == "active_patron":
-                    # Get tier based on pledge amount (in cents)
-                    amount_cents = member_attrs.get("currently_entitled_amount_cents", 0)
-                    print(f"DEBUG: Patron status: {patron_status}")
-                    print(f"DEBUG: Amount in cents: {amount_cents}")
-                    print(f"DEBUG: Amount in dollars: ${amount_cents / 100}")
-                    tier = determine_tier_from_amount(amount_cents)
-                    print(f"DEBUG: Calculated tier: {tier}")
+                    # Get tier_id from currently_entitled_tiers relationship
+                    tiers_rel = item.get("relationships", {}).get("currently_entitled_tiers", {}).get("data", [])
+                    if tiers_rel and len(tiers_rel) > 0:
+                        # Take the first tier ID (users typically have one tier per campaign)
+                        tier_id = tiers_rel[0].get("id")
+
                     break
 
         return PatreonUserInfo(
             patreon_id=patreon_id,
             username=username,
             email=email,
-            tier=tier,
+            tier_id=tier_id,
+            campaign_id=campaign_id,
+            patron_status=patron_status,
         )
 
 
-def get_tier_name(tier: int) -> str:
+def get_tier_name_from_id(tier_id: Optional[str]) -> str:
     """
-    Get the display name for a tier.
-
+    Map Patreon tier ID to display name.
+    
     Args:
-        tier: Tier number (1-5)
-
+        tier_id: Patreon tier ID
+    
     Returns:
-        Tier display name
+        Human-readable tier name
     """
     tier_names = {
-        1: "Free Tier",
-        2: "NSFW Art! Tier 1",
-        3: "NSFW Art! Tier 2",
-        4: "NSFW Art! Tier 3",
-        5: "NSFW Art! Support",
+        "25126656": "Free",
+        "25126680": "NSFW Art! Tier 1",
+        "25126688": "NSFW Art! Tier 2",
+        "25126693": "NSFW Art! Tier 3",
+        "25147402": "NSFW Art! Support",
     }
-    return tier_names.get(tier, "Free Tier")
-
-
-def determine_tier_from_amount(amount_cents: int) -> int:
-    """
-    Determine tier based on VAMA's Patreon pledge amounts.
-
-    VAMA's Tier Structure:
-    - Tier 1 (Free): $0
-    - Tier 2 (NSFW Art! Tier 1): $5/month
-    - Tier 3 (NSFW Art! Tier 2): $15/month
-    - Tier 4 (NSFW Art! Tier 3): $30/month
-    - Tier 5 (NSFW Art! support): $60/month
-
-    Args:
-        amount_cents: Pledge amount in cents
-
-    Returns:
-        Tier number (1-5)
-    """
-    if amount_cents >= 6000:  # $60+
-        return 5
-    elif amount_cents >= 3000:  # $30+
-        return 4
-    elif amount_cents >= 1500:  # $15+
-        return 3
-    elif amount_cents >= 500:  # $5+
-        return 2
-    else:
-        return 1  # Free tier
+    return tier_names.get(tier_id, "Unknown Tier")
 
 
 @router.get("/me")
@@ -404,16 +354,14 @@ async def get_current_user_info(
     Returns:
         User information
     """
-    # Ensure tier_name is set
-    tier_name = current_user.tier_name or get_tier_name(current_user.tier)
-    
     return {
         "id": current_user.id,
         "patreon_id": current_user.patreon_id,
         "patreon_username": current_user.patreon_username,
-        "email": current_user.email,
-        "tier": current_user.tier,
-        "tier_name": tier_name,
+        "tier_id": current_user.tier_id,
+        "tier_name": get_tier_name_from_id(current_user.tier_id),
+        "campaign_id": current_user.campaign_id,
+        "patron_status": current_user.patron_status,
         "role": current_user.role,
         "can_submit_multiple": current_user.can_submit_multiple,
     }
@@ -435,7 +383,7 @@ async def check_subscription(
         db: Database session
 
     Returns:
-        Subscription status including tier and pledge amount
+        Subscription status including tier_id and patron status
     """
     # Check if we have a valid access token
     if not current_user.patreon_access_token:
@@ -460,7 +408,7 @@ async def check_subscription(
         identity_response = await client.get(
             f"{settings.patreon_api_url}/identity",
             params={
-                "include": "memberships.campaign",
+                "include": "memberships.campaign,memberships.currently_entitled_tiers",
                 "fields[user]": "email,full_name",
                 "fields[member]": "patron_status,currently_entitled_amount_cents,pledge_relationship_start",
                 "fields[campaign]": "creation_name,vanity",
@@ -492,18 +440,25 @@ async def check_subscription(
                     amount_cents = member_attrs.get("currently_entitled_amount_cents", 0)
                     pledge_start = member_attrs.get("pledge_relationship_start")
 
-                    is_active = patron_status == "active_patron"
-                    tier = determine_tier_from_amount(amount_cents) if is_active else 1
+                    # Get tier_id from currently_entitled_tiers relationship
+                    tier_id = None
+                    tiers_rel = item.get("relationships", {}).get("currently_entitled_tiers", {}).get("data", [])
+                    if tiers_rel and len(tiers_rel) > 0:
+                        tier_id = tiers_rel[0].get("id")
 
-                    # Update user's tier in database if it changed
-                    if current_user.tier != tier:
-                        current_user.tier = tier
+                    is_active = patron_status == "active_patron"
+
+                    # Update user's info in database if it changed
+                    if current_user.tier_id != tier_id or current_user.patron_status != patron_status:
+                        current_user.tier_id = tier_id
+                        current_user.patron_status = patron_status
+                        current_user.campaign_id = campaign_id
                         db.commit()
 
                     return {
                         "is_subscribed": is_active,
                         "patron_status": patron_status,
-                        "tier": tier,
+                        "tier_id": tier_id,
                         "pledge_amount_cents": amount_cents,
                         "pledge_amount_dollars": amount_cents / 100,
                         "member_since": pledge_start,
@@ -511,15 +466,16 @@ async def check_subscription(
                     }
 
         # No active membership found
-        # Update user to tier 1 if they were previously subscribed
-        if current_user.tier > 1:
-            current_user.tier = 1
+        # Update user status if they were previously subscribed
+        if current_user.patron_status == "active_patron":
+            current_user.patron_status = "not_patron"
+            current_user.tier_id = None
             db.commit()
 
         return {
             "is_subscribed": False,
             "patron_status": "not_patron",
-            "tier": 1,
+            "tier_id": None,
             "pledge_amount_cents": 0,
             "pledge_amount_dollars": 0,
             "member_since": None,

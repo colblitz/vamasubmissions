@@ -16,6 +16,7 @@ export default function CommunityRequestsPage() {
     series: "",
     description: "",
     timestamp: "", // Date when user wants this fulfilled
+    is_private: false, // Whether request is private (only visible to user and admins)
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
@@ -180,9 +181,10 @@ export default function CommunityRequestsPage() {
           .filter(Boolean),
         description: formData.description,
         timestamp: timestamp,
+        is_private: formData.is_private,
       });
 
-      setFormData({ characters: "", series: "", description: "", timestamp: "" });
+      setFormData({ characters: "", series: "", description: "", timestamp: "", is_private: false });
       setSubmitSuccess(true);
       setShowForm(false);
 
@@ -381,6 +383,24 @@ export default function CommunityRequestsPage() {
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                 />
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  type="checkbox"
+                  id="is_private"
+                  checked={formData.is_private}
+                  onChange={(e) => setFormData({ ...formData, is_private: e.target.checked })}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <div className="flex-1">
+                  <label htmlFor="is_private" className="block text-sm font-medium text-gray-700 cursor-pointer">
+                    Private Request
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Private requests are only visible to you and admins. They will not appear in the public queue.
+                  </p>
+                </div>
               </div>
 
               <button

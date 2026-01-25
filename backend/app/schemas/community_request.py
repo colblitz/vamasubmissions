@@ -11,7 +11,7 @@ class CommunityRequestBase(BaseModel):
 
     characters: List[str] = Field(..., min_length=1, description="List of character names")
     series: List[str] = Field(..., min_length=1, description="List of series names")
-    timestamp: Optional[datetime] = Field(
+    requested_timestamp: Optional[datetime] = Field(
         default_factory=datetime.utcnow, description="When request was made"
     )
     description: Optional[str] = None
@@ -42,7 +42,7 @@ class CommunityRequestUpdate(BaseModel):
 
     characters: Optional[List[str]] = Field(None, min_length=1)
     series: Optional[List[str]] = Field(None, min_length=1)
-    timestamp: Optional[datetime] = None
+    requested_timestamp: Optional[datetime] = None
     description: Optional[str] = None
     is_private: Optional[bool] = None
 
@@ -83,7 +83,7 @@ class CommunityRequestPublic(BaseModel):
     id: int
     characters: List[str]
     series: List[str]
-    timestamp: datetime
+    requested_timestamp: datetime
     description: Optional[str] = None
     is_private: bool
     fulfilled: bool

@@ -15,17 +15,16 @@ class Post(Base):
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(String(255), unique=True, nullable=False, index=True)
     timestamp = Column(DateTime, nullable=False, index=True)
-    url = Column(Text, nullable=False)
+    patreon_url = Column(Text, nullable=False)
     title = Column(Text, nullable=False)
     characters = Column(ARRAY(Text), nullable=False, default=[])
     series = Column(ARRAY(Text), nullable=False, default=[])
     tags = Column(ARRAY(Text), nullable=False, default=[])
-    image_urls = Column(ARRAY(Text), nullable=False, default=[])
+    thumbnail_url = Column(Text, nullable=True)
     thumbnail_urls = Column(ARRAY(Text), nullable=False, default=[])
 
     # Post import status
     status = Column(String(20), nullable=False, default="published", index=True)
-    raw_patreon_json = Column(JSONB, nullable=True)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

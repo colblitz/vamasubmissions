@@ -18,7 +18,18 @@ class Settings(BaseSettings):
     patreon_client_id: str
     patreon_client_secret: str
     patreon_redirect_uri: str
-    patreon_creator_id: str
+    patreon_creator_id: str  # VAMA's campaign ID: 13637777
+    
+    # Patreon Tier Access Control
+    # Comma-separated list of allowed Patreon tier IDs
+    # Only users subscribed to these tiers can access the site
+    # VAMA's Tiers:
+    #   25126656 - Free ($0) - BLOCKED (not in list)
+    #   25126680 - NSFW Art! Tier 1 ($6.90) - ALLOWED
+    #   25126688 - NSFW Art! Tier 2 ($15) - ALLOWED
+    #   25126693 - NSFW Art! Tier 3 ($30) - ALLOWED
+    #   25147402 - NSFW Art! support ($60) - ALLOWED
+    allowed_patreon_tier_ids: str = "25126680,25126688,25126693,25147402"
 
     # Security
     secret_key: str

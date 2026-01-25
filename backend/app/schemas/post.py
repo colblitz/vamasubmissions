@@ -29,8 +29,8 @@ class PostCreate(PostBase):
 
     post_id: str
     timestamp: datetime
-    url: str
-    image_urls: List[str] = Field(default_factory=list)
+    patreon_url: str
+    thumbnail_url: Optional[str] = None
     thumbnail_urls: List[str] = Field(default_factory=list)
 
 
@@ -41,7 +41,7 @@ class PostUpdate(BaseModel):
     characters: Optional[List[str]] = None
     series: Optional[List[str]] = None
     tags: Optional[List[str]] = None
-    image_urls: Optional[List[str]] = None
+    thumbnail_url: Optional[str] = None
     thumbnail_urls: Optional[List[str]] = None
     status: Optional[PostStatus] = None
 
@@ -51,11 +51,10 @@ class PostImport(BaseModel):
 
     post_id: str
     title: str
-    url: str
+    patreon_url: str
     timestamp: datetime
-    image_urls: List[str] = Field(default_factory=list)
+    thumbnail_url: Optional[str] = None
     thumbnail_urls: List[str] = Field(default_factory=list)
-    raw_patreon_json: Optional[Dict[str, Any]] = None
     # Characters/series left empty for manual input
     characters: List[str] = Field(default_factory=list)
     series: List[str] = Field(default_factory=list)
@@ -67,8 +66,8 @@ class Post(PostBase):
     id: int
     post_id: str
     timestamp: datetime
-    url: str
-    image_urls: List[str]
+    patreon_url: str
+    thumbnail_url: Optional[str] = None
     thumbnail_urls: List[str]
     created_at: datetime
     updated_at: datetime
@@ -84,7 +83,7 @@ class PostSearchItem(BaseModel):
     """Optimized schema for individual posts in search results.
     
     Only includes fields needed for search display to reduce payload size.
-    Excludes: image_urls, raw_patreon_json, status, created_at, updated_at.
+    Excludes: raw_patreon_json, status, created_at, updated_at.
     """
 
     id: int
@@ -93,9 +92,10 @@ class PostSearchItem(BaseModel):
     characters: List[str]
     series: List[str]
     tags: List[str]
+    thumbnail_url: Optional[str] = None
     thumbnail_urls: List[str]
     timestamp: datetime
-    url: str
+    patreon_url: str
     pending_edits: List[Dict[str, Any]] = Field(default_factory=list)
 
     class Config:

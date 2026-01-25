@@ -32,4 +32,6 @@ class PatreonUserInfo(BaseModel):
     patreon_id: str
     username: Optional[str] = None
     email: Optional[str] = None
-    tier: int = 1
+    tier_id: Optional[str] = None
+    campaign_id: Optional[str] = None
+    patron_status: Optional[str] = None

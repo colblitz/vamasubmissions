@@ -14,9 +14,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     patreon_id = Column(String(255), unique=True, nullable=False, index=True)
     patreon_username = Column(String(255))
-    email = Column(String(255))
-    tier = Column(Integer, nullable=False, default=1, index=True)  # 1=free, 2/3/4/5=paid
-    tier_name = Column(String(100), nullable=True)  # Display name for tier
+    tier_id = Column(String(50), nullable=True)
+    campaign_id = Column(String(50), nullable=True)
+    patron_status = Column(String(50), nullable=True)
     credits = Column(Integer, nullable=False, default=0)
     role = Column(String(50), nullable=False, default="patron")  # patron, creator, admin
     last_credit_refresh = Column(DateTime)
@@ -44,7 +44,7 @@ class User(Base):
     )
 
     def __repr__(self):
-        return f"<User(id={self.id}, patreon_username={self.patreon_username}, tier={self.tier})>"
+        return f"<User(id={self.id}, patreon_username={self.patreon_username}, tier_id={self.tier_id})>"
 
     @property
     def is_admin(self) -> bool:
@@ -58,29 +58,30 @@ class User(Base):
 
     @property
     def max_credits(self) -> int:
-        """Get maximum credits based on tier."""
-        credit_caps = {
-            1: 0,  # Tier 1 (Free) doesn't use credits
-            2: 2,  # Tier 2 ($5/month)
-            3: 4,  # Tier 3 ($15/month)
-            4: 8,  # Tier 4 ($30/month)
-            5: 16,  # Tier 5 ($60/month)
-        }
-        return credit_caps.get(self.tier, 0)
+        """Get maximum credits based on tier_id.
+        
+        Note: This method will need to be updated once tier_id mapping is established.
+        For now, returns 0 as default.
+        """
+        # TODO: Map tier_id to credit caps once Patreon tier IDs are known
+        return 0
 
     @property
     def credits_per_month(self) -> int:
-        """Get credits earned per month based on tier."""
-        monthly_credits = {
-            1: 0,  # Tier 1 (Free) doesn't use credits
-            2: 1,  # Tier 2 ($5/month)
-            3: 2,  # Tier 3 ($15/month)
-            4: 4,  # Tier 4 ($30/month)
-            5: 8,  # Tier 5 ($60/month)
-        }
-        return monthly_credits.get(self.tier, 0)
+        """Get credits earned per month based on tier_id.
+        
+        Note: This method will need to be updated once tier_id mapping is established.
+        For now, returns 0 as default.
+        """
+        # TODO: Map tier_id to monthly credits once Patreon tier IDs are known
+        return 0
 
     @property
     def can_submit_multiple(self) -> bool:
-        """Check if user can have multiple pending submissions."""
-        return self.tier > 1  # Only tier 2+ can have multiple pending
+        """Check if user can have multiple pending submissions.
+        
+        Note: This method will need to be updated once tier_id mapping is established.
+        For now, returns False as default (most restrictive).
+        """
+        # TODO: Determine which tier_ids allow multiple submissions
+        return False

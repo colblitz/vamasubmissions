@@ -34,13 +34,12 @@ def create_post(db: Session, post_data: PostCreate) -> Post:
     post = Post(
         post_id=post_data.post_id,
         timestamp=post_data.timestamp,
-        url=post_data.url,
+        patreon_url=post_data.patreon_url,
         title=post_data.title,
         characters=post_data.characters,
         series=post_data.series,
         tags=post_data.tags,
-        image_urls=post_data.image_urls,
-        thumbnail_urls=post_data.thumbnail_urls,
+        thumbnail_url=post_data.thumbnail_url,
     )
 
     db.add(post)

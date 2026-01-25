@@ -1,14 +1,14 @@
 # Project Plan - VAMA Community Tracker
 
-**Last Updated**: 2026-01-24 16:47
+**Last Updated**: 2026-01-24 17:14
 
 ## Current Status
 
-Phase 1 + Post Import System + SearchPage Refactoring + Browse Tab + Performance Optimizations **COMPLETE ✅**
+Phase 1 + Post Import System + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edit Suggestions **COMPLETE ✅**
 
-Backend: 30+ API endpoints, 2833+ posts imported, full business logic implemented. Frontend: SearchPage (refactored + Browse tab), CommunityRequestsPage, ReviewEditsPage, ImportPostsPage (admin), AboutPage. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. See PROJECT_LOG.md for detailed history.
+Backend: 38+ API endpoints, 2833+ posts imported, full business logic implemented. Frontend: SearchPage (refactored + Browse tab), CommunityRequestsPage, ReviewEditsPage (3 tabs: Pending/Global/History), ImportPostsPage (admin), AboutPage. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%, deployed to production. Global Edit Suggestions feature allows bulk rename across all posts. See PROJECT_LOG.md for detailed history.
 
-**Next Priority**: Deploy performance optimizations to production server, optional thumbnail resize for bandwidth savings.
+**Next Priority**: Testing and deploying Global Edit Suggestions, then addressing UX improvements and new features from backlog.
 
 ---
 
@@ -41,6 +41,24 @@ Backend: 30+ API endpoints, 2833+ posts imported, full business logic implemente
 ---
 
 ## Data Models
+
+**Note**: This section shows only the active Phase 1 tables. Legacy tables (submissions, votes, etc.) exist but are not currently used. For complete schema, see the model files in `backend/app/models/`.
+
+### Users
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    patreon_id VARCHAR(255) UNIQUE NOT NULL,
+    patreon_username VARCHAR(255),
+    email VARCHAR(255),
+    tier INTEGER NOT NULL DEFAULT 1,
+    tier_name VARCHAR(100),
+    role VARCHAR(50) NOT NULL DEFAULT 'patron',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_login TIMESTAMP
+);
+```
 
 ### Posts
 ```sql
@@ -123,9 +141,35 @@ CREATE TABLE admin_settings (
     patreon_access_token TEXT,
     patreon_refresh_token TEXT,
     token_expires_at TIMESTAMP,
+    patreon_session_id TEXT,  -- Added in migration 007
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+```
+
+### Global Edit Suggestions
+```sql
+CREATE TABLE global_edit_suggestions (
+    id SERIAL PRIMARY KEY,
+    suggester_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    field_name VARCHAR(50) NOT NULL,  -- 'characters', 'series', 'tags'
+    old_value TEXT NOT NULL,
+    new_value TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'approved', 'rejected'
+    approver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    affected_post_ids INTEGER[] DEFAULT '{}',
+    affected_count INTEGER DEFAULT 0,
+    previous_values JSONB,  -- For undo functionality
+    created_at TIMESTAMP DEFAULT NOW(),
+    approved_at TIMESTAMP,
+    applied_at TIMESTAMP,
+    CONSTRAINT check_field_name CHECK (field_name IN ('characters', 'series', 'tags')),
+    CONSTRAINT check_status CHECK (status IN ('pending', 'approved', 'rejected')),
+    CONSTRAINT check_different_values CHECK (old_value != new_value)
+);
+CREATE INDEX idx_global_edits_status ON global_edit_suggestions(status);
+CREATE INDEX idx_global_edits_suggester ON global_edit_suggestions(suggester_id);
+CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC);
 ```
 
 ---
@@ -160,6 +204,17 @@ CREATE TABLE admin_settings (
 - `POST /api/edits/{id}/reject` - Reject edit
 - `GET /api/edits/history` - Get edit history (optional post_id filter)
 - `POST /api/edits/{id}/undo` - Undo edit (admin only)
+- `GET /api/edits/pending-for-posts` - Batch query for pending edits (post_ids param)
+
+### Global Edits
+- `POST /api/global-edits/preview` - Preview affected posts (field_name, old_value params)
+- `POST /api/global-edits/suggest` - Create global edit suggestion
+- `GET /api/global-edits/pending` - List pending global edits
+- `GET /api/global-edits/{id}/preview` - Get preview for specific suggestion
+- `POST /api/global-edits/{id}/approve` - Approve and apply bulk changes (cannot approve own)
+- `POST /api/global-edits/{id}/reject` - Reject suggestion
+- `GET /api/global-edits/history` - Get history of applied global edits
+- `POST /api/global-edits/{id}/undo` - Undo applied global edit (admin only)
 
 ### Users
 - `GET /api/users/leaderboard` - Top 20 users by edits suggested/approved
@@ -178,58 +233,55 @@ CREATE TABLE admin_settings (
 
 ## Feature Backlog
 
-### ✅ COMPLETED: Browse Tab (2026-01-24)
-- ✅ Tabbed interface (Search / Browse)
-- ✅ Browse characters, series, tags with counts
-- ✅ Aggregation endpoint: `GET /api/posts/browse/{type}` returns `[{name, count}]`
-- ✅ Click item → filter posts by that value
-- ✅ Reuse SearchResults component
-- ✅ Backend SQL aggregation (COUNT/GROUP BY), frontend tab state management
+### Priority 1: UX & Admin Improvements (🟡 Medium - 4-6 hours)
+**Browse Posts Without Tags**:
+- Add "No Tags" filter option in Browse tab
+- Backend: Query for posts where `tags = '{}'` or `tags IS NULL`
+- Frontend: Add special filter button/option
+- Use case: Find posts that need tagging
+- **Complexity**: Low - simple query modification
 
-### ✅ COMPLETED: Data Normalization & Security (2026-01-24)
-- ✅ Input validation: Trim whitespace, normalize unicode, prevent empty strings
-- ✅ Backend: `utils/validation.py` with `normalize_text()` and `normalize_array_field()`
-- ✅ Frontend: `utils/validation.js` with matching functions
-- ✅ Applied to: All text inputs (characters, series, tags, descriptions)
-- ✅ Security: Rate limiting (slowapi), Pydantic validators with Field constraints
+**Mobile Layout Improvements**:
+- Review responsive design on mobile devices
+- Fix any layout issues (cards, forms, navigation)
+- Improve touch targets and spacing
+- Test on various screen sizes (320px, 375px, 414px)
+- **Complexity**: Medium - CSS/Tailwind adjustments
 
-### ✅ COMPLETED: Performance Optimizations (2026-01-24)
-- ✅ Eliminated N+1 queries: Pending edits now included in search response via batch query
-- ✅ Batch endpoint: `GET /api/edits/pending-for-posts?post_ids=1,2,3...`
-- ✅ Optimized search response: Removed unnecessary fields (40-50% reduction)
-- ✅ Database indices: GIN indices for text search, composite indices for pending edits
-- ✅ Debounced search input: 300ms delay reduces autocomplete API calls by 70%
-- ✅ Thumbnail resize script: 360x360 → 192x192 (70% bandwidth reduction)
-- ✅ Deployment scripts: `rebuild-frontend.sh`, `rebuild-backend.sh`, `rebuild-all.sh`
-- **Impact**: 31 API calls → 1 (97% reduction), 85% reduction in data transfer
+**Admin Self-Approval**:
+- Allow admins to approve their own edit suggestions
+- Backend: Skip `suggester_id == approver_id` check if `is_admin`
+- Frontend: Show approve button for admins on own suggestions
+- Use case: Admins can make quick fixes without needing another user
+- **Complexity**: Low - conditional logic change
 
-### Priority 3: Global Edit Suggestions (🔴 Hard - 8-10 hours)
-- Bulk rename across all posts (e.g., "Naruto Uzamaki" → "Naruto Uzumaki" on 50 posts)
-- New table: `global_edit_suggestions` with status workflow
-- Preview affected posts before approval
-- Backend: `array_replace()` for bulk updates
-- Frontend: New GlobalEditsPage with tabs (Suggest / Pending / History)
-- **Complexity**: Atomic bulk operations, preview logic, undo functionality
+### Priority 5: CDN & Image Viewer (🔴 Hard - 10-15 hours)
+**CDN Integration**:
+- Research CDN options (Cloudflare, CloudFront, Bunny CDN)
+- Serve static assets (thumbnails, images) from CDN
+- Configure caching headers and invalidation
+- Update image URLs to use CDN domain
+- **Benefits**: Faster load times, reduced server bandwidth
+- **Complexity**: High - infrastructure setup
 
-### Priority 4: Modal → Expandable Section (🟡 Medium - 2-3 hours)
-- Convert EditModal to inline expandable section under each post
-- Better UX: Edit multiple posts without opening/closing modals
-- Click "Suggest Edit" → section expands below post card
-- Click away or "Cancel" → section collapses
-- Reuse existing EditModal logic, just change presentation
-- **Files**: `PostCard.jsx`, `EditModal.jsx` → `EditSection.jsx`
+**Multiple Thumbnails Per Post**:
+- Currently: 1 thumbnail per post (first image)
+- Goal: Show all thumbnails in grid/carousel
+- Backend: Already have `thumbnail_urls[]` array
+- Frontend: Update PostCard to display multiple thumbnails
+- Consider lazy loading for performance
+- **Complexity**: Medium - UI component work
 
-### Quick Wins (Completed)
-- ✅ Disclaimer banner on requests page
-- ✅ Sort direction toggle (newest/oldest)
-- ✅ Prevent duplicate edit suggestions
-- ✅ Show pending edits inline in search results
-- ✅ About page with leaderboards
-- ✅ Latest post date on import page
-- ✅ SearchPage component extraction (1066 → 239 lines)
+**Post Viewer / Lightbox**:
+- Click thumbnail → open full-size image viewer
+- Features: Navigation (prev/next), zoom, download
+- Show all images from post in gallery
+- Keyboard shortcuts (arrow keys, ESC)
+- Mobile-friendly swipe gestures
+- **Complexity**: High - complex UI component or library integration
+- **Options**: Build custom or use library (react-image-lightbox, yet-another-react-lightbox)
 
-### Future Enhancements (Not in Scope)
-- Posts without tags filter
+### Future Enhancements (Lower Priority)
 - Email notifications
 - Discord integration
 - Rush queue (skip positions for credits)
@@ -282,10 +334,53 @@ CREATE TABLE admin_settings (
 - **No auto-commits** without explicit user approval
 - **No auto-testing** - let user verify functionality
 
+**Subagent Usage (IMPORTANT - Use Frequently)**:
+Goose should **actively use subagents** for well-defined tasks to save context and work in parallel. Use subagents when:
+
+**When to use subagents**:
+- ✅ Creating new files/components (well-defined scope)
+- ✅ Implementing a specific feature with clear requirements
+- ✅ Analyzing code structure or dependencies
+- ✅ Refactoring a single component
+- ✅ Writing tests for a specific module
+- ✅ Fixing a specific bug with known location
+- ✅ Adding a new API endpoint with clear spec
+- ✅ Creating database migrations
+- ✅ Multiple independent tasks that can run in parallel
+
+**When NOT to use subagents**:
+- ❌ Exploratory work (figuring out what needs to be done)
+- ❌ Tasks requiring context from previous conversation
+- ❌ Debugging unknown issues
+- ❌ Making architectural decisions
+- ❌ Tasks that depend on each other sequentially
+
+**How to use subagents effectively**:
+1. **Break down work** into independent, well-defined tasks
+2. **Launch multiple subagents** in parallel when possible (one tool call with multiple subagents)
+3. **Provide clear instructions** with all necessary context
+4. **Review subagent output** before presenting to user
+5. **Save context** by offloading routine tasks to subagents
+
+**Example subagent tasks**:
+- "Create a new React component for X with these props..."
+- "Add a new API endpoint POST /api/Y that does Z..."
+- "Analyze the file structure of directory X and summarize..."
+- "Write a database migration to add column Y to table Z..."
+- "Refactor component X to use hooks instead of class components..."
+
 **Documentation**:
-- Update PROJECT_PLAN.md as part of commits (not separate)
-- Mark completed features with ✅, update timestamps
-- Keep PROJECT_PLAN.md current with latest status
+- **PROJECT_PLAN.md**: Forward-looking only (current status, next priorities, backlog)
+  - Update "Current Status" summary
+  - Update "Last Updated" timestamp
+  - Move priorities around as they're completed
+  - Do NOT add completed feature details here
+- **PROJECT_LOG.md**: Historical record of completed work
+  - Add detailed completion notes with dates
+  - List all files changed, features implemented
+  - Include technical details and lessons learned
+  - This is the permanent achievement record
+- **Commit messages**: Should reference both documents when appropriate
 
 **Subagent Instructions**:
 When using subagents, they must follow the same workflow:

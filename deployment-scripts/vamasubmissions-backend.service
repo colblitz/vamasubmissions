@@ -1,0 +1,21 @@
+[Unit]
+Description=Vamasubmissions Backend API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/vamasubmissions/backend
+Environment="PATH=/home/deploy/vamasubmissions/backend/venv/bin"
+ExecStart=/home/deploy/vamasubmissions/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vamasubmissions-backend
+
+[Install]
+WantedBy=multi-user.target

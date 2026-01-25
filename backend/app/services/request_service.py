@@ -59,7 +59,7 @@ def create_request(
         user_id=user_id,
         characters=normalized_characters,
         series=normalized_series,
-        timestamp=request_data.timestamp,
+        requested_timestamp=request_data.requested_timestamp,
         description=normalized_description,
         is_private=request_data.is_private,
         fulfilled=False,
@@ -217,8 +217,8 @@ def get_all_requests(
     if not include_fulfilled:
         q = q.filter(CommunityRequest.fulfilled == False)
 
-    # Order by timestamp (oldest first - FIFO queue)
-    q = q.order_by(CommunityRequest.timestamp.asc())
+    # Order by requested_timestamp (oldest first - FIFO queue)
+    q = q.order_by(CommunityRequest.requested_timestamp.asc())
 
     # Get total count
     total = q.count()
@@ -240,7 +240,7 @@ def get_all_requests(
                 id=request.id,
                 characters=["[Private Request]"],
                 series=["[Private]"],
-                timestamp=request.timestamp,
+                requested_timestamp=request.requested_timestamp,
                 description=None,
                 is_private=True,
                 fulfilled=request.fulfilled,
@@ -252,7 +252,7 @@ def get_all_requests(
                 id=request.id,
                 characters=request.characters,
                 series=request.series,
-                timestamp=request.timestamp,
+                requested_timestamp=request.requested_timestamp,
                 description=request.description,
                 is_private=request.is_private,
                 fulfilled=request.fulfilled,
@@ -296,7 +296,7 @@ def get_user_requests(
     if not include_fulfilled:
         q = q.filter(CommunityRequest.fulfilled == False)
 
-    requests = q.order_by(CommunityRequest.timestamp.asc()).all()
+    requests = q.order_by(CommunityRequest.requested_timestamp.asc()).all()
     
     # Add queue positions to each request
     result = []
@@ -306,7 +306,7 @@ def get_user_requests(
             "user_id": request.user_id,
             "characters": request.characters,
             "series": request.series,
-            "timestamp": request.timestamp,
+            "requested_timestamp": request.requested_timestamp,
             "description": request.description,
             "is_private": request.is_private,
             "fulfilled": request.fulfilled,
@@ -340,7 +340,7 @@ def get_queue_position(db: Session, request_id: int) -> Optional[int]:
         db.query(func.count(CommunityRequest.id))
         .filter(
             CommunityRequest.fulfilled == False,
-            CommunityRequest.timestamp <= request.timestamp,
+            CommunityRequest.requested_timestamp <= request.requested_timestamp,
             CommunityRequest.id <= request.id,  # Break ties by ID
         )
         .scalar()

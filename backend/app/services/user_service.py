@@ -28,8 +28,9 @@ def create_user(
     db: Session,
     patreon_id: str,
     patreon_username: Optional[str] = None,
-    email: Optional[str] = None,
-    tier: int = 1,
+    tier_id: Optional[str] = None,
+    campaign_id: Optional[str] = None,
+    patron_status: Optional[str] = None,
     patreon_access_token: Optional[str] = None,
     patreon_refresh_token: Optional[str] = None,
     patreon_token_expires_at: Optional[datetime] = None,
@@ -41,8 +42,9 @@ def create_user(
         db: Database session
         patreon_id: Patreon user ID
         patreon_username: Patreon username
-        email: User email
-        tier: User tier (1-5)
+        tier_id: Patreon tier ID
+        campaign_id: Patreon campaign ID
+        patron_status: Patreon patron status
         patreon_access_token: Patreon OAuth access token
         patreon_refresh_token: Patreon OAuth refresh token
         patreon_token_expires_at: When the access token expires
@@ -59,8 +61,9 @@ def create_user(
     user = User(
         patreon_id=patreon_id,
         patreon_username=patreon_username,
-        email=email,
-        tier=tier,
+        tier_id=tier_id,
+        campaign_id=campaign_id,
+        patron_status=patron_status,
         role=role,
         credits=0,
         last_login=datetime.utcnow(),
@@ -73,8 +76,8 @@ def create_user(
     db.commit()
     db.refresh(user)
 
-    # Initialize credits for paid tiers
-    if tier > 1:
+    # Initialize credits for active patrons
+    if patron_status == "active_patron":
         refresh_user_credits(db, user)
 
     return user
@@ -84,8 +87,9 @@ def update_user(
     db: Session,
     user_id: int,
     patreon_username: Optional[str] = None,
-    email: Optional[str] = None,
-    tier: Optional[int] = None,
+    tier_id: Optional[str] = None,
+    campaign_id: Optional[str] = None,
+    patron_status: Optional[str] = None,
     credits: Optional[int] = None,
     patreon_access_token: Optional[str] = None,
     patreon_refresh_token: Optional[str] = None,
@@ -98,8 +102,9 @@ def update_user(
         db: Database session
         user_id: User ID
         patreon_username: New username
-        email: New email
-        tier: New tier
+        tier_id: New tier ID
+        campaign_id: New campaign ID
+        patron_status: New patron status
         credits: New credit amount
         patreon_access_token: New Patreon access token
         patreon_refresh_token: New Patreon refresh token
@@ -117,14 +122,12 @@ def update_user(
 
     if patreon_username is not None:
         user.patreon_username = patreon_username
-    if email is not None:
-        user.email = email
-    if tier is not None:
-        old_tier = user.tier
-        user.tier = tier
-        # If tier changed, adjust credits
-        if old_tier != tier:
-            user.credits = min(user.credits, user.max_credits)
+    if tier_id is not None:
+        user.tier_id = tier_id
+    if campaign_id is not None:
+        user.campaign_id = campaign_id
+    if patron_status is not None:
+        user.patron_status = patron_status
     if credits is not None:
         user.credits = min(credits, user.max_credits)
     if patreon_access_token is not None:
@@ -143,7 +146,7 @@ def update_user(
 
 def refresh_user_credits(db: Session, user: User) -> User:
     """
-    Refresh user credits based on their tier.
+    Refresh user credits based on their patron status.
 
     Args:
         db: Database session
@@ -154,8 +157,12 @@ def refresh_user_credits(db: Session, user: User) -> User:
     """
     from app.services.credit_service import add_credits
 
-    # Only refresh for paid tiers
-    if user.tier <= 1:
+    # Only refresh for active patrons
+    if user.patron_status != "active_patron":
+        return user
+
+    # Skip if no credits are configured for this tier
+    if user.credits_per_month <= 0:
         return user
 
     now = datetime.utcnow()
@@ -177,7 +184,7 @@ def refresh_user_credits(db: Session, user: User) -> User:
             user_id=user.id,
             amount=new_credits - user.credits,
             transaction_type="monthly_refresh",
-            description=f"Monthly credit refresh for tier {user.tier}",
+            description=f"Monthly credit refresh for patron",
         )
         user.credits = new_credits
         user.last_credit_refresh = now
@@ -232,8 +239,8 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Check tier access - block tier 1 users (unless admin)
-    if user.tier == 1 and user.role != "admin":
+    # Check patron status - block non-active patrons (unless admin)
+    if user.patron_status != "active_patron" and user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your subscription is required to access this site. Please renew your VAMA Patreon subscription.",
