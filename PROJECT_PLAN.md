@@ -383,11 +383,41 @@ When using subagents, they must follow the same workflow:
 When adding new database columns/tables:
 1. Create migration file in `backend/alembic/versions/`
 2. Number it sequentially (e.g., `007_description.sql`)
-3. Document in commit message
-4. User must run migration: `psql vamasubmissions < backend/alembic/versions/XXX_file.sql`
-5. Common errors:
+3. **CRITICAL**: Migrations MUST be idempotent (safe to run multiple times)
+   - Use `IF NOT EXISTS`, `IF EXISTS`, `DO $$ BEGIN ... EXCEPTION WHEN ... END $$`
+   - Example: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;`
+   - Example: `CREATE INDEX IF NOT EXISTS idx_name ON table(column);`
+4. **CRITICAL**: When changing schema, update BOTH frontend AND backend:
+   - Backend: Update model in `backend/app/models/`
+   - Backend: Update schema in `backend/app/schemas/`
+   - Backend: Update service layer if needed
+   - Frontend: Update components that use the data
+   - Frontend: Update API calls if field names changed
+5. Document in commit message
+6. Migrations run automatically via `deployment-scripts/deploy.sh`
+7. Common errors:
    - `column X does not exist` → Migration not run yet
    - `relation X does not exist` → Earlier migrations missing
+   - Schema mismatch between frontend/backend → Forgot to update one side
+
+**Deployment**:
+To deploy to production:
+1. Commit and push all changes to `origin/master`
+2. SSH to production server: `ssh deploy@45.33.94.21`
+3. Run deployment script: `cd ~/vamasubmissions && bash deployment-scripts/deploy.sh`
+
+The deployment script automatically:
+- Backs up database
+- Pulls latest code
+- Runs all migrations (idempotent, safe to re-run)
+- Updates dependencies (Python + Node)
+- Rebuilds frontend
+- Restarts backend service
+- Verifies deployment
+
+See `deployment-scripts/README.md` for details.
+
+---
 
 ## UI/UX Design Guidelines
 
