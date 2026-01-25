@@ -23,7 +23,7 @@ BACKUP_DIR="$HOME/vamasubmissions-backups"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 DB_NAME="vamasubmissions"
 SERVICE_NAME="vamasubmissions-backend"
-NGINX_DIR="/var/www/vamarequests.com/html"
+NGINX_DIR="/var/www/vamarequests"
 
 echo "App directory: $APP_DIR"
 echo "Backup directory: $BACKUP_DIR"
