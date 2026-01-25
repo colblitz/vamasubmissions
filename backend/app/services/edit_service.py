@@ -53,7 +53,7 @@ def suggest_edit(
     field_name = edit_data.field_name
     action = edit_data.action
     value = normalize_text(edit_data.value)
-    
+
     # Reject empty values after normalization
     if not value:
         raise HTTPException(
@@ -71,24 +71,28 @@ def suggest_edit(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Value '{value}' already exists in {field_name}",
             )
-        
+
         # Check if there's already a pending ADD suggestion for this value
-        existing_pending = db.query(PostEdit).filter(
-            and_(
-                PostEdit.post_id == edit_data.post_id,
-                PostEdit.field_name == field_name,
-                PostEdit.action == "ADD",
-                func.lower(PostEdit.value) == value.lower(),
-                PostEdit.status == "pending",
+        existing_pending = (
+            db.query(PostEdit)
+            .filter(
+                and_(
+                    PostEdit.post_id == edit_data.post_id,
+                    PostEdit.field_name == field_name,
+                    PostEdit.action == "ADD",
+                    func.lower(PostEdit.value) == value.lower(),
+                    PostEdit.status == "pending",
+                )
             )
-        ).first()
-        
+            .first()
+        )
+
         if existing_pending:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"There is already a pending suggestion to add '{value}' to {field_name}",
             )
-            
+
     elif action == "DELETE":
         # Check if value exists to delete (case-insensitive)
         if not any(v.lower() == value.lower() for v in current_values):
@@ -96,18 +100,22 @@ def suggest_edit(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Value '{value}' not found in {field_name}",
             )
-        
+
         # Check if there's already a pending DELETE suggestion for this value
-        existing_pending = db.query(PostEdit).filter(
-            and_(
-                PostEdit.post_id == edit_data.post_id,
-                PostEdit.field_name == field_name,
-                PostEdit.action == "DELETE",
-                func.lower(PostEdit.value) == value.lower(),
-                PostEdit.status == "pending",
+        existing_pending = (
+            db.query(PostEdit)
+            .filter(
+                and_(
+                    PostEdit.post_id == edit_data.post_id,
+                    PostEdit.field_name == field_name,
+                    PostEdit.action == "DELETE",
+                    func.lower(PostEdit.value) == value.lower(),
+                    PostEdit.status == "pending",
+                )
             )
-        ).first()
-        
+            .first()
+        )
+
         if existing_pending:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -322,7 +330,7 @@ def get_pending_edits_for_posts(
 ) -> dict:
     """
     Get pending edit suggestions for multiple posts (batch query).
-    
+
     This function solves the N+1 query problem by fetching pending edits
     for multiple posts in a single database query.
 
@@ -337,33 +345,30 @@ def get_pending_edits_for_posts(
     """
     if not post_ids:
         return {}
-    
+
     # Query all pending edits for these posts in one query
     edits = (
         db.query(PostEdit)
-        .filter(
-            PostEdit.post_id.in_(post_ids),
-            PostEdit.status == "pending"
-        )
+        .filter(PostEdit.post_id.in_(post_ids), PostEdit.status == "pending")
         .order_by(PostEdit.post_id.asc(), PostEdit.created_at.asc())
         .all()
     )
-    
+
     # Get all unique suggester IDs
     suggester_ids = list(set(edit.suggester_id for edit in edits if edit.suggester_id))
-    
+
     # Batch fetch all suggesters
     suggesters = {}
     if suggester_ids:
         suggester_list = db.query(User).filter(User.id.in_(suggester_ids)).all()
         suggesters = {user.id: user for user in suggester_list}
-    
+
     # Group edits by post_id
     result = {post_id: [] for post_id in post_ids}
-    
+
     for edit in edits:
         suggester = suggesters.get(edit.suggester_id)
-        
+
         edit_dict = {
             "id": edit.id,
             "post_id": edit.post_id,
@@ -377,7 +382,7 @@ def get_pending_edits_for_posts(
             "is_own_suggestion": edit.suggester_id == current_user_id,
         }
         result[edit.post_id].append(edit_dict)
-    
+
     return result
 
 

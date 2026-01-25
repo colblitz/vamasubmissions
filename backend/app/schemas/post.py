@@ -81,7 +81,7 @@ class Post(PostBase):
 
 class PostSearchItem(BaseModel):
     """Optimized schema for individual posts in search results.
-    
+
     Only includes fields needed for search display to reduce payload size.
     Excludes: raw_patreon_json, status, created_at, updated_at.
     """

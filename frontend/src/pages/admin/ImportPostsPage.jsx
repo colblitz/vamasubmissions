@@ -30,7 +30,7 @@ export default function ImportPostsPage() {
       const response = await api.get("/api/admin/posts/pending", {
         params: { limit: 50 },
       });
-      
+
       // Handle new response structure
       if (response.data.posts) {
         setPendingPosts(response.data.posts);
@@ -62,16 +62,18 @@ export default function ImportPostsPage() {
 
   // Remove a post from the local list (after publish/delete)
   const removePostFromList = (postId) => {
-    setPendingPosts(prev => prev.filter(p => p.id !== postId));
-    setTotalPendingCount(prev => Math.max(0, prev - 1));
-    setSelectedPosts(prev => prev.filter(id => id !== postId));
+    setPendingPosts((prev) => prev.filter((p) => p.id !== postId));
+    setTotalPendingCount((prev) => Math.max(0, prev - 1));
+    setSelectedPosts((prev) => prev.filter((id) => id !== postId));
   };
 
   // Fetch new posts from Patreon
   const handleFetchNew = async () => {
     // Validate session_id is provided
     if (!sessionIdInput.trim()) {
-      setError("Please enter your Patreon session_id cookie to fetch new posts");
+      setError(
+        "Please enter your Patreon session_id cookie to fetch new posts",
+      );
       return;
     }
 
@@ -86,7 +88,7 @@ export default function ImportPostsPage() {
       });
 
       setSuccess(
-        `Imported ${response.data.imported} new posts, ${response.data.skipped} already existed`
+        `Imported ${response.data.imported} new posts, ${response.data.skipped} already existed`,
       );
       fetchPendingPosts(); // Refresh list
       fetchTotalCount();
@@ -108,10 +110,13 @@ export default function ImportPostsPage() {
     setSuccess(null);
 
     try {
-      const response = await api.post("/api/admin/posts/bulk-publish", selectedPosts);
+      const response = await api.post(
+        "/api/admin/posts/bulk-publish",
+        selectedPosts,
+      );
 
       setSuccess(
-        `Published ${response.data.published.length} posts, ${response.data.failed.length} failed`
+        `Published ${response.data.published.length} posts, ${response.data.failed.length} failed`,
       );
       setSelectedPosts([]);
       fetchPendingPosts();
@@ -139,8 +144,11 @@ export default function ImportPostsPage() {
       for (const postId of selectedPosts) {
         try {
           // Find the post in pendingPosts
-          const post = pendingPosts.find(p => p.id === postId);
-          if (post && (post.characters?.length > 0 || post.series?.length > 0)) {
+          const post = pendingPosts.find((p) => p.id === postId);
+          if (
+            post &&
+            (post.characters?.length > 0 || post.series?.length > 0)
+          ) {
             await api.patch(`/api/admin/posts/${postId}`, {
               characters: post.characters || [],
               series: post.series || [],
@@ -153,7 +161,9 @@ export default function ImportPostsPage() {
         }
       }
 
-      setSuccess(`Saved ${savedCount} posts${failedCount > 0 ? `, ${failedCount} failed` : ''}`);
+      setSuccess(
+        `Saved ${savedCount} posts${failedCount > 0 ? `, ${failedCount} failed` : ""}`,
+      );
       fetchPendingPosts(); // Refresh to clear unsaved indicators
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to bulk save");
@@ -175,7 +185,9 @@ export default function ImportPostsPage() {
         data: selectedPosts,
       });
 
-      setSuccess(`Deleted ${response.data.deleted.length} posts, ${response.data.failed.length} failed`);
+      setSuccess(
+        `Deleted ${response.data.deleted.length} posts, ${response.data.failed.length} failed`,
+      );
       setSelectedPosts([]);
       fetchPendingPosts();
       fetchTotalCount();
@@ -213,7 +225,7 @@ export default function ImportPostsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Import Posts</h1>
-        
+
         <FetchNewPostsForm
           sessionIdInput={sessionIdInput}
           setSessionIdInput={setSessionIdInput}
@@ -250,7 +262,8 @@ export default function ImportPostsPage() {
 
       {/* Pending Posts Count */}
       <div className="mb-4 text-gray-600">
-        {pendingPosts.length} of {totalPendingCount} pending post{totalPendingCount !== 1 ? "s" : ""} awaiting review
+        {pendingPosts.length} of {totalPendingCount} pending post
+        {totalPendingCount !== 1 ? "s" : ""} awaiting review
       </div>
 
       {/* Loading State */}

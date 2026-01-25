@@ -2,7 +2,7 @@ import PostCard from "./PostCard";
 
 /**
  * SearchResults component - Displays search results with pagination
- * 
+ *
  * @param {array} results - Array of post objects (each with pending_edits array)
  * @param {number} total - Total number of results
  * @param {boolean} loading - Loading state
@@ -59,7 +59,9 @@ export default function SearchResults({
             d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No results found</h3>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">
+          No results found
+        </h3>
         <p className="mt-1 text-sm text-gray-500">
           Try adjusting your search or filters to find what you're looking for.
         </p>

@@ -3,17 +3,22 @@ import api from "../../../services/api";
 
 /**
  * PendingPostCard Component
- * 
+ *
  * Displays a single pending post with editing capabilities for characters and series.
  * Includes autocomplete functionality, auto-fill from title, and actions to save,
  * publish, skip, or delete the post.
- * 
+ *
  * @param {Object} post - The post object containing id, title, thumbnail_urls, url, timestamp, characters, series
  * @param {boolean} isSelected - Whether this post is selected for bulk actions
  * @param {Function} onToggleSelect - Callback to toggle selection state
  * @param {Function} onRemove - Callback to remove post from list after publish/delete
  */
-export default function PendingPostCard({ post, isSelected, onToggleSelect, onRemove }) {
+export default function PendingPostCard({
+  post,
+  isSelected,
+  onToggleSelect,
+  onRemove,
+}) {
   const [characters, setCharacters] = useState(post.characters || []);
   const [series, setSeries] = useState(post.series || []);
   const [saving, setSaving] = useState(false);
@@ -22,51 +27,59 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
   const [cardSuccess, setCardSuccess] = useState(null);
 
   // Track unsaved changes
-  const hasUnsavedChanges = 
-    JSON.stringify(characters.sort()) !== JSON.stringify((post.characters || []).sort()) ||
-    JSON.stringify(series.sort()) !== JSON.stringify((post.series || []).sort());
+  const hasUnsavedChanges =
+    JSON.stringify(characters.sort()) !==
+      JSON.stringify((post.characters || []).sort()) ||
+    JSON.stringify(series.sort()) !==
+      JSON.stringify((post.series || []).sort());
 
   // Auto-fill from title
   const handleAutoFill = () => {
     const title = post.title;
-    
+
     // Pattern 1: "Character Name (Series)" or "Character Name (Series) 500 pics"
     // Examples: "Hasuma Kanae (Tsumamigui)", "lucrezia noin (gundam) 500 pics"
     const pattern1 = /^([^(]+)\s*\(([^)]+)\)/i;
     const match1 = title.match(pattern1);
-    
+
     if (match1) {
       const extractedChar = match1[1].trim();
       const extractedSeries = match1[2].trim();
-      
+
       // Title case the names
       const titleCaseChar = extractedChar
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-      
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join(" ");
+
       const titleCaseSeries = extractedSeries
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-      
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join(" ");
+
       // Add character if not already present
       if (!characters.includes(titleCaseChar)) {
         setCharacters([...characters, titleCaseChar]);
       }
-      
+
       // Add series if not already present
       if (!series.includes(titleCaseSeries)) {
         setSeries([...series, titleCaseSeries]);
       }
-      
+
       setCardSuccess("Auto-filled character and series from title!");
       setTimeout(() => setCardSuccess(null), 3000);
       return;
     }
-    
+
     // If no pattern matched, show a message
-    setCardError("Could not auto-fill: title format not recognized. Expected format: 'Character Name (Series)'");
+    setCardError(
+      "Could not auto-fill: title format not recognized. Expected format: 'Character Name (Series)'",
+    );
     setTimeout(() => setCardError(null), 3000);
   };
 
@@ -92,22 +105,25 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
     }
 
     try {
-      const response = await api.get("/api/posts/autocomplete/characters-with-series", {
-        params: { q: query, limit: 10 },
-      });
-      
+      const response = await api.get(
+        "/api/posts/autocomplete/characters-with-series",
+        {
+          params: { q: query, limit: 10 },
+        },
+      );
+
       // Backend returns array of {character, series} objects
       const data = response.data || [];
-      
+
       // Convert to map: {character: series}
       const charSeriesMap = {};
       const charNames = [];
-      
-      data.forEach(item => {
+
+      data.forEach((item) => {
         charSeriesMap[item.character] = item.series;
         charNames.push(item.character);
       });
-      
+
       setCharacterSeriesMap(charSeriesMap);
       setCharacterSuggestions(charNames);
     } catch (err) {
@@ -135,7 +151,10 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
   // Click-away detection for autocomplete dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (characterRef.current && !characterRef.current.contains(event.target)) {
+      if (
+        characterRef.current &&
+        !characterRef.current.contains(event.target)
+      ) {
         setCharacterSuggestions([]);
         setCharacterSeriesMap({});
       }
@@ -193,7 +212,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
   // Publish post
   const handlePublish = async () => {
     if (!characters.length || !series.length) {
-      setCardError("Please add at least one character and series before publishing");
+      setCardError(
+        "Please add at least one character and series before publishing",
+      );
       return;
     }
 
@@ -230,7 +251,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
 
     try {
       await api.post(`/api/admin/posts/${post.id}/skip`);
-      setCardSuccess("Post marked as skipped (won't appear in search, won't be re-imported)");
+      setCardSuccess(
+        "Post marked as skipped (won't appear in search, won't be re-imported)",
+      );
       setTimeout(() => {
         onRemove(post.id);
       }, 1500);
@@ -256,7 +279,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${isSelected ? "ring-2 ring-blue-500" : ""}`}>
+    <div
+      className={`bg-white rounded-lg shadow p-6 ${isSelected ? "ring-2 ring-blue-500" : ""}`}
+    >
       {/* Card-level success/error banners */}
       {cardSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded mb-4 text-sm">
@@ -298,8 +323,16 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
             <h3 className="text-xl font-bold text-gray-900">{post.title}</h3>
             {hasUnsavedChanges && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Unsaved changes
               </span>
@@ -321,7 +354,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
 
           {/* Characters Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Characters *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Characters *
+            </label>
             <div className="relative" ref={characterRef}>
               <div className="flex gap-2">
                 <input
@@ -344,7 +379,10 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
                 />
                 <button
                   onClick={() => {
-                    if (characterInput.trim() && !characters.includes(characterInput.trim())) {
+                    if (
+                      characterInput.trim() &&
+                      !characters.includes(characterInput.trim())
+                    ) {
                       setCharacters([...characters, characterInput.trim()]);
                       setCharacterInput("");
                       setCharacterSuggestions([]);
@@ -367,13 +405,16 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
                         if (!characters.includes(suggestion)) {
                           setCharacters([...characters, suggestion]);
                         }
-                        
+
                         // Auto-add series if character has one and series not already added
                         const associatedSeries = characterSeriesMap[suggestion];
-                        if (associatedSeries && !series.includes(associatedSeries)) {
+                        if (
+                          associatedSeries &&
+                          !series.includes(associatedSeries)
+                        ) {
                           setSeries([...series, associatedSeries]);
                         }
-                        
+
                         setCharacterInput("");
                         setCharacterSuggestions([]);
                         setCharacterSeriesMap({});
@@ -401,7 +442,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
                 >
                   {char}
                   <button
-                    onClick={() => setCharacters(characters.filter((_, i) => i !== idx))}
+                    onClick={() =>
+                      setCharacters(characters.filter((_, i) => i !== idx))
+                    }
                     className="hover:text-blue-600"
                   >
                     ×
@@ -413,7 +456,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
 
           {/* Series Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Series *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Series *
+            </label>
             <div className="relative" ref={seriesRef}>
               <div className="flex gap-2">
                 <input
@@ -435,7 +480,10 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
                 />
                 <button
                   onClick={() => {
-                    if (seriesInput.trim() && !series.includes(seriesInput.trim())) {
+                    if (
+                      seriesInput.trim() &&
+                      !series.includes(seriesInput.trim())
+                    ) {
                       setSeries([...series, seriesInput.trim()]);
                       setSeriesInput("");
                       setSeriesSuggestions([]);
@@ -475,7 +523,9 @@ export default function PendingPostCard({ post, isSelected, onToggleSelect, onRe
                 >
                   {s}
                   <button
-                    onClick={() => setSeries(series.filter((_, i) => i !== idx))}
+                    onClick={() =>
+                      setSeries(series.filter((_, i) => i !== idx))
+                    }
                     className="hover:text-green-600"
                   >
                     ×

@@ -76,7 +76,9 @@ export default function SubmitPage() {
 
     // Validation
     if (user.tier > 1 && user.credits < creditCost) {
-      alert(`Not enough credits. You need ${creditCost} credits but have ${user.credits}.`);
+      alert(
+        `Not enough credits. You need ${creditCost} credits but have ${user.credits}.`,
+      );
       return;
     }
 
@@ -93,8 +95,14 @@ export default function SubmitPage() {
       submissionFormData.append("character_name", formData.character_name);
       submissionFormData.append("series", formData.series);
       submissionFormData.append("description", formData.description);
-      submissionFormData.append("is_large_image_set", formData.is_large_image_set);
-      submissionFormData.append("is_double_character", formData.is_double_character);
+      submissionFormData.append(
+        "is_large_image_set",
+        formData.is_large_image_set,
+      );
+      submissionFormData.append(
+        "is_double_character",
+        formData.is_double_character,
+      );
 
       const response = await submissionsAPI.create(submissionFormData);
       const submissionId = response.data.id;
@@ -125,11 +133,14 @@ export default function SubmitPage() {
                 Current Credits: {user.credits} / {user.max_credits}
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                This submission will cost: {creditCost} credit{creditCost !== 1 ? "s" : ""}
+                This submission will cost: {creditCost} credit
+                {creditCost !== 1 ? "s" : ""}
               </p>
             </div>
             {user.tier > 1 && user.credits < creditCost && (
-              <span className="text-red-600 font-semibold">[ERROR] Not enough credits</span>
+              <span className="text-red-600 font-semibold">
+                [ERROR] Not enough credits
+              </span>
             )}
           </div>
         </div>
@@ -144,7 +155,9 @@ export default function SubmitPage() {
               type="text"
               required
               value={formData.character_name}
-              onChange={(e) => setFormData({ ...formData, character_name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, character_name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               placeholder="e.g., Asuka Langley"
             />
@@ -190,12 +203,16 @@ export default function SubmitPage() {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               rows="6"
               placeholder="Describe your character request in detail..."
             />
-            <p className="text-sm text-gray-500 mt-1">{formData.description.length} characters</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {formData.description.length} characters
+            </p>
           </div>
 
           {/* Image Upload */}
@@ -210,7 +227,9 @@ export default function SubmitPage() {
               onChange={handleImageChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
-            <p className="text-sm text-gray-500 mt-1">Upload up to 20 images (max 10MB each)</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Upload up to 20 images (max 10MB each)
+            </p>
 
             {imagePreviews.length > 0 && (
               <div className="grid grid-cols-4 gap-4 mt-4">
@@ -237,14 +256,19 @@ export default function SubmitPage() {
           {/* Request Modifiers (Tier 2+ only) */}
           {user.tier > 1 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-900">Request Modifiers</h3>
+              <h3 className="text-sm font-medium text-gray-900">
+                Request Modifiers
+              </h3>
 
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.is_large_image_set}
                   onChange={(e) =>
-                    setFormData({ ...formData, is_large_image_set: e.target.checked })
+                    setFormData({
+                      ...formData,
+                      is_large_image_set: e.target.checked,
+                    })
                   }
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
@@ -258,7 +282,10 @@ export default function SubmitPage() {
                   type="checkbox"
                   checked={formData.is_double_character}
                   onChange={(e) =>
-                    setFormData({ ...formData, is_double_character: e.target.checked })
+                    setFormData({
+                      ...formData,
+                      is_double_character: e.target.checked,
+                    })
                   }
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
@@ -280,7 +307,11 @@ export default function SubmitPage() {
                 ? "Submitting..."
                 : `Submit (${creditCost} credit${creditCost !== 1 ? "s" : ""})`}
             </button>
-            <button type="button" onClick={() => navigate("/dashboard")} className="btn-secondary">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="btn-secondary"
+            >
               Cancel
             </button>
           </div>

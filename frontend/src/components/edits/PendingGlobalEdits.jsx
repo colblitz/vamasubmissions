@@ -27,7 +27,10 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
     try {
       if (action === "approve") {
         await api.post(`/api/global-edits/${editId}/approve`);
-        setSuccessMessages((prev) => ({ ...prev, [editId]: "✓ Approved & Applied!" }));
+        setSuccessMessages((prev) => ({
+          ...prev,
+          [editId]: "✓ Approved & Applied!",
+        }));
         setTimeout(() => {
           setSuccessMessages((prev) => {
             const { [editId]: _, ...rest } = prev;
@@ -47,7 +50,9 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
         }, 1500);
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.detail || `Failed to ${action} global edit`);
+      setErrorMessage(
+        err.response?.data?.detail || `Failed to ${action} global edit`,
+      );
       setTimeout(() => setErrorMessage(""), 5000);
     }
   };
@@ -124,13 +129,18 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
                 </span>
               </div>
               <div className="text-sm text-gray-900 mb-1">
-                <span className="font-medium text-red-600">"{edit.old_value}"</span>
+                <span className="font-medium text-red-600">
+                  "{edit.old_value}"
+                </span>
                 {" → "}
-                <span className="font-medium text-green-600">"{edit.new_value}"</span>
+                <span className="font-medium text-green-600">
+                  "{edit.new_value}"
+                </span>
               </div>
               <div className="text-xs text-gray-500">
-                Affects {edit.affected_count} post{edit.affected_count !== 1 ? "s" : ""} •{" "}
-                Suggested by {edit.suggester_username} •{" "}
+                Affects {edit.affected_count} post
+                {edit.affected_count !== 1 ? "s" : ""} • Suggested by{" "}
+                {edit.suggester_username} •{" "}
                 {new Date(edit.created_at).toLocaleDateString()}
               </div>
 
@@ -149,17 +159,25 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
                     Affected Posts ({previewData[edit.id].affected_count}):
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-2">
-                    {previewData[edit.id].affected_posts.slice(0, 10).map((post) => (
-                      <div key={post.id} className="bg-gray-50 p-2 rounded text-xs">
-                        <div className="font-medium text-gray-900">{post.title}</div>
-                        <div className="text-gray-600 mt-1">
-                          Current: {post.current_values.join(", ")}
+                    {previewData[edit.id].affected_posts
+                      .slice(0, 10)
+                      .map((post) => (
+                        <div
+                          key={post.id}
+                          className="bg-gray-50 p-2 rounded text-xs"
+                        >
+                          <div className="font-medium text-gray-900">
+                            {post.title}
+                          </div>
+                          <div className="text-gray-600 mt-1">
+                            Current: {post.current_values.join(", ")}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                     {previewData[edit.id].affected_posts.length > 10 && (
                       <p className="text-gray-500 text-xs italic">
-                        ... and {previewData[edit.id].affected_posts.length - 10} more
+                        ... and{" "}
+                        {previewData[edit.id].affected_posts.length - 10} more
                       </p>
                     )}
                   </div>

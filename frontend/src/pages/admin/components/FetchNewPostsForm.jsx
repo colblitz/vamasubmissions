@@ -1,9 +1,9 @@
 /**
  * FetchNewPostsForm Component
- * 
+ *
  * A form component for fetching new posts from Patreon.
  * Displays the latest published date and provides input for the Patreon session_id cookie.
- * 
+ *
  * @param {Object} props
  * @param {string} props.sessionIdInput - The current session_id input value
  * @param {Function} props.setSessionIdInput - Function to update session_id input
@@ -23,10 +23,11 @@ export default function FetchNewPostsForm({
       {/* Latest Published Date Display */}
       {latestPublishedDate && (
         <p className="text-sm text-gray-600 mb-4">
-          Latest published post: {new Date(latestPublishedDate).toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          Latest published post:{" "}
+          {new Date(latestPublishedDate).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </p>
       )}

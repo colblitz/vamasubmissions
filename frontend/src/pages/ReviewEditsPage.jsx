@@ -11,14 +11,14 @@ export default function ReviewEditsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("pending"); // 'pending', 'global', or 'history'
-  
+
   // Banner messages (only for errors)
   const [errorMessage, setErrorMessage] = useState("");
-  
+
   // Inline confirmation states - track which edit is in confirm mode
   const [confirmingAction, setConfirmingAction] = useState(null); // {editId, action: 'approve'|'reject'|'undo'}
   const [rejectReason, setRejectReason] = useState("");
-  
+
   // Inline success messages per edit
   const [editSuccessMessages, setEditSuccessMessages] = useState({}); // {editId: "message"}
 
@@ -87,45 +87,50 @@ export default function ReviewEditsPage() {
   // Execute action (second click - confirm)
   const executeAction = async () => {
     if (!confirmingAction) return;
-    
+
     const { editId, action } = confirmingAction;
     setConfirmingAction(null);
     setErrorMessage("");
 
     try {
-      if (action === 'approve') {
+      if (action === "approve") {
         await api.post(`/api/edits/${editId}/approve`);
         // Show inline success message
-        setEditSuccessMessages(prev => ({ ...prev, [editId]: "✓ Approved!" }));
+        setEditSuccessMessages((prev) => ({
+          ...prev,
+          [editId]: "✓ Approved!",
+        }));
         // Remove from list after brief delay
         setTimeout(() => {
-          setPendingEdits(prev => prev.filter(e => e.id !== editId));
-          setEditSuccessMessages(prev => {
+          setPendingEdits((prev) => prev.filter((e) => e.id !== editId));
+          setEditSuccessMessages((prev) => {
             const { [editId]: _, ...rest } = prev;
             return rest;
           });
         }, 1500);
-      } else if (action === 'reject') {
-        await api.post(`/api/edits/${editId}/reject`, { reason: rejectReason || undefined });
+      } else if (action === "reject") {
+        await api.post(`/api/edits/${editId}/reject`, {
+          reason: rejectReason || undefined,
+        });
         setRejectReason("");
         // Show inline success message
-        setEditSuccessMessages(prev => ({ ...prev, [editId]: "✓ Rejected" }));
+        setEditSuccessMessages((prev) => ({ ...prev, [editId]: "✓ Rejected" }));
         // Remove from list after brief delay
         setTimeout(() => {
-          setPendingEdits(prev => prev.filter(e => e.id !== editId));
-          setEditSuccessMessages(prev => {
+          setPendingEdits((prev) => prev.filter((e) => e.id !== editId));
+          setEditSuccessMessages((prev) => {
             const { [editId]: _, ...rest } = prev;
             return rest;
           });
         }, 1500);
-      } else if (action === 'undo') {
+      } else if (action === "undo") {
         await api.post(`/api/edits/history/${editId}/undo`);
         // Show inline success message
-        setEditSuccessMessages(prev => ({ ...prev, [editId]: "✓ Undone!" }));
+        setEditSuccessMessages((prev) => ({ ...prev, [editId]: "✓ Undone!" }));
         // Remove from list after brief delay
         setTimeout(() => {
-          setHistory(prev => prev.filter(e => e.id !== editId));
-          setEditSuccessMessages(prev => {
+          setHistory((prev) => prev.filter((e) => e.id !== editId));
+          setEditSuccessMessages((prev) => {
             const { [editId]: _, ...rest } = prev;
             return rest;
           });
@@ -232,7 +237,9 @@ export default function ReviewEditsPage() {
             /* PENDING TAB */
             <>
               {!pendingEdits || pendingEdits.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">No pending edits to review</div>
+                <div className="text-center py-12 text-gray-500">
+                  No pending edits to review
+                </div>
               ) : (
                 pendingEdits.map((edit) => (
                   <div
@@ -266,7 +273,9 @@ export default function ReviewEditsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{edit.post_title}</h3>
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {edit.post_title}
+                      </h3>
                       <div className="flex items-center gap-2 mt-1">
                         {renderActionBadge(edit.action)}
                         <span className="text-sm text-gray-600">
@@ -293,7 +302,7 @@ export default function ReviewEditsPage() {
                       ) : confirmingAction?.editId === edit.id ? (
                         /* Confirmation state */
                         <>
-                          {confirmingAction.action === 'approve' && (
+                          {confirmingAction.action === "approve" && (
                             <div className="flex flex-col gap-2">
                               <button
                                 onClick={executeAction}
@@ -309,12 +318,14 @@ export default function ReviewEditsPage() {
                               </button>
                             </div>
                           )}
-                          {confirmingAction.action === 'reject' && (
+                          {confirmingAction.action === "reject" && (
                             <div className="flex flex-col gap-2">
                               <input
                                 type="text"
                                 value={rejectReason}
-                                onChange={(e) => setRejectReason(e.target.value)}
+                                onChange={(e) =>
+                                  setRejectReason(e.target.value)
+                                }
                                 placeholder="Reason (optional)"
                                 className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400"
                               />
@@ -337,13 +348,15 @@ export default function ReviewEditsPage() {
                         /* Initial state */
                         <>
                           <button
-                            onClick={() => handleActionClick(edit.id, 'approve')}
+                            onClick={() =>
+                              handleActionClick(edit.id, "approve")
+                            }
                             className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
                           >
                             Approve
                           </button>
                           <button
-                            onClick={() => handleActionClick(edit.id, 'reject')}
+                            onClick={() => handleActionClick(edit.id, "reject")}
                             className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 whitespace-nowrap"
                           >
                             Reject
@@ -359,7 +372,10 @@ export default function ReviewEditsPage() {
             /* GLOBAL EDITS TAB */
             <>
               <SuggestGlobalEditForm onSuccess={fetchGlobalEdits} />
-              <PendingGlobalEdits globalEdits={globalEdits} onRefresh={fetchGlobalEdits} />
+              <PendingGlobalEdits
+                globalEdits={globalEdits}
+                onRefresh={fetchGlobalEdits}
+              />
             </>
           ) : (
             /* HISTORY TAB */
@@ -367,12 +383,24 @@ export default function ReviewEditsPage() {
               {/* Combine and sort per-post and global history */}
               {(() => {
                 const combinedHistory = [
-                  ...(history || []).map(item => ({ ...item, type: 'per-post' })),
-                  ...(globalHistory || []).map(item => ({ ...item, type: 'global' }))
-                ].sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at));
+                  ...(history || []).map((item) => ({
+                    ...item,
+                    type: "per-post",
+                  })),
+                  ...(globalHistory || []).map((item) => ({
+                    ...item,
+                    type: "global",
+                  })),
+                ].sort(
+                  (a, b) => new Date(b.applied_at) - new Date(a.applied_at),
+                );
 
                 if (combinedHistory.length === 0) {
-                  return <div className="text-center py-12 text-gray-500">No edit history yet</div>;
+                  return (
+                    <div className="text-center py-12 text-gray-500">
+                      No edit history yet
+                    </div>
+                  );
                 }
 
                 return combinedHistory.map((item) => (
@@ -381,7 +409,7 @@ export default function ReviewEditsPage() {
                     className="bg-white rounded-lg shadow p-4 flex gap-4 items-start"
                   >
                     {/* Icon/Thumbnail */}
-                    {item.type === 'global' ? (
+                    {item.type === "global" ? (
                       <div className="w-12 h-12 flex-shrink-0 bg-purple-100 rounded flex items-center justify-center">
                         <svg
                           className="w-6 h-6 text-purple-600"
@@ -423,7 +451,7 @@ export default function ReviewEditsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      {item.type === 'global' ? (
+                      {item.type === "global" ? (
                         <>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">
@@ -434,19 +462,26 @@ export default function ReviewEditsPage() {
                             </span>
                           </div>
                           <div className="text-sm text-gray-900 mb-1">
-                            <span className="font-medium text-red-600">"{item.old_value}"</span>
+                            <span className="font-medium text-red-600">
+                              "{item.old_value}"
+                            </span>
                             {" → "}
-                            <span className="font-medium text-green-600">"{item.new_value}"</span>
+                            <span className="font-medium text-green-600">
+                              "{item.new_value}"
+                            </span>
                           </div>
                           <p className="text-xs text-gray-500">
-                            {item.affected_count} post{item.affected_count !== 1 ? 's' : ''} affected •{" "}
+                            {item.affected_count} post
+                            {item.affected_count !== 1 ? "s" : ""} affected •{" "}
                             Approved by {item.approver_username} •{" "}
                             {new Date(item.applied_at).toLocaleDateString()}
                           </p>
                         </>
                       ) : (
                         <>
-                          <h3 className="font-semibold text-gray-900 truncate">{item.post_title}</h3>
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {item.post_title}
+                          </h3>
                           <div className="flex items-center gap-2 mt-1">
                             {renderActionBadge(item.action)}
                             <span className="text-sm text-gray-600">
@@ -472,7 +507,8 @@ export default function ReviewEditsPage() {
                         <span className="text-green-600 font-medium text-sm whitespace-nowrap">
                           {editSuccessMessages[item.id]}
                         </span>
-                      ) : confirmingAction?.editId === item.id && confirmingAction.action === 'undo' ? (
+                      ) : confirmingAction?.editId === item.id &&
+                        confirmingAction.action === "undo" ? (
                         /* Confirmation state */
                         <div className="flex flex-col gap-2">
                           <button
@@ -491,7 +527,7 @@ export default function ReviewEditsPage() {
                       ) : (
                         /* Initial state */
                         <button
-                          onClick={() => handleActionClick(item.id, 'undo')}
+                          onClick={() => handleActionClick(item.id, "undo")}
                           className="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 whitespace-nowrap"
                         >
                           Undo
@@ -505,7 +541,6 @@ export default function ReviewEditsPage() {
           )}
         </div>
       )}
-
     </div>
   );
 }

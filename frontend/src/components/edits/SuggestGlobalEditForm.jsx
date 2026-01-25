@@ -62,7 +62,9 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         new_value: normalizedNewValue,
       });
 
-      setSuccess(`Global edit suggested: "${normalizedOldValue}" → "${normalizedNewValue}"`);
+      setSuccess(
+        `Global edit suggested: "${normalizedOldValue}" → "${normalizedNewValue}"`,
+      );
       setOldValue("");
       setNewValue("");
       setPreview(null);
@@ -81,9 +83,12 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-900">Suggest Global Edit</h2>
+      <h2 className="text-xl font-bold mb-4 text-gray-900">
+        Suggest Global Edit
+      </h2>
       <p className="text-sm text-gray-600 mb-4">
-        Fix typos or rename values across all posts at once (e.g., "Naruto Uzamaki" → "Naruto Uzumaki")
+        Fix typos or rename values across all posts at once (e.g., "Naruto
+        Uzamaki" → "Naruto Uzumaki")
       </p>
 
       {/* Success Message */}
@@ -168,10 +173,13 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
       {preview && (
         <div className="mt-6 border-t pt-4">
           <h3 className="font-semibold text-gray-900 mb-2">
-            Preview: {preview.affected_count} post{preview.affected_count !== 1 ? "s" : ""} will be affected
+            Preview: {preview.affected_count} post
+            {preview.affected_count !== 1 ? "s" : ""} will be affected
           </h3>
           {preview.affected_count === 0 ? (
-            <p className="text-gray-600 text-sm">No posts found with "{oldValue}"</p>
+            <p className="text-gray-600 text-sm">
+              No posts found with "{oldValue}"
+            </p>
           ) : (
             <div className="max-h-64 overflow-y-auto space-y-2">
               {preview.affected_posts.slice(0, 10).map((post) => (

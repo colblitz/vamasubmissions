@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export default function AboutPage() {
   const [leaderboard, setLeaderboard] = useState(null);
@@ -19,8 +19,8 @@ export default function AboutPage() {
       setLeaderboard(response.data);
       setError(null);
     } catch (err) {
-      console.error('Error fetching leaderboard:', err);
-      setError('Failed to load leaderboard data');
+      console.error("Error fetching leaderboard:", err);
+      setError("Failed to load leaderboard data");
     } finally {
       setLoading(false);
     }
@@ -28,79 +28,96 @@ export default function AboutPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">About VAMA Community Tracker</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        About VAMA Community Tracker
+      </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column: About Content */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Welcome!</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Welcome!
+            </h2>
             <div className="prose prose-sm text-gray-700 space-y-4">
               <p>
-                Welcome to the VAMA Community Tracker, an unofficial community-driven platform for
-                tracking and searching VAMA's Patreon character posts.
+                Welcome to the VAMA Community Tracker, an unofficial
+                community-driven platform for tracking and searching VAMA's
+                Patreon character posts.
               </p>
               <p>
-                This platform was created by fans, for fans, to help the community organize and
-                discover VAMA's amazing character artwork. All content belongs to VAMA and their
-                Patreon supporters.
+                This platform was created by fans, for fans, to help the
+                community organize and discover VAMA's amazing character
+                artwork. All content belongs to VAMA and their Patreon
+                supporters.
               </p>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Features</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Features
+            </h2>
             <div className="prose prose-sm text-gray-700 space-y-3">
               <ul className="list-disc list-inside space-y-2">
                 <li>
-                  <strong>Search & Browse:</strong> Find character posts by name, series, or tags
+                  <strong>Search & Browse:</strong> Find character posts by
+                  name, series, or tags
                 </li>
                 <li>
-                  <strong>Community Requests:</strong> Track unofficial request queue (not
-                  everyone uses this)
+                  <strong>Community Requests:</strong> Track unofficial request
+                  queue (not everyone uses this)
                 </li>
                 <li>
-                  <strong>Collaborative Editing:</strong> Suggest improvements to character
-                  metadata
+                  <strong>Collaborative Editing:</strong> Suggest improvements
+                  to character metadata
                 </li>
                 <li>
-                  <strong>Community Moderation:</strong> All edits require peer approval
+                  <strong>Community Moderation:</strong> All edits require peer
+                  approval
                 </li>
               </ul>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">How It Works</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              How It Works
+            </h2>
             <div className="prose prose-sm text-gray-700 space-y-3">
               <p>
-                <strong>Searching:</strong> Use the Search page to find posts by character name,
-                series, or tags. You can also browse by category to discover new content.
+                <strong>Searching:</strong> Use the Search page to find posts by
+                character name, series, or tags. You can also browse by category
+                to discover new content.
               </p>
               <p>
-                <strong>Suggesting Edits:</strong> Found a typo or missing tag? Click "Suggest
-                Edit" on any post to propose changes. Another community member will review and
-                approve your suggestion.
+                <strong>Suggesting Edits:</strong> Found a typo or missing tag?
+                Click "Suggest Edit" on any post to propose changes. Another
+                community member will review and approve your suggestion.
               </p>
               <p>
-                <strong>Reviewing Edits:</strong> Visit the Review Edits page to see pending
-                suggestions from other users. Help keep the database accurate by approving good
-                edits!
+                <strong>Reviewing Edits:</strong> Visit the Review Edits page to
+                see pending suggestions from other users. Help keep the database
+                accurate by approving good edits!
               </p>
               <p>
-                <strong>Request Tracking:</strong> The Community Requests page lets you record when
-                you've submitted a request to VAMA. This is unofficial and not everyone uses it,
-                but it can help you track your own requests.
+                <strong>Request Tracking:</strong> The Community Requests page
+                lets you record when you've submitted a request to VAMA. This is
+                unofficial and not everyone uses it, but it can help you track
+                your own requests.
               </p>
             </div>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-blue-900 mb-3">Disclaimer</h2>
+            <h2 className="text-xl font-semibold text-blue-900 mb-3">
+              Disclaimer
+            </h2>
             <p className="text-sm text-blue-800">
-              This is an <strong>unofficial community project</strong> and is not affiliated with
-              or endorsed by VAMA. All character artwork and content belongs to VAMA. This platform
-              is for organizational purposes only and requires an active Patreon subscription to
+              This is an <strong>unofficial community project</strong> and is
+              not affiliated with or endorsed by VAMA. All character artwork and
+              content belongs to VAMA. This platform is for organizational
+              purposes only and requires an active Patreon subscription to
               access.
             </p>
           </div>
@@ -143,20 +160,28 @@ export default function AboutPage() {
                           <span
                             className={`text-lg font-bold ${
                               index === 0
-                                ? 'text-yellow-500'
+                                ? "text-yellow-500"
                                 : index === 1
-                                ? 'text-gray-400'
-                                : index === 2
-                                ? 'text-orange-600'
-                                : 'text-gray-600'
+                                  ? "text-gray-400"
+                                  : index === 2
+                                    ? "text-orange-600"
+                                    : "text-gray-600"
                             }`}
                           >
-                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                            {index === 0
+                              ? "🥇"
+                              : index === 1
+                                ? "🥈"
+                                : index === 2
+                                  ? "🥉"
+                                  : `#${index + 1}`}
                           </span>
-                          <span className="font-medium text-gray-900">{user.username}</span>
+                          <span className="font-medium text-gray-900">
+                            {user.username}
+                          </span>
                         </div>
                         <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-                          {user.count} {user.count === 1 ? 'edit' : 'edits'}
+                          {user.count} {user.count === 1 ? "edit" : "edits"}
                         </span>
                       </div>
                     ))}
@@ -185,20 +210,29 @@ export default function AboutPage() {
                           <span
                             className={`text-lg font-bold ${
                               index === 0
-                                ? 'text-yellow-500'
+                                ? "text-yellow-500"
                                 : index === 1
-                                ? 'text-gray-400'
-                                : index === 2
-                                ? 'text-orange-600'
-                                : 'text-gray-600'
+                                  ? "text-gray-400"
+                                  : index === 2
+                                    ? "text-orange-600"
+                                    : "text-gray-600"
                             }`}
                           >
-                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                            {index === 0
+                              ? "🥇"
+                              : index === 1
+                                ? "🥈"
+                                : index === 2
+                                  ? "🥉"
+                                  : `#${index + 1}`}
                           </span>
-                          <span className="font-medium text-gray-900">{user.username}</span>
+                          <span className="font-medium text-gray-900">
+                            {user.username}
+                          </span>
                         </div>
                         <span className="text-sm font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                          {user.count} {user.count === 1 ? 'approval' : 'approvals'}
+                          {user.count}{" "}
+                          {user.count === 1 ? "approval" : "approvals"}
                         </span>
                       </div>
                     ))}
@@ -208,19 +242,31 @@ export default function AboutPage() {
 
               {/* Stats Summary */}
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Community Stats</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  Community Stats
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-indigo-600">
-                      {leaderboard.top_suggesters.reduce((sum, user) => sum + user.count, 0)}
+                      {leaderboard.top_suggesters.reduce(
+                        (sum, user) => sum + user.count,
+                        0,
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">Total Edits Suggested</div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Total Edits Suggested
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-green-600">
-                      {leaderboard.top_approvers.reduce((sum, user) => sum + user.count, 0)}
+                      {leaderboard.top_approvers.reduce(
+                        (sum, user) => sum + user.count,
+                        0,
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">Total Edits Approved</div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Total Edits Approved
+                    </div>
                   </div>
                 </div>
               </div>

@@ -46,7 +46,7 @@ export default function SearchPage() {
 
     try {
       const response = await api.get(`/api/posts/autocomplete/${type}`, {
-        params: { q: query, limit: 100 },  // Substring matching: worst case "a" = 310 matches
+        params: { q: query, limit: 100 }, // Substring matching: worst case "a" = 310 matches
       });
 
       if (type === "characters") setCharacterSuggestions(response.data || []);
@@ -60,17 +60,17 @@ export default function SearchPage() {
   // Create stable debounced functions using useMemo
   const debouncedFetchCharacters = useMemo(
     () => debounce((query) => fetchAutocomplete("characters", query), 300),
-    []
+    [],
   );
 
   const debouncedFetchSeries = useMemo(
     () => debounce((query) => fetchAutocomplete("series", query), 300),
-    []
+    [],
   );
 
   const debouncedFetchTags = useMemo(
     () => debounce((query) => fetchAutocomplete("tags", query), 300),
-    []
+    [],
   );
 
   // Debounced autocomplete using lodash debounce
@@ -148,7 +148,14 @@ export default function SearchPage() {
     ) {
       handleSearch();
     }
-  }, [searchParams.characters, searchParams.series, searchParams.tags, searchParams.sortBy, searchParams.sortOrder, searchParams.page]);
+  }, [
+    searchParams.characters,
+    searchParams.series,
+    searchParams.tags,
+    searchParams.sortBy,
+    searchParams.sortOrder,
+    searchParams.page,
+  ]);
 
   // Handle clear search
   const handleClear = () => {
@@ -176,7 +183,7 @@ export default function SearchPage() {
   const handleBrowseItemSelect = (fieldType, itemName) => {
     // Switch to search tab
     setActiveTab("search");
-    
+
     // Apply the filter based on field type
     if (fieldType === "characters") {
       setSearchParams((prev) => ({ ...prev, characters: [itemName], page: 1 }));
@@ -256,7 +263,10 @@ export default function SearchPage() {
         pagination={{ page: searchParams.page, limit: searchParams.limit }}
         onPageChange={handlePageChange}
         onEditSuccess={handleEditSuccess}
-        sortParams={{ sortBy: searchParams.sortBy, sortOrder: searchParams.sortOrder }}
+        sortParams={{
+          sortBy: searchParams.sortBy,
+          sortOrder: searchParams.sortOrder,
+        }}
         onSortChange={handleSortChange}
       />
     </div>

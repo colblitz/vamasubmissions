@@ -7,10 +7,10 @@
  * - Trim leading/trailing whitespace
  * - Normalize unicode to NFC form
  * - Return null if empty after normalization
- * 
+ *
  * @param {string|null|undefined} text - Input string to normalize
  * @returns {string|null} Normalized string or null if empty
- * 
+ *
  * @example
  * normalizeText("  Hello  ") // "Hello"
  * normalizeText("   ") // null
@@ -18,17 +18,17 @@
  */
 export function normalizeText(text) {
   if (!text) return null;
-  
+
   // Trim whitespace
   text = text.trim();
-  
+
   // Return null if empty
   if (!text) return null;
-  
+
   // Normalize unicode to NFC form (canonical composition)
   // This ensures consistent representation of accented characters
-  text = text.normalize('NFC');
-  
+  text = text.normalize("NFC");
+
   return text;
 }
 
@@ -37,10 +37,10 @@ export function normalizeText(text) {
  * - Apply normalizeText to each item
  * - Remove empty values
  * - Remove case-insensitive duplicates (keeps first occurrence)
- * 
+ *
  * @param {string[]|null|undefined} items - Array of strings to normalize
  * @returns {string[]} Normalized, deduplicated array
- * 
+ *
  * @example
  * normalizeArrayField(["  Naruto  ", "naruto", "Sasuke"]) // ["Naruto", "Sasuke"]
  * normalizeArrayField(["", "  ", "Valid"]) // ["Valid"]
@@ -48,10 +48,10 @@ export function normalizeText(text) {
  */
 export function normalizeArrayField(items) {
   if (!items || !Array.isArray(items)) return [];
-  
+
   const normalized = [];
   const seenLower = new Set();
-  
+
   for (const item of items) {
     const normalizedItem = normalizeText(item);
     if (normalizedItem) {
@@ -62,6 +62,6 @@ export function normalizeArrayField(items) {
       }
     }
   }
-  
+
   return normalized;
 }

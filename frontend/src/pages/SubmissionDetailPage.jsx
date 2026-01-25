@@ -31,7 +31,9 @@ export default function SubmissionDetailPage() {
 
   const handleCancel = async () => {
     if (
-      !confirm("Are you sure you want to cancel this submission? Your credits will be refunded.")
+      !confirm(
+        "Are you sure you want to cancel this submission? Your credits will be refunded.",
+      )
     ) {
       return;
     }
@@ -71,7 +73,9 @@ export default function SubmissionDetailPage() {
   if (!submission) {
     return (
       <div className="card text-center">
-        <p className="text-red-600 font-semibold">[ERROR] Submission not found</p>
+        <p className="text-red-600 font-semibold">
+          [ERROR] Submission not found
+        </p>
         <Link to="/dashboard" className="btn-primary mt-4 inline-block">
           Back to Dashboard
         </Link>
@@ -102,7 +106,9 @@ export default function SubmissionDetailPage() {
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold">{submission.character_name}</h1>
+              <h1 className="text-3xl font-bold">
+                {submission.character_name}
+              </h1>
               <span
                 className={`px-3 py-1 rounded text-sm font-semibold ${getStatusBadge(submission.status)}`}
               >
@@ -119,10 +125,17 @@ export default function SubmissionDetailPage() {
 
           {isOwner && submission.status === "pending" && (
             <div className="flex gap-2">
-              <Link to={`/submission/${submission.id}/edit`} className="btn-secondary">
+              <Link
+                to={`/submission/${submission.id}/edit`}
+                className="btn-secondary"
+              >
                 Edit
               </Link>
-              <button onClick={handleCancel} disabled={cancelling} className="btn-danger">
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="btn-danger"
+              >
                 {cancelling ? "Cancelling..." : "Cancel"}
               </button>
             </div>
@@ -140,7 +153,9 @@ export default function SubmissionDetailPage() {
           {submission.queue_position && (
             <div>
               <p className="text-gray-500">Queue Position</p>
-              <p className="font-semibold text-gray-900">#{submission.queue_position}</p>
+              <p className="font-semibold text-gray-900">
+                #{submission.queue_position}
+              </p>
             </div>
           )}
           <div>
@@ -151,19 +166,24 @@ export default function SubmissionDetailPage() {
           </div>
           <div>
             <p className="text-gray-500">Credit Cost</p>
-            <p className="font-semibold text-gray-900">{submission.credit_cost}</p>
+            <p className="font-semibold text-gray-900">
+              {submission.credit_cost}
+            </p>
           </div>
         </div>
 
-        {submission.estimated_completion_date && submission.status === "pending" && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <span className="font-semibold">Estimated Completion:</span>{" "}
-              {new Date(submission.estimated_completion_date).toLocaleDateString()}
-              <span className="text-xs ml-2">(estimate only)</span>
-            </p>
-          </div>
-        )}
+        {submission.estimated_completion_date &&
+          submission.status === "pending" && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">Estimated Completion:</span>{" "}
+                {new Date(
+                  submission.estimated_completion_date,
+                ).toLocaleDateString()}
+                <span className="text-xs ml-2">(estimate only)</span>
+              </p>
+            </div>
+          )}
 
         {submission.status === "completed" && submission.patreon_post_url && (
           <div className="mt-4">
@@ -182,7 +202,9 @@ export default function SubmissionDetailPage() {
       {/* Description */}
       <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-3">Description</h2>
-        <p className="text-gray-700 whitespace-pre-wrap">{submission.description}</p>
+        <p className="text-gray-700 whitespace-pre-wrap">
+          {submission.description}
+        </p>
       </div>
 
       {/* Request Modifiers */}
@@ -207,7 +229,9 @@ export default function SubmissionDetailPage() {
       {/* Images */}
       {submission.images && submission.images.length > 0 && (
         <div className="card">
-          <h2 className="text-xl font-bold mb-3">Reference Images ({submission.images.length})</h2>
+          <h2 className="text-xl font-bold mb-3">
+            Reference Images ({submission.images.length})
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {submission.images.map((image) => (
               <div key={image.id} className="relative group">
@@ -275,8 +299,12 @@ export default function SubmissionDetailPage() {
       {/* Admin Notes */}
       {isAdmin() && submission.admin_notes && (
         <div className="card bg-yellow-50 border border-yellow-200">
-          <h2 className="text-xl font-bold mb-3 text-yellow-900">Admin Notes (Admin Only)</h2>
-          <p className="text-yellow-800 whitespace-pre-wrap">{submission.admin_notes}</p>
+          <h2 className="text-xl font-bold mb-3 text-yellow-900">
+            Admin Notes (Admin Only)
+          </h2>
+          <p className="text-yellow-800 whitespace-pre-wrap">
+            {submission.admin_notes}
+          </p>
         </div>
       )}
 

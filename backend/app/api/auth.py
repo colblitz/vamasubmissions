@@ -18,7 +18,9 @@ router = APIRouter()
 
 
 @router.get("/login")
-async def login(username: Optional[str] = None, tier_id: Optional[str] = None, db: Session = Depends(get_db)):
+async def login(
+    username: Optional[str] = None, tier_id: Optional[str] = None, db: Session = Depends(get_db)
+):
     """
     Development mode: Mock login for testing.
     Production mode: Redirect to Patreon OAuth authorization page.
@@ -36,7 +38,7 @@ async def login(username: Optional[str] = None, tier_id: Optional[str] = None, d
             # Use provided tier_id or default to "mock_tier_1" for testing
             if tier_id is None:
                 tier_id = "mock_tier_1"
-            
+
             # Create mock user with active patron status
             user = user_service.create_user(
                 db,
@@ -200,7 +202,7 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 return RedirectResponse(url=frontend_redirect)
 
             # Step 3: Check if user's tier is in the allowed whitelist
-            allowed_tier_ids = settings.allowed_patreon_tier_ids.split(',')
+            allowed_tier_ids = settings.allowed_patreon_tier_ids.split(",")
             if user_info.tier_id not in allowed_tier_ids:
                 error_message = "Your subscription tier does not have access to this site. Please upgrade your VAMA Patreon subscription."
                 frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
@@ -287,7 +289,7 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
         tier_id = None
         campaign_id = None
         patron_status = None
-        
+
         target_campaign_id = settings.patreon_creator_id
 
         # Find membership to VAMA's campaign (not just any campaign)
@@ -296,7 +298,7 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
                 # Get campaign_id from relationships
                 campaign_rel = item.get("relationships", {}).get("campaign", {}).get("data", {})
                 item_campaign_id = campaign_rel.get("id")
-                
+
                 # Only process if this is VAMA's campaign
                 if item_campaign_id == target_campaign_id:
                     member_attrs = item.get("attributes", {})
@@ -304,7 +306,11 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
                     campaign_id = item_campaign_id
 
                     # Get tier_id from currently_entitled_tiers relationship
-                    tiers_rel = item.get("relationships", {}).get("currently_entitled_tiers", {}).get("data", [])
+                    tiers_rel = (
+                        item.get("relationships", {})
+                        .get("currently_entitled_tiers", {})
+                        .get("data", [])
+                    )
                     if tiers_rel and len(tiers_rel) > 0:
                         # Take the first tier ID (users typically have one tier per campaign)
                         tier_id = tiers_rel[0].get("id")
@@ -324,10 +330,10 @@ async def fetch_patreon_user_info(access_token: str) -> PatreonUserInfo:
 def get_tier_name_from_id(tier_id: Optional[str]) -> str:
     """
     Map Patreon tier ID to display name.
-    
+
     Args:
         tier_id: Patreon tier ID
-    
+
     Returns:
         Human-readable tier name
     """
@@ -442,14 +448,21 @@ async def check_subscription(
 
                     # Get tier_id from currently_entitled_tiers relationship
                     tier_id = None
-                    tiers_rel = item.get("relationships", {}).get("currently_entitled_tiers", {}).get("data", [])
+                    tiers_rel = (
+                        item.get("relationships", {})
+                        .get("currently_entitled_tiers", {})
+                        .get("data", [])
+                    )
                     if tiers_rel and len(tiers_rel) > 0:
                         tier_id = tiers_rel[0].get("id")
 
                     is_active = patron_status == "active_patron"
 
                     # Update user's info in database if it changed
-                    if current_user.tier_id != tier_id or current_user.patron_status != patron_status:
+                    if (
+                        current_user.tier_id != tier_id
+                        or current_user.patron_status != patron_status
+                    ):
                         current_user.tier_id = tier_id
                         current_user.patron_status = patron_status
                         current_user.campaign_id = campaign_id

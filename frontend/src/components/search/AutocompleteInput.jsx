@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 
 /**
  * Reusable autocomplete input component
- * 
+ *
  * @param {string} value - Current input value
  * @param {function} onChange - Callback when input changes
  * @param {function} onSelect - Callback when suggestion is selected
@@ -27,7 +27,8 @@ export default function AutocompleteInput({
   const inputRef = useRef(null);
 
   // Show dropdown when there are suggestions or when showing "no results"
-  const shouldShowDropdown = value.length >= 3 && (suggestions.length > 0 || showNoResults);
+  const shouldShowDropdown =
+    value.length >= 3 && (suggestions.length > 0 || showNoResults);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -78,7 +79,7 @@ export default function AutocompleteInput({
         placeholder={placeholder}
         className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 ${className}`}
       />
-      
+
       {isOpen && (
         <div
           ref={dropdownRef}
@@ -95,7 +96,9 @@ export default function AutocompleteInput({
               </button>
             ))
           ) : showNoResults ? (
-            <div className="px-4 py-2 text-gray-500 text-sm">No results found</div>
+            <div className="px-4 py-2 text-gray-500 text-sm">
+              No results found
+            </div>
           ) : null}
         </div>
       )}

@@ -96,7 +96,7 @@ export default function SubmissionEditPage() {
     // Check if user has enough credits for cost increase
     if (user.tier > 1 && costDifference > 0 && user.credits < costDifference) {
       alert(
-        `Not enough credits. You need ${costDifference} more credit(s) but have ${user.credits}.`
+        `Not enough credits. You need ${costDifference} more credit(s) but have ${user.credits}.`,
       );
       return;
     }
@@ -118,7 +118,9 @@ export default function SubmissionEditPage() {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading submission...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          Loading submission...
+        </p>
       </div>
     );
   }
@@ -138,7 +140,9 @@ export default function SubmissionEditPage() {
             }`}
           >
             <p className="font-semibold">
-              {costDifference > 0 ? "[WARNING] Cost Increase" : "[INFO] Cost Decrease"}
+              {costDifference > 0
+                ? "[WARNING] Cost Increase"
+                : "[INFO] Cost Decrease"}
             </p>
             <p className="text-sm mt-1">
               {costDifference > 0
@@ -161,7 +165,9 @@ export default function SubmissionEditPage() {
               type="text"
               required
               value={formData.character_name}
-              onChange={(e) => setFormData({ ...formData, character_name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, character_name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
             />
           </div>
@@ -205,7 +211,9 @@ export default function SubmissionEditPage() {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               rows="6"
             />
@@ -217,20 +225,31 @@ export default function SubmissionEditPage() {
               <input
                 type="checkbox"
                 checked={formData.is_public}
-                onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_public: e.target.checked })
+                }
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 font-medium">Make this submission public</span>
+              <span className="text-sm text-gray-700 font-medium">
+                Make this submission public
+              </span>
             </label>
 
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.is_large_image_set}
-                onChange={(e) => setFormData({ ...formData, is_large_image_set: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    is_large_image_set: e.target.checked,
+                  })
+                }
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700 font-medium">Large image set (+1 credit)</span>
+              <span className="text-sm text-gray-700 font-medium">
+                Large image set (+1 credit)
+              </span>
             </label>
 
             <label className="flex items-center gap-3 cursor-pointer">
@@ -238,7 +257,10 @@ export default function SubmissionEditPage() {
                 type="checkbox"
                 checked={formData.is_double_character}
                 onChange={(e) =>
-                  setFormData({ ...formData, is_double_character: e.target.checked })
+                  setFormData({
+                    ...formData,
+                    is_double_character: e.target.checked,
+                  })
                 }
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
@@ -251,9 +273,9 @@ export default function SubmissionEditPage() {
           {/* Note about images */}
           <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-semibold">[INFO]</span> Images cannot be edited after
-              submission. If you need to change images, please cancel this submission and create a
-              new one.
+              <span className="font-semibold">[INFO]</span> Images cannot be
+              edited after submission. If you need to change images, please
+              cancel this submission and create a new one.
             </p>
           </div>
 
@@ -262,7 +284,10 @@ export default function SubmissionEditPage() {
             <button
               type="submit"
               disabled={
-                saving || (user.tier > 1 && costDifference > 0 && user.credits < costDifference)
+                saving ||
+                (user.tier > 1 &&
+                  costDifference > 0 &&
+                  user.credits < costDifference)
               }
               className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >

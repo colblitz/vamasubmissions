@@ -73,7 +73,9 @@ export default function QueuePage() {
     <div
       key={submission.id}
       className={`bg-white border rounded-lg p-4 ${
-        submission.is_own_submission ? "border-blue-500 bg-blue-50" : "border-gray-200"
+        submission.is_own_submission
+          ? "border-blue-500 bg-blue-50"
+          : "border-gray-200"
       }`}
     >
       <div className="flex items-start justify-between">
@@ -88,27 +90,37 @@ export default function QueuePage() {
               </span>
             )}
             {submission.is_public && !submission.is_own_submission && (
-              <span className="text-sm text-gray-700">{submission.character_name}</span>
+              <span className="text-sm text-gray-700">
+                {submission.character_name}
+              </span>
             )}
           </div>
 
           <p className="text-sm text-gray-700 mb-2">
             <span className="font-medium text-gray-900">Series:</span>{" "}
-            {submission.is_own_submission || submission.is_public ? submission.series : "???"}
+            {submission.is_own_submission || submission.is_public
+              ? submission.series
+              : "???"}
           </p>
 
           <div className="flex items-center gap-4 text-xs text-gray-600">
             <span>Position: #{submission.queue_position}</span>
-            <span>Submitted: {new Date(submission.submitted_at).toLocaleDateString()}</span>
+            <span>
+              Submitted:{" "}
+              {new Date(submission.submitted_at).toLocaleDateString()}
+            </span>
             {submission.estimated_completion_date && (
               <span>
                 Est. Completion:{" "}
-                {new Date(submission.estimated_completion_date).toLocaleDateString()}
+                {new Date(
+                  submission.estimated_completion_date,
+                ).toLocaleDateString()}
               </span>
             )}
             {showVoting && (
               <span className="font-semibold text-blue-600">
-                {submission.vote_count} vote{submission.vote_count !== 1 ? "s" : ""}
+                {submission.vote_count} vote
+                {submission.vote_count !== 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -142,7 +154,9 @@ export default function QueuePage() {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading queues...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          Loading queues...
+        </p>
       </div>
     );
   }
@@ -150,21 +164,28 @@ export default function QueuePage() {
   return (
     <div className="space-y-6">
       <div className="card">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Submission Queues</h1>
-        <p className="text-gray-600">View the current queue status and your position</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Submission Queues
+        </h1>
+        <p className="text-gray-600">
+          View the current queue status and your position
+        </p>
       </div>
 
       {/* Vote Allowance (Tier 1 only) */}
       {user.tier === 1 && voteAllowance && (
         <div className="card bg-purple-50 border border-purple-200">
-          <h3 className="font-semibold text-gray-900 mb-2">Your Votes This Month</h3>
+          <h3 className="font-semibold text-gray-900 mb-2">
+            Your Votes This Month
+          </h3>
           <div className="flex items-center gap-4">
             <div className="text-3xl font-bold text-purple-600">
               {voteAllowance.votes_remaining}
             </div>
             <div className="text-sm text-gray-600">
               <p>
-                {voteAllowance.votes_used} used / {voteAllowance.votes_available} available
+                {voteAllowance.votes_used} used /{" "}
+                {voteAllowance.votes_available} available
               </p>
               <p className="text-xs">Votes reset monthly</p>
             </div>
@@ -177,7 +198,9 @@ export default function QueuePage() {
         <button
           onClick={() => setActiveTab("paid")}
           className={`px-6 py-3 rounded-lg font-semibold ${
-            activeTab === "paid" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+            activeTab === "paid"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700"
           }`}
         >
           Paid Queue ({paidQueue?.total_submissions || 0})
@@ -185,7 +208,9 @@ export default function QueuePage() {
         <button
           onClick={() => setActiveTab("free")}
           className={`px-6 py-3 rounded-lg font-semibold ${
-            activeTab === "free" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+            activeTab === "free"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700"
           }`}
         >
           Free Queue ({freeQueue?.total_submissions || 0})
@@ -196,7 +221,9 @@ export default function QueuePage() {
       {activeTab === "paid" && paidQueue && (
         <div className="card">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Paid Queue (FIFO)</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Paid Queue (FIFO)
+            </h2>
             <p className="text-gray-600">
               Strict first-in-first-out ordering for tiers 2, 3, and 4
             </p>
@@ -208,11 +235,13 @@ export default function QueuePage() {
           </div>
 
           {paidQueue.visible_submissions.length === 0 ? (
-            <p className="text-center text-gray-600 py-8">No submissions in paid queue</p>
+            <p className="text-center text-gray-600 py-8">
+              No submissions in paid queue
+            </p>
           ) : (
             <div className="space-y-4">
               {paidQueue.visible_submissions.map((submission) =>
-                renderSubmission(submission, false)
+                renderSubmission(submission, false),
               )}
             </div>
           )}
@@ -222,8 +251,12 @@ export default function QueuePage() {
       {activeTab === "free" && freeQueue && (
         <div className="card">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Free Queue (Vote-Based)</h2>
-            <p className="text-gray-600">Ordered by community votes, then submission time</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Free Queue (Vote-Based)
+            </h2>
+            <p className="text-gray-600">
+              Ordered by community votes, then submission time
+            </p>
             {freeQueue.user_position && (
               <p className="text-lg font-semibold text-blue-600 mt-2">
                 Your position: #{freeQueue.user_position}
@@ -232,11 +265,13 @@ export default function QueuePage() {
           </div>
 
           {freeQueue.visible_submissions.length === 0 ? (
-            <p className="text-center text-gray-600 py-8">No submissions in free queue</p>
+            <p className="text-center text-gray-600 py-8">
+              No submissions in free queue
+            </p>
           ) : (
             <div className="space-y-4">
               {freeQueue.visible_submissions.map((submission) =>
-                renderSubmission(submission, true)
+                renderSubmission(submission, true),
               )}
             </div>
           )}

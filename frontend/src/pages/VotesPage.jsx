@@ -14,11 +14,14 @@ export default function VotesPage() {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(import.meta.env.VITE_API_URL + "/api/votes/sessions", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      const response = await fetch(
+        import.meta.env.VITE_API_URL + "/api/votes/sessions",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         },
-      });
+      );
       const data = await response.json();
       setSessions(data.sessions);
 
@@ -42,7 +45,7 @@ export default function VotesPage() {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        }
+        },
       );
       const data = await response.json();
       setActiveSession(data);
@@ -64,7 +67,11 @@ export default function VotesPage() {
         ...prev,
         submissions: prev.submissions.map((s) => {
           if (s.id === submissionId) {
-            return { ...s, user_has_voted: false, vote_count: s.vote_count - 1 };
+            return {
+              ...s,
+              user_has_voted: false,
+              vote_count: s.vote_count - 1,
+            };
           }
           return s;
         }),
@@ -78,7 +85,7 @@ export default function VotesPage() {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-          }
+          },
         );
       } catch (error) {
         console.error("Failed to remove vote:", error);
@@ -112,7 +119,7 @@ export default function VotesPage() {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-          }
+          },
         );
       }
 
@@ -124,7 +131,7 @@ export default function VotesPage() {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -165,21 +172,27 @@ export default function VotesPage() {
                   : "border-gray-300 bg-white"
               }`}
             >
-              {submission.user_has_voted && <div className="w-2 h-2 rounded-full bg-white"></div>}
+              {submission.user_has_voted && (
+                <div className="w-2 h-2 rounded-full bg-white"></div>
+              )}
             </div>
           </div>
 
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl font-bold text-gray-400">#{rank}</span>
-              <h3 className="text-lg font-semibold text-gray-900">{submission.character_name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {submission.character_name}
+              </h3>
               <span className="px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-800">
-                {submission.vote_count} vote{submission.vote_count !== 1 ? "s" : ""}
+                {submission.vote_count} vote
+                {submission.vote_count !== 1 ? "s" : ""}
               </span>
             </div>
 
             <p className="text-sm text-gray-700 mb-2">
-              <span className="font-medium text-gray-900">Series:</span> {submission.series}
+              <span className="font-medium text-gray-900">Series:</span>{" "}
+              {submission.series}
             </p>
 
             <p className="text-sm text-gray-600">{submission.description}</p>
@@ -219,7 +232,9 @@ export default function VotesPage() {
               <div className="mb-6">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">{session.title}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                      {session.title}
+                    </h2>
                     <p className="text-gray-600">{session.description}</p>
                   </div>
                   <span className="px-3 py-1 rounded text-sm font-semibold bg-green-100 text-green-800">
@@ -229,20 +244,24 @@ export default function VotesPage() {
 
                 {session.closes_at && (
                   <p className="text-sm text-gray-500">
-                    Closes: {new Date(session.closes_at).toLocaleDateString()} at{" "}
-                    {new Date(session.closes_at).toLocaleTimeString()}
+                    Closes: {new Date(session.closes_at).toLocaleDateString()}{" "}
+                    at {new Date(session.closes_at).toLocaleTimeString()}
                   </p>
                 )}
               </div>
 
-              {activeSession?.id === session.id && activeSession.submissions.length > 0 ? (
+              {activeSession?.id === session.id &&
+              activeSession.submissions.length > 0 ? (
                 <div className="space-y-4">
                   {activeSession.submissions.map((submission, index) =>
-                    renderSubmission(submission, index)
+                    renderSubmission(submission, index),
                   )}
                 </div>
               ) : (
-                <button onClick={() => loadSession(session.id)} className="btn-primary">
+                <button
+                  onClick={() => loadSession(session.id)}
+                  className="btn-primary"
+                >
                   View Submissions
                 </button>
               )}
@@ -261,7 +280,9 @@ export default function VotesPage() {
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div>
-                  <h3 className="font-semibold text-gray-900">{session.title}</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    {session.title}
+                  </h3>
                   <p className="text-sm text-gray-600">
                     Closed: {new Date(session.closed_at).toLocaleDateString()}
                   </p>

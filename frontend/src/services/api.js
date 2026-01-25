@@ -21,7 +21,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor to handle errors
@@ -35,13 +35,15 @@ api.interceptors.response.use(
       window.location.href = "/login";
     } else if (error.response?.status === 403) {
       // Forbidden - likely tier restriction
-      const errorMessage = error.response?.data?.detail || "Your subscription is required to access this site. Please renew your VAMA Patreon subscription.";
+      const errorMessage =
+        error.response?.data?.detail ||
+        "Your subscription is required to access this site. Please renew your VAMA Patreon subscription.";
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = `/login?error=${encodeURIComponent(errorMessage)}`;
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth API
@@ -63,7 +65,8 @@ export const authAPI = {
 export const usersAPI = {
   getMe: () => api.get("/api/users/me"),
 
-  getCreditHistory: (limit = 50) => api.get("/api/users/me/credits/history", { params: { limit } }),
+  getCreditHistory: (limit = 50) =>
+    api.get("/api/users/me/credits/history", { params: { limit } }),
 };
 
 // Submissions API
@@ -95,7 +98,8 @@ export const submissionsAPI = {
 
   cancel: (id) => api.delete(`/api/submissions/${id}`),
 
-  search: (query) => api.get("/api/submissions/search/", { params: { q: query } }),
+  search: (query) =>
+    api.get("/api/submissions/search/", { params: { q: query } }),
 
   autocompleteSeries: (query) =>
     api.get("/api/submissions/autocomplete/series", { params: { q: query } }),
@@ -107,7 +111,8 @@ export const queueAPI = {
 
   getFreeQueue: () => api.get("/api/queue/free"),
 
-  vote: (submissionId) => api.post("/api/queue/vote", { submission_id: submissionId }),
+  vote: (submissionId) =>
+    api.post("/api/queue/vote", { submission_id: submissionId }),
 
   removeVote: (submissionId) => api.delete(`/api/queue/vote/${submissionId}`),
 
@@ -119,7 +124,9 @@ export const queueAPI = {
 // Admin API
 export const adminAPI = {
   listSubmissions: (status, queueType) =>
-    api.get("/api/admin/submissions", { params: { status, queue_type: queueType } }),
+    api.get("/api/admin/submissions", {
+      params: { status, queue_type: queueType },
+    }),
 
   getSubmission: (id) => api.get(`/api/admin/submissions/${id}`),
 

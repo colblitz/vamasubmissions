@@ -15,20 +15,35 @@ export default function Header() {
           {isAuthenticated ? (
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <Link to="/search" className="hover:text-blue-400 transition-colors">
+                <Link
+                  to="/search"
+                  className="hover:text-blue-400 transition-colors"
+                >
                   Search
                 </Link>
-                <Link to="/requests" className="hover:text-blue-400 transition-colors">
+                <Link
+                  to="/requests"
+                  className="hover:text-blue-400 transition-colors"
+                >
                   Requests
                 </Link>
-                <Link to="/review" className="hover:text-blue-400 transition-colors">
+                <Link
+                  to="/review"
+                  className="hover:text-blue-400 transition-colors"
+                >
                   Review Edits
                 </Link>
-                <Link to="/about" className="hover:text-blue-400 transition-colors">
+                <Link
+                  to="/about"
+                  className="hover:text-blue-400 transition-colors"
+                >
                   About
                 </Link>
                 {isAdmin() && (
-                  <Link to="/admin/import" className="hover:text-yellow-400 transition-colors">
+                  <Link
+                    to="/admin/import"
+                    className="hover:text-yellow-400 transition-colors"
+                  >
                     Import Posts
                   </Link>
                 )}
@@ -38,10 +53,13 @@ export default function Header() {
                 <div className="text-sm">
                   <div className="font-semibold">{user.patreon_username}</div>
                   <div className="text-gray-400">
-                    {user.tier_name || 'Free Tier'}
+                    {user.tier_name || "Free Tier"}
                   </div>
                 </div>
-                <button onClick={logout} className="text-sm hover:text-red-400 transition-colors">
+                <button
+                  onClick={logout}
+                  className="text-sm hover:text-red-400 transition-colors"
+                >
                   Logout
                 </button>
               </div>

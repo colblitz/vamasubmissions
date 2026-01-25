@@ -25,7 +25,7 @@ export default function BrowseTab({ onSelectItem }) {
   const fetchBrowseData = async () => {
     setLoading(true);
     setError("");
-    
+
     try {
       const response = await api.get(`/api/posts/browse/${activeSubTab}`, {
         params: {
@@ -33,7 +33,7 @@ export default function BrowseTab({ onSelectItem }) {
           limit: pagination.limit,
         },
       });
-      
+
       setItems(response.data.items || []);
       setPagination({
         page: response.data.page,
@@ -58,7 +58,7 @@ export default function BrowseTab({ onSelectItem }) {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -68,7 +68,7 @@ export default function BrowseTab({ onSelectItem }) {
         <button
           onClick={() => {
             setActiveSubTab("characters");
-            setPagination(prev => ({ ...prev, page: 1 }));
+            setPagination((prev) => ({ ...prev, page: 1 }));
           }}
           className={`px-4 py-2 font-medium transition-colors ${
             activeSubTab === "characters"
@@ -81,7 +81,7 @@ export default function BrowseTab({ onSelectItem }) {
         <button
           onClick={() => {
             setActiveSubTab("series");
-            setPagination(prev => ({ ...prev, page: 1 }));
+            setPagination((prev) => ({ ...prev, page: 1 }));
           }}
           className={`px-4 py-2 font-medium transition-colors ${
             activeSubTab === "series"
@@ -94,7 +94,7 @@ export default function BrowseTab({ onSelectItem }) {
         <button
           onClick={() => {
             setActiveSubTab("tags");
-            setPagination(prev => ({ ...prev, page: 1 }));
+            setPagination((prev) => ({ ...prev, page: 1 }));
           }}
           className={`px-4 py-2 font-medium transition-colors ${
             activeSubTab === "tags"
@@ -132,12 +132,15 @@ export default function BrowseTab({ onSelectItem }) {
                   activeSubTab === "characters"
                     ? "border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100"
                     : activeSubTab === "series"
-                    ? "border-green-200 hover:border-green-400 bg-green-50 hover:bg-green-100"
-                    : "border-purple-200 hover:border-purple-400 bg-purple-50 hover:bg-purple-100"
+                      ? "border-green-200 hover:border-green-400 bg-green-50 hover:bg-green-100"
+                      : "border-purple-200 hover:border-purple-400 bg-purple-50 hover:bg-purple-100"
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium text-gray-900 truncate" title={item.name}>
+                  <span
+                    className="font-medium text-gray-900 truncate"
+                    title={item.name}
+                  >
                     {item.name}
                   </span>
                   <span className="text-sm text-gray-600 flex-shrink-0">

@@ -259,9 +259,9 @@ class PatreonService:
                 cookie_content = f"""# Netscape HTTP Cookie File
 .patreon.com	TRUE	/	TRUE	0	session_id	{session_id}
 """
-                with open(cookie_file, 'w') as f:
+                with open(cookie_file, "w") as f:
                     f.write(cookie_content)
-                
+
                 cmd.extend(["--cookies", str(cookie_file)])
                 print(f"[GALLERY-DL] Using session_id cookie from parameter")
 
@@ -432,33 +432,34 @@ class PatreonService:
         # Download thumbnail from image.thumb_square_url
         thumbnail_url = gallery_dl_metadata.get("image", {}).get("thumb_square_url")
         thumbnail_local_path = None
-        
+
         if thumbnail_url:
             try:
                 # Determine file extension from URL
                 from urllib.parse import urlparse
+
                 parsed = urlparse(thumbnail_url)
                 # Extract extension from path, default to .png
                 ext = os.path.splitext(parsed.path)[1] or ".png"
-                
+
                 # Download thumbnail
                 response = requests.get(thumbnail_url, timeout=10)
                 response.raise_for_status()
-                
+
                 # Save to backend/static/thumbnails/
                 thumbnails_dir = Path(__file__).parent.parent.parent / "static" / "thumbnails"
                 thumbnails_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 thumbnail_filename = f"{post_id}-thumbnail-square{ext}"
                 thumbnail_path = thumbnails_dir / thumbnail_filename
-                
+
                 with open(thumbnail_path, "wb") as f:
                     f.write(response.content)
-                
+
                 # Store relative path for database
                 thumbnail_local_path = f"/static/thumbnails/{thumbnail_filename}"
                 print(f"[THUMBNAIL] Downloaded thumbnail for post {post_id}: {thumbnail_filename}")
-                
+
             except Exception as e:
                 print(f"[THUMBNAIL] ERROR downloading thumbnail for post {post_id}: {e}")
                 thumbnail_local_path = None
@@ -467,13 +468,13 @@ class PatreonService:
         try:
             archive_dir = Path(__file__).parent.parent.parent / "static" / "archive"
             archive_dir.mkdir(parents=True, exist_ok=True)
-            
+
             archive_filename = f"{post_id}-metadata.json"
             archive_path = archive_dir / archive_filename
-            
+
             with open(archive_path, "w") as f:
                 json.dump(gallery_dl_metadata, f, indent=2, default=str)
-            
+
             print(f"[ARCHIVE] Saved JSON for post {post_id}: {archive_filename}")
         except Exception as e:
             print(f"[ARCHIVE] ERROR saving JSON for post {post_id}: {e}")

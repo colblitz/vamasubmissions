@@ -59,7 +59,7 @@ class User(Base):
     @property
     def max_credits(self) -> int:
         """Get maximum credits based on tier_id.
-        
+
         Note: This method will need to be updated once tier_id mapping is established.
         For now, returns 0 as default.
         """
@@ -69,7 +69,7 @@ class User(Base):
     @property
     def credits_per_month(self) -> int:
         """Get credits earned per month based on tier_id.
-        
+
         Note: This method will need to be updated once tier_id mapping is established.
         For now, returns 0 as default.
         """
@@ -79,7 +79,7 @@ class User(Base):
     @property
     def can_submit_multiple(self) -> bool:
         """Check if user can have multiple pending submissions.
-        
+
         Note: This method will need to be updated once tier_id mapping is established.
         For now, returns False as default (most restrictive).
         """

@@ -26,7 +26,8 @@ export default function CommunityRequestsPage() {
   // Autocomplete state
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
-  const [showCharacterSuggestions, setShowCharacterSuggestions] = useState(false);
+  const [showCharacterSuggestions, setShowCharacterSuggestions] =
+    useState(false);
   const [showSeriesSuggestions, setShowSeriesSuggestions] = useState(false);
 
   // Fetch community queue
@@ -184,7 +185,13 @@ export default function CommunityRequestsPage() {
         is_private: formData.is_private,
       });
 
-      setFormData({ characters: "", series: "", description: "", timestamp: "", is_private: false });
+      setFormData({
+        characters: "",
+        series: "",
+        description: "",
+        timestamp: "",
+        is_private: false,
+      });
       setSubmitSuccess(true);
       setShowForm(false);
 
@@ -220,7 +227,9 @@ export default function CommunityRequestsPage() {
       setDeleteSuccess(true);
       setTimeout(() => setDeleteSuccess(false), 3000);
     } catch (err) {
-      setDeleteError(err.response?.data?.detail || "Failed to mark request as done");
+      setDeleteError(
+        err.response?.data?.detail || "Failed to mark request as done",
+      );
       setTimeout(() => setDeleteError(""), 5000);
     }
   };
@@ -237,20 +246,34 @@ export default function CommunityRequestsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Community Requests</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        Community Requests
+      </h1>
 
       {/* Disclaimer Banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          <svg
+            className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clipRule="evenodd"
+            />
           </svg>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-blue-900 mb-1">Important Notice</h3>
+            <h3 className="text-sm font-semibold text-blue-900 mb-1">
+              Important Notice
+            </h3>
             <p className="text-sm text-blue-800">
-              This is an <strong>unofficial community tracker</strong> for character requests. Not all users record their requests here, 
-              so the queue may not reflect the complete picture. This tool is meant to help the community coordinate and track 
-              what has been requested, but it is not managed or endorsed by VAMA.
+              This is an <strong>unofficial community tracker</strong> for
+              character requests. Not all users record their requests here, so
+              the queue may not reflect the complete picture. This tool is meant
+              to help the community coordinate and track what has been
+              requested, but it is not managed or endorsed by VAMA.
             </p>
           </div>
         </div>
@@ -304,26 +327,31 @@ export default function CommunityRequestsPage() {
                   type="text"
                   value={formData.characters}
                   onChange={handleCharacterInputChange}
-                  onFocus={() => formData.characters && setShowCharacterSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowCharacterSuggestions(false), 200)}
+                  onFocus={() =>
+                    formData.characters && setShowCharacterSuggestions(true)
+                  }
+                  onBlur={() =>
+                    setTimeout(() => setShowCharacterSuggestions(false), 200)
+                  }
                   placeholder="e.g., Kafka, Himeko"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                   required
                 />
-                {showCharacterSuggestions && characterSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {characterSuggestions.map((suggestion, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => addCharacterSuggestion(suggestion)}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {showCharacterSuggestions &&
+                  characterSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {characterSuggestions.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => addCharacterSuggestion(suggestion)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
               </div>
 
               <div className="relative">
@@ -334,8 +362,12 @@ export default function CommunityRequestsPage() {
                   type="text"
                   value={formData.series}
                   onChange={handleSeriesInputChange}
-                  onFocus={() => formData.series && setShowSeriesSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSeriesSuggestions(false), 200)}
+                  onFocus={() =>
+                    formData.series && setShowSeriesSuggestions(true)
+                  }
+                  onBlur={() =>
+                    setTimeout(() => setShowSeriesSuggestions(false), 200)
+                  }
                   placeholder="e.g., Honkai: Star Rail"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                   required
@@ -363,7 +395,9 @@ export default function CommunityRequestsPage() {
                 <input
                   type="date"
                   value={formData.timestamp}
-                  onChange={(e) => setFormData({ ...formData, timestamp: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, timestamp: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 />
@@ -378,7 +412,9 @@ export default function CommunityRequestsPage() {
                 </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Any additional details..."
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
@@ -390,15 +426,21 @@ export default function CommunityRequestsPage() {
                   type="checkbox"
                   id="is_private"
                   checked={formData.is_private}
-                  onChange={(e) => setFormData({ ...formData, is_private: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_private: e.target.checked })
+                  }
                   className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <div className="flex-1">
-                  <label htmlFor="is_private" className="block text-sm font-medium text-gray-700 cursor-pointer">
+                  <label
+                    htmlFor="is_private"
+                    className="block text-sm font-medium text-gray-700 cursor-pointer"
+                  >
                     Private Request
                   </label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Private requests are only visible to you and admins. They will not appear in the public queue.
+                    Private requests are only visible to you and admins. They
+                    will not appear in the public queue.
                   </p>
                 </div>
               </div>
@@ -421,7 +463,10 @@ export default function CommunityRequestsPage() {
           <div className="space-y-3">
             {myRequests.map((request) => {
               return (
-                <div key={request.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div
+                  key={request.id}
+                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -439,11 +484,12 @@ export default function CommunityRequestsPage() {
                         >
                           {request.status}
                         </span>
-                        {request.status === "pending" && request.queue_position && (
-                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                            #{request.queue_position} in queue
-                          </span>
-                        )}
+                        {request.status === "pending" &&
+                          request.queue_position && (
+                            <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                              #{request.queue_position} in queue
+                            </span>
+                          )}
                       </div>
 
                       <p className="text-gray-600 text-sm mb-1">
@@ -451,7 +497,9 @@ export default function CommunityRequestsPage() {
                       </p>
 
                       {request.description && (
-                        <p className="text-gray-700 text-sm mb-1">{request.description}</p>
+                        <p className="text-gray-700 text-sm mb-1">
+                          {request.description}
+                        </p>
                       )}
 
                       <p className="text-xs text-gray-500">
@@ -487,7 +535,8 @@ export default function CommunityRequestsPage() {
                   {deleteConfirm === request.id && (
                     <div className="border-t border-blue-300 bg-blue-100 pt-3 mt-3 transition-all duration-300 ease-in-out">
                       <p className="text-gray-900 font-medium mb-3">
-                        Mark this request as fulfilled? It will be removed from the queue.
+                        Mark this request as fulfilled? It will be removed from
+                        the queue.
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -532,10 +581,14 @@ export default function CommunityRequestsPage() {
                   {request.characters.join(", ")}
                 </h3>
 
-                <p className="text-gray-600 text-sm mb-1">Series: {request.series.join(", ")}</p>
+                <p className="text-gray-600 text-sm mb-1">
+                  Series: {request.series.join(", ")}
+                </p>
 
                 {request.description && (
-                  <p className="text-gray-700 text-sm mb-1">{request.description}</p>
+                  <p className="text-gray-700 text-sm mb-1">
+                    {request.description}
+                  </p>
                 )}
 
                 <p className="text-xs text-gray-500">
@@ -549,7 +602,6 @@ export default function CommunityRequestsPage() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

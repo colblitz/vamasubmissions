@@ -94,7 +94,7 @@ async def get_pending_edits_for_posts(
 ):
     """
     Get pending edit suggestions for multiple posts (batch query).
-    
+
     This endpoint solves the N+1 query problem by fetching pending edits
     for multiple posts in a single database query.
 
@@ -113,15 +113,14 @@ async def get_pending_edits_for_posts(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid post_ids format. Expected comma-separated integers."
+            detail="Invalid post_ids format. Expected comma-separated integers.",
         )
-    
+
     if len(ids) > 100:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum 100 post IDs per request"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Maximum 100 post IDs per request"
         )
-    
+
     return edit_service.get_pending_edits_for_posts(db, ids, current_user.id)
 
 

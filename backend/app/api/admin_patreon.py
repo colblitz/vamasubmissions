@@ -22,14 +22,14 @@ async def get_vama_tier_ids(
 ):
     """
     Fetch VAMA's Patreon tier IDs and details.
-    
+
     This endpoint queries the Patreon API to get all tier information for VAMA's campaign.
     Use this to find the tier IDs that should be allowed access to the site.
-    
+
     Args:
         current_user: Current admin user
         db: Database session
-    
+
     Returns:
         List of tiers with IDs, titles, and amounts
     """
@@ -37,13 +37,13 @@ async def get_vama_tier_ids(
     admin_settings = (
         db.query(AdminSettings).filter(AdminSettings.user_id == current_user.id).first()
     )
-    
+
     if not admin_settings or not admin_settings.patreon_access_token:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Admin must be logged in with Patreon to fetch tier information.",
         )
-    
+
     # Check if token is expired and refresh if needed
     if admin_settings.is_token_expired:
         try:
@@ -60,7 +60,7 @@ async def get_vama_tier_ids(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Failed to refresh Patreon token: {str(e)}",
             )
-    
+
     # Fetch campaign tiers
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -71,33 +71,35 @@ async def get_vama_tier_ids(
             },
             headers={"Authorization": f"Bearer {admin_settings.patreon_access_token}"},
         )
-        
+
         if response.status_code != 200:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"Failed to fetch tiers from Patreon: {response.text}",
             )
-        
+
         data = response.json()
-        
+
         # Extract tier information
         tiers = []
         for item in data.get("included", []):
             if item.get("type") == "tier":
                 tier_attrs = item.get("attributes", {})
-                tiers.append({
-                    "id": item.get("id"),
-                    "title": tier_attrs.get("title"),
-                    "amount_cents": tier_attrs.get("amount_cents"),
-                    "amount_dollars": tier_attrs.get("amount_cents", 0) / 100,
-                    "description": tier_attrs.get("description"),
-                    "patron_count": tier_attrs.get("patron_count"),
-                    "published": tier_attrs.get("published"),
-                })
-        
+                tiers.append(
+                    {
+                        "id": item.get("id"),
+                        "title": tier_attrs.get("title"),
+                        "amount_cents": tier_attrs.get("amount_cents"),
+                        "amount_dollars": tier_attrs.get("amount_cents", 0) / 100,
+                        "description": tier_attrs.get("description"),
+                        "patron_count": tier_attrs.get("patron_count"),
+                        "published": tier_attrs.get("published"),
+                    }
+                )
+
         # Sort by amount
         tiers.sort(key=lambda t: t["amount_cents"])
-        
+
         return {
             "campaign_id": settings.patreon_creator_id,
             "tiers": tiers,

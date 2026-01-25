@@ -94,7 +94,9 @@ export default function DashboardPage() {
     e.preventDefault();
 
     if (user.tier > 1 && user.credits < creditCost) {
-      alert(`Not enough credits. You need ${creditCost} credits but have ${user.credits}.`);
+      alert(
+        `Not enough credits. You need ${creditCost} credits but have ${user.credits}.`,
+      );
       return;
     }
 
@@ -110,8 +112,14 @@ export default function DashboardPage() {
       submissionFormData.append("character_name", formData.character_name);
       submissionFormData.append("series", formData.series);
       submissionFormData.append("description", formData.description);
-      submissionFormData.append("is_large_image_set", formData.is_large_image_set);
-      submissionFormData.append("is_double_character", formData.is_double_character);
+      submissionFormData.append(
+        "is_large_image_set",
+        formData.is_large_image_set,
+      );
+      submissionFormData.append(
+        "is_double_character",
+        formData.is_double_character,
+      );
 
       const response = await submissionsAPI.create(submissionFormData);
       const submissionId = response.data.id;
@@ -198,7 +206,9 @@ export default function DashboardPage() {
 
       {/* New Submission Form */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">New Submission</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          New Submission
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -211,7 +221,9 @@ export default function DashboardPage() {
                 type="text"
                 required
                 value={formData.character_name}
-                onChange={(e) => setFormData({ ...formData, character_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, character_name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 placeholder="e.g., Asuka Langley"
               />
@@ -258,7 +270,9 @@ export default function DashboardPage() {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               rows="4"
               placeholder="Describe your character request..."
@@ -268,7 +282,8 @@ export default function DashboardPage() {
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reference Images <span className="text-red-500">*</span> (max 20, 10MB each)
+              Reference Images <span className="text-red-500">*</span> (max 20,
+              10MB each)
             </label>
             <input
               type="file"
@@ -308,7 +323,10 @@ export default function DashboardPage() {
                   type="checkbox"
                   checked={formData.is_large_image_set}
                   onChange={(e) =>
-                    setFormData({ ...formData, is_large_image_set: e.target.checked })
+                    setFormData({
+                      ...formData,
+                      is_large_image_set: e.target.checked,
+                    })
                   }
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
@@ -322,7 +340,10 @@ export default function DashboardPage() {
                   type="checkbox"
                   checked={formData.is_double_character}
                   onChange={(e) =>
-                    setFormData({ ...formData, is_double_character: e.target.checked })
+                    setFormData({
+                      ...formData,
+                      is_double_character: e.target.checked,
+                    })
                   }
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
@@ -335,7 +356,9 @@ export default function DashboardPage() {
 
           <button
             type="submit"
-            disabled={submitting || (user.tier > 1 && user.credits < creditCost)}
+            disabled={
+              submitting || (user.tier > 1 && user.credits < creditCost)
+            }
             className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting
@@ -347,7 +370,9 @@ export default function DashboardPage() {
 
       {/* Search Completed Requests */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Search Completed Requests</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Search Completed Requests
+        </h2>
 
         <form onSubmit={handleSearch} className="flex gap-4 mb-4">
           <input
@@ -365,7 +390,8 @@ export default function DashboardPage() {
         {hasSearched && (
           <div>
             <p className="text-sm text-gray-600 mb-4">
-              Found {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
+              Found {searchResults.length} result
+              {searchResults.length !== 1 ? "s" : ""}
             </p>
 
             {searchResults.length === 0 ? (
@@ -381,7 +407,9 @@ export default function DashboardPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {submission.character_name}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-2">{submission.series}</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {submission.series}
+                    </p>
                     <p className="text-xs text-gray-500">
                       {new Date(submission.completed_at).toLocaleDateString()}
                     </p>
@@ -395,7 +423,9 @@ export default function DashboardPage() {
 
       {/* My Submissions */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">My Submissions</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          My Submissions
+        </h2>
 
         {submissions.length === 0 ? (
           <p className="text-center text-gray-600 py-8">No submissions yet</p>
@@ -421,12 +451,14 @@ export default function DashboardPage() {
                     </div>
 
                     <p className="text-sm text-gray-600 mb-2">
-                      <span className="font-medium text-gray-900">Series:</span> {submission.series}
+                      <span className="font-medium text-gray-900">Series:</span>{" "}
+                      {submission.series}
                     </p>
 
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <span>
-                        Submitted: {new Date(submission.submitted_at).toLocaleDateString()}
+                        Submitted:{" "}
+                        {new Date(submission.submitted_at).toLocaleDateString()}
                       </span>
                       {submission.queue_position && (
                         <span>Position: #{submission.queue_position}</span>
@@ -434,7 +466,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="text-blue-600 hover:text-blue-700">View →</div>
+                  <div className="text-blue-600 hover:text-blue-700">
+                    View →
+                  </div>
                 </div>
               </Link>
             ))}

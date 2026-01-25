@@ -18,7 +18,9 @@ class CommunityRequest(Base):
     )
     characters = Column(ARRAY(Text), nullable=False, default=[])
     series = Column(ARRAY(Text), nullable=False, default=[])
-    requested_timestamp = Column(DateTime, nullable=False, index=True)  # When user made the request to VAMA
+    requested_timestamp = Column(
+        DateTime, nullable=False, index=True
+    )  # When user made the request to VAMA
     description = Column(Text)
     is_private = Column(Boolean, nullable=False, default=False)
     fulfilled = Column(Boolean, nullable=False, default=False, index=True)

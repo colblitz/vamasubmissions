@@ -57,11 +57,14 @@ export default function DashboardPageV2() {
 
   const loadTierRules = async () => {
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + "/api/users/me/tier-rules", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      const response = await fetch(
+        import.meta.env.VITE_API_URL + "/api/users/me/tier-rules",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         },
-      });
+      );
       const data = await response.json();
       setTierRules(data);
     } catch (error) {
@@ -117,7 +120,9 @@ export default function DashboardPageV2() {
     e.preventDefault();
 
     if (user.tier > 1 && user.credits < creditCost) {
-      alert(`Not enough credits. You need ${creditCost} credits but have ${user.credits}.`);
+      alert(
+        `Not enough credits. You need ${creditCost} credits but have ${user.credits}.`,
+      );
       return;
     }
 
@@ -133,8 +138,14 @@ export default function DashboardPageV2() {
       submissionFormData.append("character_name", formData.character_name);
       submissionFormData.append("series", formData.series);
       submissionFormData.append("description", formData.description);
-      submissionFormData.append("is_large_image_set", formData.is_large_image_set);
-      submissionFormData.append("is_double_character", formData.is_double_character);
+      submissionFormData.append(
+        "is_large_image_set",
+        formData.is_large_image_set,
+      );
+      submissionFormData.append(
+        "is_double_character",
+        formData.is_double_character,
+      );
 
       const response = await submissionsAPI.create(submissionFormData);
       const submissionId = response.data.id;
@@ -244,7 +255,9 @@ export default function DashboardPageV2() {
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="card">
-        <p className="text-xl text-gray-900 mb-2">Welcome back, {user.patreon_username}!</p>
+        <p className="text-xl text-gray-900 mb-2">
+          Welcome back, {user.patreon_username}!
+        </p>
         {user.tier > 1 && (
           <>
             <p className="text-sm text-gray-600 mb-4">{getTierRulesText()}</p>
@@ -263,7 +276,9 @@ export default function DashboardPageV2() {
       {/* New Submission Form - Only for Tier 2+ */}
       {user.tier > 1 && (
         <div className="card">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">New Submission</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            New Submission
+          </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -275,7 +290,9 @@ export default function DashboardPageV2() {
                   type="text"
                   required
                   value={formData.character_name}
-                  onChange={(e) => setFormData({ ...formData, character_name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, character_name: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                   placeholder="e.g., Asuka Langley"
                 />
@@ -320,7 +337,9 @@ export default function DashboardPageV2() {
               <textarea
                 required
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 rows="4"
                 placeholder="Describe your character request..."
@@ -329,7 +348,8 @@ export default function DashboardPageV2() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reference Images <span className="text-red-500">*</span> (max 20, 10MB each)
+                Reference Images <span className="text-red-500">*</span> (max
+                20, 10MB each)
               </label>
               <input
                 type="file"
@@ -368,7 +388,10 @@ export default function DashboardPageV2() {
                     type="checkbox"
                     checked={formData.is_large_image_set}
                     onChange={(e) =>
-                      setFormData({ ...formData, is_large_image_set: e.target.checked })
+                      setFormData({
+                        ...formData,
+                        is_large_image_set: e.target.checked,
+                      })
                     }
                     className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -382,7 +405,10 @@ export default function DashboardPageV2() {
                     type="checkbox"
                     checked={formData.is_double_character}
                     onChange={(e) =>
-                      setFormData({ ...formData, is_double_character: e.target.checked })
+                      setFormData({
+                        ...formData,
+                        is_double_character: e.target.checked,
+                      })
                     }
                     className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -395,7 +421,9 @@ export default function DashboardPageV2() {
 
             <button
               type="submit"
-              disabled={submitting || (user.tier > 1 && user.credits < creditCost)}
+              disabled={
+                submitting || (user.tier > 1 && user.credits < creditCost)
+              }
               className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting
@@ -408,7 +436,9 @@ export default function DashboardPageV2() {
 
       {/* Search Completed Requests */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Search Completed Requests</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Search Completed Requests
+        </h2>
 
         <input
           type="text"
@@ -423,20 +453,27 @@ export default function DashboardPageV2() {
         {searchQuery && searchResults.length > 0 && (
           <div>
             <p className="text-sm text-gray-600 mb-4">
-              Found {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
+              Found {searchResults.length} result
+              {searchResults.length !== 1 ? "s" : ""}
             </p>
 
             <div className="space-y-3">
               {searchResults.map((submission) => (
-                <div key={submission.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                <div
+                  key={submission.id}
+                  className="bg-white border border-gray-200 rounded-lg p-4"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">
                         {submission.character_name}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-2">{submission.series}</p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {submission.series}
+                      </p>
                       <p className="text-xs text-gray-500 mb-2">
-                        Completed: {new Date(submission.completed_at).toLocaleDateString()}
+                        Completed:{" "}
+                        {new Date(submission.completed_at).toLocaleDateString()}
                       </p>
                     </div>
 
@@ -465,7 +502,9 @@ export default function DashboardPageV2() {
       {/* My Submissions - Only for Tier 2+ */}
       {user.tier > 1 && (
         <div className="card">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">My Submissions</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            My Submissions
+          </h2>
 
           {submissions.length === 0 ? (
             <p className="text-center text-gray-600 py-8">No submissions yet</p>
@@ -520,7 +559,7 @@ function SubmissionCard({
 
     if (totalImages > 20) {
       alert(
-        `Maximum 20 images allowed. You have ${images.length + newImages.length}, trying to add ${files.length}`
+        `Maximum 20 images allowed. You have ${images.length + newImages.length}, trying to add ${files.length}`,
       );
       return;
     }
@@ -577,7 +616,9 @@ function SubmissionCard({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">{submission.character_name}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {submission.character_name}
+              </h3>
               <span
                 className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(submission.status)}`}
               >
@@ -586,11 +627,13 @@ function SubmissionCard({
             </div>
 
             <p className="text-sm text-gray-600 mb-2">
-              <span className="font-medium text-gray-900">Series:</span> {submission.series}
+              <span className="font-medium text-gray-900">Series:</span>{" "}
+              {submission.series}
             </p>
 
             <p className="text-xs text-gray-500">
-              Completed: {new Date(submission.completed_at).toLocaleDateString()}
+              Completed:{" "}
+              {new Date(submission.completed_at).toLocaleDateString()}
             </p>
           </div>
 
@@ -614,30 +657,42 @@ function SubmissionCard({
       <div className="bg-white border border-blue-300 rounded-lg p-4">
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Character Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Character Name
+            </label>
             <input
               type="text"
               value={editData.character_name}
-              onChange={(e) => setEditData({ ...editData, character_name: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, character_name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Series</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Series
+            </label>
             <input
               type="text"
               value={editData.series}
-              onChange={(e) => setEditData({ ...editData, series: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, series: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
             <textarea
               value={editData.description}
-              onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+              onChange={(e) =>
+                setEditData({ ...editData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               rows="3"
             />
@@ -678,7 +733,9 @@ function SubmissionCard({
             {/* New Images to Upload */}
             {newImagePreviews.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs text-gray-600 mb-2">New Images to Upload:</p>
+                <p className="text-xs text-gray-600 mb-2">
+                  New Images to Upload:
+                </p>
                 <div className="grid grid-cols-4 gap-2">
                   {newImagePreviews.map((preview, index) => (
                     <div key={index} className="relative">
@@ -717,10 +774,17 @@ function SubmissionCard({
               <input
                 type="checkbox"
                 checked={editData.is_large_image_set}
-                onChange={(e) => setEditData({ ...editData, is_large_image_set: e.target.checked })}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    is_large_image_set: e.target.checked,
+                  })
+                }
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded"
               />
-              <span className="text-sm text-gray-700">Large image set (+1 credit)</span>
+              <span className="text-sm text-gray-700">
+                Large image set (+1 credit)
+              </span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer">
@@ -728,16 +792,24 @@ function SubmissionCard({
                 type="checkbox"
                 checked={editData.is_double_character}
                 onChange={(e) =>
-                  setEditData({ ...editData, is_double_character: e.target.checked })
+                  setEditData({
+                    ...editData,
+                    is_double_character: e.target.checked,
+                  })
                 }
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded"
               />
-              <span className="text-sm text-gray-700">Double character (+1 credit)</span>
+              <span className="text-sm text-gray-700">
+                Double character (+1 credit)
+              </span>
             </label>
           </div>
 
           <div className="flex gap-2">
-            <button onClick={handleSaveWithImages} className="btn-primary flex-1">
+            <button
+              onClick={handleSaveWithImages}
+              className="btn-primary flex-1"
+            >
               Save
             </button>
             <button
@@ -757,7 +829,9 @@ function SubmissionCard({
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{submission.character_name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {submission.character_name}
+            </h3>
             <span
               className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(submission.status)}`}
             >
@@ -766,14 +840,17 @@ function SubmissionCard({
           </div>
 
           <p className="text-sm text-gray-600 mb-1">
-            <span className="font-medium text-gray-900">Series:</span> {submission.series}
+            <span className="font-medium text-gray-900">Series:</span>{" "}
+            {submission.series}
           </p>
 
           <p className="text-sm text-gray-600 mb-2">
-            <span className="font-medium text-gray-900">Description:</span> {submission.description}
+            <span className="font-medium text-gray-900">Description:</span>{" "}
+            {submission.description}
           </p>
 
-          {(submission.is_large_image_set || submission.is_double_character) && (
+          {(submission.is_large_image_set ||
+            submission.is_double_character) && (
             <div className="flex gap-2 mb-2">
               {submission.is_large_image_set && (
                 <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
@@ -789,29 +866,37 @@ function SubmissionCard({
           )}
 
           {/* Display submitted images for pending requests */}
-          {submission.status === "pending" && submission.images && submission.images.length > 0 && (
-            <div className="mt-3 mb-2">
-              <p className="text-sm font-medium text-gray-900 mb-2">
-                Reference Images ({submission.images.length}):
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {submission.images.map((image, index) => (
-                  <img
-                    key={index}
-                    src={`${import.meta.env.VITE_API_URL}${image.file_path}`}
-                    alt={`Reference ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                  />
-                ))}
+          {submission.status === "pending" &&
+            submission.images &&
+            submission.images.length > 0 && (
+              <div className="mt-3 mb-2">
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  Reference Images ({submission.images.length}):
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {submission.images.map((image, index) => (
+                    <img
+                      key={index}
+                      src={`${import.meta.env.VITE_API_URL}${image.file_path}`}
+                      alt={`Reference ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
-            <span>Submitted: {new Date(submission.submitted_at).toLocaleDateString()}</span>
-            {submission.queue_position && <span>Position: #{submission.queue_position}</span>}
             <span>
-              Cost: {submission.credit_cost} credit{submission.credit_cost !== 1 ? "s" : ""}
+              Submitted:{" "}
+              {new Date(submission.submitted_at).toLocaleDateString()}
+            </span>
+            {submission.queue_position && (
+              <span>Position: #{submission.queue_position}</span>
+            )}
+            <span>
+              Cost: {submission.credit_cost} credit
+              {submission.credit_cost !== 1 ? "s" : ""}
             </span>
           </div>
         </div>

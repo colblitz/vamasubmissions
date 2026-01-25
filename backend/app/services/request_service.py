@@ -42,7 +42,7 @@ def create_request(
     normalized_characters = normalize_array_field(request_data.characters)
     normalized_series = normalize_array_field(request_data.series)
     normalized_description = normalize_text(request_data.description)
-    
+
     # Validate required fields
     if not normalized_characters:
         raise HTTPException(
@@ -54,7 +54,7 @@ def create_request(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one series is required",
         )
-    
+
     request = CommunityRequest(
         user_id=user_id,
         characters=normalized_characters,
@@ -297,7 +297,7 @@ def get_user_requests(
         q = q.filter(CommunityRequest.fulfilled == False)
 
     requests = q.order_by(CommunityRequest.requested_timestamp.asc()).all()
-    
+
     # Add queue positions to each request
     result = []
     for request in requests:
@@ -316,7 +316,7 @@ def get_user_requests(
             "status": "fulfilled" if request.fulfilled else "pending",
         }
         result.append(request_dict)
-    
+
     return result
 
 

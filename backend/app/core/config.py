@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     patreon_client_secret: str
     patreon_redirect_uri: str
     patreon_creator_id: str  # VAMA's campaign ID: 13637777
-    
+
     # Patreon Tier Access Control
     # Comma-separated list of allowed Patreon tier IDs
     # Only users subscribed to these tiers can access the site

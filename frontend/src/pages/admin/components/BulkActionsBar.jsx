@@ -1,9 +1,9 @@
 /**
  * BulkActionsBar Component
- * 
+ *
  * Displays a bar with bulk action controls for managing multiple items.
  * Shows selection status and provides buttons for bulk operations.
- * 
+ *
  * @param {Object} props - Component props
  * @param {number} props.selectedCount - Number of currently selected items
  * @param {number} props.totalCount - Total number of items available for selection

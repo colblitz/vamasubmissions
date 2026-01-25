@@ -7,7 +7,9 @@ export default function Banner({ type = "info", message, onClose }) {
   };
 
   return (
-    <div className={`border px-4 py-3 rounded mb-6 flex justify-between items-center ${styles[type]}`}>
+    <div
+      className={`border px-4 py-3 rounded mb-6 flex justify-between items-center ${styles[type]}`}
+    >
       <span>{message}</span>
       {onClose && (
         <button onClick={onClose} className="ml-4 font-bold hover:opacity-70">

@@ -2,7 +2,7 @@ import AutocompleteInput from "./AutocompleteInput";
 
 /**
  * SearchFilters component - Handles all search filter inputs
- * 
+ *
  * @param {object} searchParams - Current search parameters
  * @param {function} onSearchParamsChange - Callback when search params change
  * @param {function} onSearch - Callback to trigger search
@@ -61,7 +61,11 @@ export default function SearchFilters({
               type="text"
               value={searchParams.query}
               onChange={(e) =>
-                onSearchParamsChange({ ...searchParams, query: e.target.value, page: 1 })
+                onSearchParamsChange({
+                  ...searchParams,
+                  query: e.target.value,
+                  page: 1,
+                })
               }
               onKeyPress={(e) => {
                 if (e.key === "Enter" && searchParams.query.trim()) {
@@ -94,7 +98,9 @@ export default function SearchFilters({
 
         {/* Characters */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Characters</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Characters
+          </label>
           <AutocompleteInput
             value={autocomplete.characterInput}
             onChange={autocomplete.setCharacterInput}
@@ -122,7 +128,9 @@ export default function SearchFilters({
 
         {/* Series */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Series</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Series
+          </label>
           <AutocompleteInput
             value={autocomplete.seriesInput}
             onChange={autocomplete.setSeriesInput}
@@ -137,7 +145,10 @@ export default function SearchFilters({
                 className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
               >
                 {s}
-                <button onClick={() => removeFilter("series", s)} className="hover:text-green-600">
+                <button
+                  onClick={() => removeFilter("series", s)}
+                  className="hover:text-green-600"
+                >
                   ×
                 </button>
               </span>
@@ -147,7 +158,9 @@ export default function SearchFilters({
 
         {/* Tags */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Tags
+          </label>
           <AutocompleteInput
             value={autocomplete.tagInput}
             onChange={autocomplete.setTagInput}
@@ -162,7 +175,10 @@ export default function SearchFilters({
                 className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
               >
                 {tag}
-                <button onClick={() => removeFilter("tags", tag)} className="hover:text-purple-600">
+                <button
+                  onClick={() => removeFilter("tags", tag)}
+                  className="hover:text-purple-600"
+                >
                   ×
                 </button>
               </span>

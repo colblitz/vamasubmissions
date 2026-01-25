@@ -85,10 +85,7 @@ async def get_leaderboard(
     """
     # Top suggesters - count edits by suggester_id
     top_suggesters = (
-        db.query(
-            UserModel.patreon_username,
-            func.count(EditHistory.id).label("count")
-        )
+        db.query(UserModel.patreon_username, func.count(EditHistory.id).label("count"))
         .join(EditHistory, UserModel.id == EditHistory.suggester_id)
         .group_by(UserModel.id, UserModel.patreon_username)
         .order_by(func.count(EditHistory.id).desc())
@@ -98,10 +95,7 @@ async def get_leaderboard(
 
     # Top approvers - count edits by approver_id
     top_approvers = (
-        db.query(
-            UserModel.patreon_username,
-            func.count(EditHistory.id).label("count")
-        )
+        db.query(UserModel.patreon_username, func.count(EditHistory.id).label("count"))
         .join(EditHistory, UserModel.id == EditHistory.approver_id)
         .group_by(UserModel.id, UserModel.patreon_username)
         .order_by(func.count(EditHistory.id).desc())

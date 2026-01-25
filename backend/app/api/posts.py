@@ -47,8 +47,9 @@ async def search_posts(
         Search results with pagination
     """
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     logger.info("=" * 80)
     logger.info(f"[API DEBUG] /api/posts/search called")
     logger.info(f"[API DEBUG] Raw query params:")
@@ -57,13 +58,15 @@ async def search_posts(
     logger.info(f"  - series: {series!r}")
     logger.info(f"  - tags: {tags!r}")
     logger.info(f"  - page: {page}, limit: {limit}")
-    logger.info(f"  - user: {current_user.patreon_username if current_user else 'None'} (tier {current_user.tier_id if current_user else 'N/A'})")
-    
+    logger.info(
+        f"  - user: {current_user.patreon_username if current_user else 'None'} (tier {current_user.tier_id if current_user else 'N/A'})"
+    )
+
     # Parse comma-separated values
     character_list = [c.strip() for c in characters.split(",")] if characters else []
     series_list = [s.strip() for s in series.split(",")] if series else []
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
-    
+
     logger.info(f"[API DEBUG] Parsed lists:")
     logger.info(f"  - character_list: {character_list}")
     logger.info(f"  - series_list: {series_list}")
@@ -81,10 +84,10 @@ async def search_posts(
         sort_order=sort_order,
         current_user_id=current_user.id if current_user else None,
     )
-    
+
     logger.info(f"[API DEBUG] Returning result: total={result.total}, posts={len(result.posts)}")
     logger.info("=" * 80)
-    
+
     return result
 
 
@@ -214,14 +217,14 @@ async def browse_posts(
 ):
     """
     Get aggregated browse data for characters, series, or tags.
-    
+
     Args:
         field_type: Type of field to browse ("characters", "series", or "tags")
         page: Page number (1-indexed)
         limit: Results per page
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         List of items with their post counts and pagination info
     """

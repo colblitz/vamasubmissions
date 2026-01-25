@@ -109,8 +109,9 @@ def search_posts(
         Search results with pagination
     """
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     logger.info("=" * 80)
     logger.info(f"[SEARCH DEBUG] Starting search_posts")
     logger.info(f"[SEARCH DEBUG] Parameters:")
@@ -119,10 +120,10 @@ def search_posts(
     logger.info(f"  - series_list: {series_list}")
     logger.info(f"  - tags: {tags}")
     logger.info(f"  - page: {page}, limit: {limit}")
-    
+
     # Start with base query - ONLY PUBLISHED POSTS
     q = db.query(Post).filter(Post.status == "published")
-    
+
     # Count base query
     base_count = q.count()
     logger.info(f"[SEARCH DEBUG] Base query (published only): {base_count} posts")
@@ -132,16 +133,22 @@ def search_posts(
         # Full-text search across title, characters, series, tags
         search_term = f"%{query.lower()}%"
         logger.info(f"[SEARCH DEBUG] Applying query filter with search_term: {search_term!r}")
-        
+
         q = q.filter(
             or_(
                 func.lower(Post.title).like(search_term),
-                text("EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) LIKE :search)").bindparams(search=search_term),
-                text("EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) LIKE :search)").bindparams(search=search_term),
-                text("EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) LIKE :search)").bindparams(search=search_term),
+                text(
+                    "EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) LIKE :search)"
+                ).bindparams(search=search_term),
+                text(
+                    "EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) LIKE :search)"
+                ).bindparams(search=search_term),
+                text(
+                    "EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) LIKE :search)"
+                ).bindparams(search=search_term),
             )
         )
-        
+
         after_query_count = q.count()
         logger.info(f"[SEARCH DEBUG] After query filter: {after_query_count} posts")
 
@@ -186,13 +193,13 @@ def search_posts(
             q = q.order_by(Post.timestamp.asc())
         else:
             q = q.order_by(Post.timestamp.desc())
-    
+
     logger.info(f"[SEARCH DEBUG] Sorting by: {sort_by} {sort_order}")
 
     # Apply pagination
     offset = (page - 1) * limit
     posts = q.offset(offset).limit(limit).all()
-    
+
     logger.info(f"[SEARCH DEBUG] Retrieved {len(posts)} posts for page {page}")
     if posts:
         logger.info(f"[SEARCH DEBUG] First 3 post titles:")
@@ -205,11 +212,10 @@ def search_posts(
     # Fetch pending edits for all posts in batch if user is authenticated
     if current_user_id and posts:
         from app.services import edit_service
+
         post_ids = [post.id for post in posts]
-        pending_edits_map = edit_service.get_pending_edits_for_posts(
-            db, post_ids, current_user_id
-        )
-        
+        pending_edits_map = edit_service.get_pending_edits_for_posts(db, post_ids, current_user_id)
+
         # Attach pending edits to each post
         for post in posts:
             post.pending_edits = pending_edits_map.get(post.id, [])
@@ -220,7 +226,7 @@ def search_posts(
 
     # Calculate total pages
     total_pages = (total + limit - 1) // limit if total > 0 else 0
-    
+
     logger.info(f"[SEARCH DEBUG] Returning: total={total}, page={page}, total_pages={total_pages}")
     logger.info("=" * 80)
 
@@ -424,13 +430,13 @@ def get_browse_data(
     """
     Get aggregated data for browsing (characters, series, or tags).
     Returns items with their post counts.
-    
+
     Args:
         db: Database session
         field_type: "characters" | "series" | "tags"
         page: Page number (1-indexed)
         limit: Results per page
-        
+
     Returns:
         Dict with items list and pagination info
     """
@@ -440,19 +446,19 @@ def get_browse_data(
         "series": "series",
         "tags": "tags",
     }
-    
+
     if field_type not in field_map:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid field_type. Must be one of: {', '.join(field_map.keys())}",
         )
-    
+
     field = field_map[field_type]
-    
+
     # SQL query to unnest array, count occurrences, and paginate
     # Use raw SQL for better performance with array operations
     offset = (page - 1) * limit
-    
+
     results = db.execute(
         text(f"""
         WITH unnested AS (
@@ -468,24 +474,22 @@ def get_browse_data(
         """),
         {"limit": limit, "offset": offset},
     ).fetchall()
-    
+
     # Get total count of unique items
-    total_result = db.execute(
-        text(f"""
+    total_result = db.execute(text(f"""
         WITH unnested AS (
             SELECT DISTINCT unnest({field}) as name
             FROM posts
             WHERE status = 'published'
         )
         SELECT COUNT(*) FROM unnested
-        """)
-    ).fetchone()
-    
+        """)).fetchone()
+
     total = total_result[0] if total_result else 0
     total_pages = (total + limit - 1) // limit if total > 0 else 0
-    
+
     items = [{"name": row[0], "count": row[1]} for row in results]
-    
+
     return {
         "items": items,
         "total": total,

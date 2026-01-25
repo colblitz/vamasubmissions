@@ -35,15 +35,25 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="card max-w-md w-full text-center">
           <h1 className="text-3xl font-bold mb-6">Character Submissions</h1>
-          
+
           {error && (
             <div className="bg-red-50 border-2 border-red-500 text-red-900 px-6 py-4 rounded-lg mb-6 text-left">
               <div className="flex items-start">
-                <svg className="w-6 h-6 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-red-500 mr-3 flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <div>
-                  <p className="font-bold text-lg mb-2">Subscription Required</p>
+                  <p className="font-bold text-lg mb-2">
+                    Subscription Required
+                  </p>
                   <p className="text-sm mb-3">{error}</p>
                   <a
                     href="https://www.patreon.com/vama_art"
@@ -66,7 +76,7 @@ export default function LoginPage() {
               </div>
             </div>
           )}
-          
+
           <p className="text-gray-600 dark:text-gray-400 mb-8">
             Login with your Patreon account to submit character requests
           </p>
@@ -86,14 +96,20 @@ export default function LoginPage() {
       <div className="card max-w-md w-full">
         <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded mb-6">
           <p className="font-semibold">[DEVELOPMENT MODE]</p>
-          <p className="text-sm">Mock authentication is enabled. Select a user type to login.</p>
+          <p className="text-sm">
+            Mock authentication is enabled. Select a user type to login.
+          </p>
         </div>
 
-        <h1 className="text-3xl font-bold mb-6 text-center">Character Submissions</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          Character Submissions
+        </h1>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select User Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select User Type
+            </label>
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
@@ -102,7 +118,11 @@ export default function LoginPage() {
               {mockUsers.map((userType) => {
                 const user = mockAuth.getMockUser(userType);
                 return (
-                  <option key={userType} value={userType} className="text-gray-900">
+                  <option
+                    key={userType}
+                    value={userType}
+                    className="text-gray-900"
+                  >
                     {user.patreon_username} (Tier {user.tier}, {user.role})
                   </option>
                 );
@@ -111,7 +131,9 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-            <h3 className="font-semibold mb-2 text-gray-900">Selected User Details:</h3>
+            <h3 className="font-semibold mb-2 text-gray-900">
+              Selected User Details:
+            </h3>
             {(() => {
               const user = mockAuth.getMockUser(selectedUser);
               return (
@@ -121,17 +143,21 @@ export default function LoginPage() {
                     {user.patreon_username}
                   </p>
                   <p>
-                    <span className="font-medium text-gray-900">Tier:</span> {user.tier}
+                    <span className="font-medium text-gray-900">Tier:</span>{" "}
+                    {user.tier}
                   </p>
                   <p>
-                    <span className="font-medium text-gray-900">Role:</span> {user.role}
+                    <span className="font-medium text-gray-900">Role:</span>{" "}
+                    {user.role}
                   </p>
                   <p>
-                    <span className="font-medium text-gray-900">Credits:</span> {user.credits} /{" "}
-                    {user.max_credits}
+                    <span className="font-medium text-gray-900">Credits:</span>{" "}
+                    {user.credits} / {user.max_credits}
                   </p>
                   <p>
-                    <span className="font-medium text-gray-900">Can Submit Multiple:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      Can Submit Multiple:
+                    </span>{" "}
                     {user.can_submit_multiple ? "Yes" : "No"}
                   </p>
                 </div>

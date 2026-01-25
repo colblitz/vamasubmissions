@@ -4,13 +4,18 @@ import { normalizeText } from "../../utils/validation";
 
 /**
  * EditSection component - Inline expandable section for suggesting edits to a post
- * 
+ *
  * @param {object} post - Post object being edited
  * @param {array} pendingEdits - Array of pending edits for this post
  * @param {function} onClose - Callback to close the section
  * @param {function} onSuccess - Callback when edit is successfully submitted
  */
-export default function EditSection({ post, pendingEdits = [], onClose, onSuccess }) {
+export default function EditSection({
+  post,
+  pendingEdits = [],
+  onClose,
+  onSuccess,
+}) {
   // Input states for each field
   const [newCharacter, setNewCharacter] = useState("");
   const [newSeries, setNewSeries] = useState("");
@@ -27,7 +32,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
 
   // Get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {
-    return pendingEdits.filter(edit => edit.field_name === fieldName);
+    return pendingEdits.filter((edit) => edit.field_name === fieldName);
   };
 
   // Fetch autocomplete suggestions
@@ -43,7 +48,8 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
       const response = await api.get(`/api/posts/autocomplete/${fieldType}`, {
         params: { q: query, limit: 100 },
       });
-      if (fieldType === "characters") setCharacterSuggestions(response.data || []);
+      if (fieldType === "characters")
+        setCharacterSuggestions(response.data || []);
       if (fieldType === "series") setSeriesSuggestions(response.data || []);
       if (fieldType === "tags") setTagSuggestions(response.data || []);
     } catch (err) {
@@ -86,7 +92,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
 
     // Normalize the value
     const normalizedValue = normalizeText(value);
-    
+
     // Validate normalized value
     if (!normalizedValue) {
       setErrorMessage("Value cannot be empty or whitespace only");
@@ -112,7 +118,9 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
         onSuccess(message);
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.detail || "Failed to submit edit suggestion");
+      setErrorMessage(
+        err.response?.data?.detail || "Failed to submit edit suggestion",
+      );
       setTimeout(() => setErrorMessage(""), 5000);
     }
   };
@@ -122,7 +130,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
     // Normalize before checking
     const normalizedValue = normalizeText(value);
     if (!normalizedValue) return;
-    
+
     submitEdit(fieldType, "ADD", normalizedValue);
     clearFunc("");
     clearSuggestionsFunc([]);
@@ -155,8 +163,10 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
         <div className="space-y-3">
           {/* CHARACTERS SECTION - Inline */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-gray-700 mr-2">Characters:</span>
-            
+            <span className="font-semibold text-gray-700 mr-2">
+              Characters:
+            </span>
+
             {/* Current Characters */}
             {post.characters?.length > 0 &&
               post.characters.map((char, idx) => (
@@ -192,7 +202,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
               <span
                 key={`pending-${idx}`}
                 className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm border border-amber-300"
-                title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || 'user'}`}
+                title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || "user"}`}
               >
                 {edit.action === "ADD" ? `+${edit.value}` : `−${edit.value}`}
                 <span className="text-xs text-amber-600">(pending)</span>
@@ -211,7 +221,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
                     "characters",
                     newCharacter,
                     setNewCharacter,
-                    setCharacterSuggestions
+                    setCharacterSuggestions,
                   )
                 }
                 placeholder="Add..."
@@ -223,7 +233,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
                     "characters",
                     newCharacter,
                     setNewCharacter,
-                    setCharacterSuggestions
+                    setCharacterSuggestions,
                   )
                 }
                 disabled={!newCharacter.trim()}
@@ -268,7 +278,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
           {/* SERIES SECTION - Inline */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-gray-700 mr-2">Series:</span>
-            
+
             {/* Current Series */}
             {post.series?.length > 0 &&
               post.series.map((s, idx) => (
@@ -304,7 +314,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
               <span
                 key={`pending-${idx}`}
                 className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm border border-amber-300"
-                title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || 'user'}`}
+                title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || "user"}`}
               >
                 {edit.action === "ADD" ? `+${edit.value}` : `−${edit.value}`}
                 <span className="text-xs text-amber-600">(pending)</span>
@@ -319,14 +329,24 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
                 onChange={(e) => setNewSeries(e.target.value)}
                 onKeyPress={(e) =>
                   e.key === "Enter" &&
-                  handleAdd("series", newSeries, setNewSeries, setSeriesSuggestions)
+                  handleAdd(
+                    "series",
+                    newSeries,
+                    setNewSeries,
+                    setSeriesSuggestions,
+                  )
                 }
                 placeholder="Add..."
                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-transparent"
               />
               <button
                 onClick={() =>
-                  handleAdd("series", newSeries, setNewSeries, setSeriesSuggestions)
+                  handleAdd(
+                    "series",
+                    newSeries,
+                    setNewSeries,
+                    setSeriesSuggestions,
+                  )
                 }
                 disabled={!newSeries.trim()}
                 className="p-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -370,7 +390,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
           {/* TAGS SECTION - Inline */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-gray-700 mr-2">Tags:</span>
-            
+
             {/* Current Tags */}
             {post.tags?.length > 0 &&
               post.tags.map((tag, idx) => (
@@ -406,7 +426,7 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
               <span
                 key={`pending-${idx}`}
                 className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm border border-amber-300"
-                title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || 'user'}`}
+                title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || "user"}`}
               >
                 {edit.action === "ADD" ? `+${edit.value}` : `−${edit.value}`}
                 <span className="text-xs text-amber-600">(pending)</span>
@@ -420,13 +440,16 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyPress={(e) =>
-                  e.key === "Enter" && handleAdd("tags", newTag, setNewTag, setTagSuggestions)
+                  e.key === "Enter" &&
+                  handleAdd("tags", newTag, setNewTag, setTagSuggestions)
                 }
                 placeholder="Add..."
                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-transparent"
               />
               <button
-                onClick={() => handleAdd("tags", newTag, setNewTag, setTagSuggestions)}
+                onClick={() =>
+                  handleAdd("tags", newTag, setNewTag, setTagSuggestions)
+                }
                 disabled={!newTag.trim()}
                 className="p-1 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Add tag"
@@ -470,7 +493,8 @@ export default function EditSection({ post, pendingEdits = [], onClose, onSucces
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
           <p className="text-xs text-blue-800">
-            Click × to suggest removing an item, or use + to suggest adding a new one. All suggestions will be reviewed by the community.
+            Click × to suggest removing an item, or use + to suggest adding a
+            new one. All suggestions will be reviewed by the community.
           </p>
         </div>
       </div>
