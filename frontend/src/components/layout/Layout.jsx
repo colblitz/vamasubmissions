@@ -8,8 +8,8 @@ export default function Layout() {
       <main className="container mx-auto px-4 py-8">
         <Outlet />
       </main>
-      <footer className="bg-gray-800 text-white text-center py-4 mt-12">
-        <p className="text-sm text-gray-400">
+      <footer className="bg-gray-800 text-white text-center py-6 mt-12">
+        <p className="text-base md:text-sm text-gray-400">
           Character Submission System • Powered by Patreon
         </p>
       </footer>
