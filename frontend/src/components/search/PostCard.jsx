@@ -36,17 +36,17 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Thumbnail */}
         {post.thumbnail_urls?.[0] ? (
           <img
             src={post.thumbnail_urls[0]}
             alt={post.title}
             loading="lazy"
-            className="w-48 h-48 flex-shrink-0 object-cover border-r border-gray-200"
+            className="w-full md:w-48 h-48 flex-shrink-0 object-cover md:border-r border-gray-200"
           />
         ) : (
-          <div className="w-48 h-48 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
+          <div className="w-full md:w-48 h-48 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center md:border-r border-gray-200">
             <div className="text-center px-4">
               <svg
                 className="w-12 h-12 mx-auto mb-2 text-gray-400"
@@ -211,12 +211,12 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
           </div>
 
           {/* Actions */}
-          <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
+          <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col md:flex-row gap-3 md:justify-between md:items-center">
             <a
               href={post.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="inline-flex items-center justify-center text-blue-600 hover:text-blue-800 text-sm font-medium py-3 min-h-[44px]"
             >
               View on Patreon
               <svg
@@ -236,7 +236,7 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
 
             <button
               onClick={() => setEditSectionOpen(!editSectionOpen)}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium"
+              className="px-4 py-3 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm font-medium min-h-[44px]"
             >
               {editSectionOpen ? "Close Edit" : "Suggest Edit"}
             </button>
