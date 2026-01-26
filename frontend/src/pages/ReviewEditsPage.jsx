@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import SuggestGlobalEditForm from "../components/edits/SuggestGlobalEditForm";
 import PendingGlobalEdits from "../components/edits/PendingGlobalEdits";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ReviewEditsPage() {
+  const { user, isAdmin } = useAuth();
   const [pendingEdits, setPendingEdits] = useState([]);
   const [globalEdits, setGlobalEdits] = useState([]);
   const [history, setHistory] = useState([]);
@@ -179,10 +182,10 @@ export default function ReviewEditsPage() {
       <h1 className="text-3xl font-bold mb-6 text-gray-900">Review Edits</h1>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b">
+      <div className="flex gap-2 sm:gap-4 mb-6 border-b overflow-x-auto">
         <button
           onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 font-medium ${
+          className={`px-3 sm:px-4 py-2 font-medium whitespace-nowrap min-h-[44px] ${
             activeTab === "pending"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-800"
@@ -192,7 +195,7 @@ export default function ReviewEditsPage() {
         </button>
         <button
           onClick={() => setActiveTab("global")}
-          className={`px-4 py-2 font-medium ${
+          className={`px-3 sm:px-4 py-2 font-medium whitespace-nowrap min-h-[44px] ${
             activeTab === "global"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-800"
@@ -202,13 +205,13 @@ export default function ReviewEditsPage() {
         </button>
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-4 py-2 font-medium ${
+          className={`px-3 sm:px-4 py-2 font-medium whitespace-nowrap min-h-[44px] ${
             activeTab === "history"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-800"
           }`}
         >
-          History
+          History ({(history?.length || 0) + (globalHistory?.length || 0)})
         </button>
       </div>
 
@@ -237,8 +240,40 @@ export default function ReviewEditsPage() {
             /* PENDING TAB */
             <>
               {!pendingEdits || pendingEdits.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  No pending edits to review
+                <div className="text-center py-16 bg-white rounded-lg shadow">
+                  <svg
+                    className="w-16 h-16 text-gray-300 mx-auto mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    All Caught Up!
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    There are no pending edits to review at the moment. Browse posts to suggest improvements and help keep the database accurate!
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                    <Link
+                      to="/"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                    >
+                      Browse Posts
+                    </Link>
+                    <Link
+                      to="/search"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                    >
+                      Search Posts
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 pendingEdits.map((edit) => (
@@ -327,7 +362,7 @@ export default function ReviewEditsPage() {
                                   setRejectReason(e.target.value)
                                 }
                                 placeholder="Reason (optional)"
-                                className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400"
+                                className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600"
                               />
                               <button
                                 onClick={executeAction}
@@ -345,16 +380,19 @@ export default function ReviewEditsPage() {
                           )}
                         </>
                       ) : (
-                        /* Initial state */
+                        /* Initial state - Show approve button unless it's user's own suggestion and they're not admin */
                         <>
-                          <button
-                            onClick={() =>
-                              handleActionClick(edit.id, "approve")
-                            }
-                            className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
-                          >
-                            Approve
-                          </button>
+                          {/* Show approve button if: user is admin OR it's not their own suggestion */}
+                          {(isAdmin() || edit.suggester_id !== user?.id) && (
+                            <button
+                              onClick={() =>
+                                handleActionClick(edit.id, "approve")
+                              }
+                              className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
+                            >
+                              Approve
+                            </button>
+                          )}
                           <button
                             onClick={() => handleActionClick(edit.id, "reject")}
                             className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 whitespace-nowrap"
@@ -397,8 +435,32 @@ export default function ReviewEditsPage() {
 
                 if (combinedHistory.length === 0) {
                   return (
-                    <div className="text-center py-12 text-gray-500">
-                      No edit history yet
+                    <div className="text-center py-16 bg-white rounded-lg shadow">
+                      <svg
+                        className="w-16 h-16 text-gray-300 mx-auto mb-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        No Edit History
+                      </h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        No edits have been approved yet. Once edits are reviewed and approved, they'll appear here.
+                      </p>
+                      <Link
+                        to="/"
+                        className="inline-block w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                      >
+                        Browse Posts
+                      </Link>
                     </div>
                   );
                 }

@@ -161,8 +161,13 @@ class GlobalEditService:
         if suggestion.status != "pending":
             raise ValueError("Global edit suggestion is not pending")
 
+        # Check if approver is different from suggester (unless approver is admin)
         if suggestion.suggester_id == approver_id:
-            raise ValueError("Cannot approve your own global edit suggestion")
+            # Get approver user to check if they're an admin
+            from app.models.user import User
+            approver = db.query(User).filter(User.id == approver_id).first()
+            if not approver or approver.role != "admin":
+                raise ValueError("Cannot approve your own global edit suggestion")
 
         # Update all affected posts using array_replace
         # This is an atomic operation

@@ -169,12 +169,15 @@ def approve_edit(
             detail=f"Edit is already {edit.status}",
         )
 
-    # Check if approver is different from suggester
+    # Check if approver is different from suggester (unless approver is admin)
     if edit.suggester_id == approver_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot approve your own edit suggestion",
-        )
+        # Get approver user to check if they're an admin
+        approver = db.query(User).filter(User.id == approver_id).first()
+        if not approver or approver.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot approve your own edit suggestion",
+            )
 
     # Get the post
     post = db.query(Post).filter(Post.id == edit.post_id).first()
