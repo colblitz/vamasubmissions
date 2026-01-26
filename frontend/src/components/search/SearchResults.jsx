@@ -72,21 +72,21 @@ export default function SearchResults({
   return (
     <>
       {/* Results Header with Count and Sort */}
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div className="text-gray-600">
           Found {total} post{total !== 1 ? "s" : ""}
         </div>
 
         {/* Sort Dropdown */}
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Sort by:</label>
+          <label className="text-sm text-gray-600 whitespace-nowrap">Sort by:</label>
           <select
             value={`${sortParams.sortBy}-${sortParams.sortOrder}`}
             onChange={(e) => {
               const [sortBy, sortOrder] = e.target.value.split("-");
               onSortChange({ sortBy, sortOrder });
             }}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full sm:w-auto px-3 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
           >
             <option value="date-desc">Date (Newest First)</option>
             <option value="date-asc">Date (Oldest First)</option>
@@ -108,21 +108,21 @@ export default function SearchResults({
 
       {/* Pagination */}
       {total > pagination.limit && (
-        <div className="flex justify-center gap-2 mt-8">
+        <div className="flex justify-center gap-3 mt-8">
           <button
             onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
             disabled={pagination.page === 1}
-            className="px-4 py-2 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+            className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
           >
             Previous
           </button>
-          <span className="px-4 py-2 text-gray-900">
+          <span className="px-4 py-3 text-gray-900 flex items-center">
             Page {pagination.page} of {totalPages}
           </span>
           <button
             onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page >= totalPages}
-            className="px-4 py-2 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+            className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
           >
             Next
           </button>
