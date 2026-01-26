@@ -12,7 +12,11 @@ export default function Banner({ type = "info", message, onClose }) {
     >
       <span>{message}</span>
       {onClose && (
-        <button onClick={onClose} className="ml-4 font-bold hover:opacity-70">
+        <button 
+          onClick={onClose} 
+          className="ml-4 font-bold hover:opacity-70 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Close notification"
+        >
           ×
         </button>
       )}
