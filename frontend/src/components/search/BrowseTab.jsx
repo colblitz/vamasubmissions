@@ -104,6 +104,17 @@ export default function BrowseTab({ onSelectItem }) {
         >
           Tags
         </button>
+        <button
+          onClick={() => {
+            // Call parent callback to switch to search tab with no_tags filter
+            if (onSelectItem) {
+              onSelectItem("no_tags", true);
+            }
+          }}
+          className="px-4 py-2 font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+        >
+          No Tags
+        </button>
       </div>
 
       {/* Error Message */}
@@ -138,7 +149,7 @@ export default function BrowseTab({ onSelectItem }) {
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span
-                    className="font-medium text-gray-900 truncate"
+                    className="font-medium text-gray-900 text-sm md:text-base break-words md:truncate"
                     title={item.name}
                   >
                     {item.name}

@@ -23,6 +23,7 @@ async def search_posts(
     ),
     series: Optional[str] = Query(None, description="Filter by series names (comma-separated)"),
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
+    no_tags: Optional[bool] = Query(None, description="Filter for posts without any tags"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Results per page"),
     sort_by: str = Query("date", description="Sort field (date)"),
@@ -38,6 +39,7 @@ async def search_posts(
         characters: Filter by character names (comma-separated)
         series: Filter by series names (comma-separated)
         tags: Filter by tags (comma-separated)
+        no_tags: Filter for posts without any tags
         page: Page number (1-indexed)
         limit: Results per page
         current_user: Current authenticated user
@@ -71,6 +73,7 @@ async def search_posts(
     logger.info(f"  - character_list: {character_list}")
     logger.info(f"  - series_list: {series_list}")
     logger.info(f"  - tag_list: {tag_list}")
+    logger.info(f"  - no_tags: {no_tags}")
 
     result = post_service.search_posts(
         db,
@@ -78,6 +81,7 @@ async def search_posts(
         characters=character_list,
         series_list=series_list,
         tags=tag_list,
+        no_tags=no_tags,
         page=page,
         limit=limit,
         sort_by=sort_by,

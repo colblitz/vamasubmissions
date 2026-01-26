@@ -15,6 +15,7 @@ export default function SearchPage() {
     characters: [],
     series: [],
     tags: [],
+    noTags: false,
     page: 1,
     limit: 20,
     sortBy: "date",
@@ -124,6 +125,9 @@ export default function SearchPage() {
       if (searchParams.tags.length > 0) {
         params.tags = searchParams.tags.join(",");
       }
+      if (searchParams.noTags) {
+        params.no_tags = true;
+      }
 
       const response = await api.get("/api/posts/search", { params });
 
@@ -144,7 +148,8 @@ export default function SearchPage() {
       results.length > 0 ||
       searchParams.characters.length > 0 ||
       searchParams.series.length > 0 ||
-      searchParams.tags.length > 0
+      searchParams.tags.length > 0 ||
+      searchParams.noTags
     ) {
       handleSearch();
     }
@@ -152,6 +157,7 @@ export default function SearchPage() {
     searchParams.characters,
     searchParams.series,
     searchParams.tags,
+    searchParams.noTags,
     searchParams.sortBy,
     searchParams.sortOrder,
     searchParams.page,
@@ -186,11 +192,13 @@ export default function SearchPage() {
 
     // Apply the filter based on field type
     if (fieldType === "characters") {
-      setSearchParams((prev) => ({ ...prev, characters: [itemName], page: 1 }));
+      setSearchParams((prev) => ({ ...prev, characters: [itemName], noTags: false, page: 1 }));
     } else if (fieldType === "series") {
-      setSearchParams((prev) => ({ ...prev, series: [itemName], page: 1 }));
+      setSearchParams((prev) => ({ ...prev, series: [itemName], noTags: false, page: 1 }));
     } else if (fieldType === "tags") {
-      setSearchParams((prev) => ({ ...prev, tags: [itemName], page: 1 }));
+      setSearchParams((prev) => ({ ...prev, tags: [itemName], noTags: false, page: 1 }));
+    } else if (fieldType === "no_tags") {
+      setSearchParams((prev) => ({ ...prev, noTags: true, tags: [], page: 1 }));
     }
   };
 
@@ -202,7 +210,7 @@ export default function SearchPage() {
       <div className="flex gap-2 border-b border-gray-200 mb-6">
         <button
           onClick={() => setActiveTab("search")}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors min-h-[44px] ${
             activeTab === "search"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
@@ -212,7 +220,7 @@ export default function SearchPage() {
         </button>
         <button
           onClick={() => setActiveTab("browse")}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors min-h-[44px] ${
             activeTab === "browse"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"

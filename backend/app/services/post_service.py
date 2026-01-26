@@ -85,6 +85,7 @@ def search_posts(
     characters: Optional[List[str]] = None,
     series_list: Optional[List[str]] = None,
     tags: Optional[List[str]] = None,
+    no_tags: Optional[bool] = None,
     page: int = 1,
     limit: int = 20,
     sort_by: str = "date",
@@ -101,6 +102,7 @@ def search_posts(
         characters: Filter by character names (must match ALL)
         series_list: Filter by series names (must match ALL)
         tags: Filter by tags (must match ALL)
+        no_tags: Filter for posts without any tags (tags = '{}' OR tags IS NULL)
         page: Page number (1-indexed)
         limit: Results per page
         current_user_id: Optional current user ID for pending edits
@@ -182,6 +184,18 @@ def search_posts(
             ).params(tag=tag.lower())
         after_tag_count = q.count()
         logger.info(f"[SEARCH DEBUG] After tag filter: {after_tag_count} posts")
+
+    if no_tags:
+        # Filter for posts without any tags (empty array or NULL)
+        logger.info(f"[SEARCH DEBUG] Applying no_tags filter")
+        q = q.filter(
+            or_(
+                Post.tags == [],
+                Post.tags == None
+            )
+        )
+        after_no_tags_count = q.count()
+        logger.info(f"[SEARCH DEBUG] After no_tags filter: {after_no_tags_count} posts")
 
     # Get total count
     total = q.count()
