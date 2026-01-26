@@ -39,13 +39,13 @@ export default function AboutPage() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Welcome!
             </h2>
-            <div className="prose prose-sm text-gray-700 space-y-4">
-              <p>
+            <div className="max-w-3xl text-gray-700">
+              <p className="text-base md:text-sm leading-relaxed mb-6">
                 Welcome to the VAMA Community Tracker, an unofficial
                 community-driven platform for tracking and searching VAMA's
                 Patreon character posts.
               </p>
-              <p>
+              <p className="text-base md:text-sm leading-relaxed mb-6">
                 This platform was created by fans, for fans, to help the
                 community organize and discover VAMA's amazing character
                 artwork. All content belongs to VAMA and their Patreon
@@ -58,8 +58,8 @@ export default function AboutPage() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Features
             </h2>
-            <div className="prose prose-sm text-gray-700 space-y-3">
-              <ul className="list-disc list-inside space-y-2">
+            <div className="max-w-3xl text-gray-700">
+              <ul className="list-disc list-inside space-y-3 text-base md:text-sm leading-relaxed">
                 <li>
                   <strong>Search & Browse:</strong> Find character posts by
                   name, series, or tags
@@ -84,23 +84,23 @@ export default function AboutPage() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               How It Works
             </h2>
-            <div className="prose prose-sm text-gray-700 space-y-3">
-              <p>
+            <div className="max-w-3xl text-gray-700">
+              <p className="text-base md:text-sm leading-relaxed mb-6">
                 <strong>Searching:</strong> Use the Search page to find posts by
                 character name, series, or tags. You can also browse by category
                 to discover new content.
               </p>
-              <p>
+              <p className="text-base md:text-sm leading-relaxed mb-6">
                 <strong>Suggesting Edits:</strong> Found a typo or missing tag?
                 Click "Suggest Edit" on any post to propose changes. Another
                 community member will review and approve your suggestion.
               </p>
-              <p>
+              <p className="text-base md:text-sm leading-relaxed mb-6">
                 <strong>Reviewing Edits:</strong> Visit the Review Edits page to
                 see pending suggestions from other users. Help keep the database
                 accurate by approving good edits!
               </p>
-              <p>
+              <p className="text-base md:text-sm leading-relaxed mb-6">
                 <strong>Request Tracking:</strong> The Community Requests page
                 lets you record when you've submitted a request to VAMA. This is
                 unofficial and not everyone uses it, but it can help you track
@@ -113,7 +113,7 @@ export default function AboutPage() {
             <h2 className="text-xl font-semibold text-blue-900 mb-3">
               Disclaimer
             </h2>
-            <p className="text-sm text-blue-800">
+            <p className="text-base md:text-sm text-blue-800 leading-relaxed max-w-3xl">
               This is an <strong>unofficial community project</strong> and is
               not affiliated with or endorsed by VAMA. All character artwork and
               content belongs to VAMA. This platform is for organizational
