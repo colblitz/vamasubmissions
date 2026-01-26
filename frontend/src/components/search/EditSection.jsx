@@ -225,7 +225,7 @@ export default function EditSection({
                   )
                 }
                 placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 onClick={() =>
@@ -337,7 +337,7 @@ export default function EditSection({
                   )
                 }
                 placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-transparent"
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-green-500 focus:border-transparent"
               />
               <button
                 onClick={() =>
@@ -444,7 +444,7 @@ export default function EditSection({
                   handleAdd("tags", newTag, setNewTag, setTagSuggestions)
                 }
                 placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-transparent"
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-purple-500 focus:border-transparent"
               />
               <button
                 onClick={() =>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -309,7 +310,7 @@ export default function CommunityRequestsPage() {
       <div className="bg-white rounded-lg shadow mb-6">
         <button
           onClick={() => setShowForm(!showForm)}
-          className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50"
+          className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50 min-h-[44px]"
         >
           <span className="text-xl font-semibold text-gray-900">
             {showForm ? "▼" : "▶"} Record a Request
@@ -334,7 +335,7 @@ export default function CommunityRequestsPage() {
                     setTimeout(() => setShowCharacterSuggestions(false), 200)
                   }
                   placeholder="e.g., Kafka, Himeko"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-600 min-h-[44px]"
                   required
                 />
                 {showCharacterSuggestions &&
@@ -345,7 +346,7 @@ export default function CommunityRequestsPage() {
                           key={idx}
                           type="button"
                           onClick={() => addCharacterSuggestion(suggestion)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                          className="w-full text-left px-4 py-3 hover:bg-gray-100 text-gray-900 min-h-[44px]"
                         >
                           {suggestion}
                         </button>
@@ -369,7 +370,7 @@ export default function CommunityRequestsPage() {
                     setTimeout(() => setShowSeriesSuggestions(false), 200)
                   }
                   placeholder="e.g., Honkai: Star Rail"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                   required
                 />
                 {showSeriesSuggestions && seriesSuggestions.length > 0 && (
@@ -417,7 +418,7 @@ export default function CommunityRequestsPage() {
                   }
                   placeholder="Any additional details..."
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
 
@@ -569,8 +570,40 @@ export default function CommunityRequestsPage() {
             <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         ) : !requests || requests.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 bg-white rounded-lg shadow">
-            No pending requests in the queue
+          <div className="text-center py-16 bg-white rounded-lg shadow">
+            <svg
+              className="w-16 h-16 text-gray-300 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No Pending Requests
+            </h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              The community queue is currently empty! Browse existing posts or search for characters to see what's already available.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <Link
+                to="/"
+                className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+              >
+                Browse Posts
+              </Link>
+              <Link
+                to="/search"
+                className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              >
+                Search Posts
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">

@@ -132,7 +132,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
             value={oldValue}
             onChange={(e) => setOldValue(e.target.value)}
             placeholder="e.g., Naruto Uzamaki"
-            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -146,7 +146,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}
             placeholder="e.g., Naruto Uzumaki"
-            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>

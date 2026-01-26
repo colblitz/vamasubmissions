@@ -77,7 +77,7 @@ export default function AutocompleteInput({
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
         placeholder={placeholder}
-        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 ${className}`}
+        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-600 min-h-[44px] ${className}`}
       />
 
       {isOpen && (
@@ -90,13 +90,13 @@ export default function AutocompleteInput({
               <button
                 key={idx}
                 onClick={() => handleSelect(suggestion)}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
+                className="w-full text-left px-4 py-3 hover:bg-gray-100 text-gray-900 min-h-[44px]"
               >
                 {suggestion}
               </button>
             ))
           ) : showNoResults ? (
-            <div className="px-4 py-2 text-gray-500 text-sm">
+            <div className="px-4 py-3 text-gray-500 text-sm min-h-[44px] flex items-center">
               No results found
             </div>
           ) : null}
