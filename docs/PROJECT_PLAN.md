@@ -1,14 +1,14 @@
 # Project Plan - VAMA Community Tracker
 
-**Last Updated**: 2026-01-26 21:59
+**Last Updated**: 2026-01-26 22:05
 
 ## Current Status
 
-Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + **Global Edits Refactor COMPLETE ✅**
+Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edits Refactor + Mobile UX Overhaul + **Quick Wins COMPLETE ✅**
 
-Backend: 38+ API endpoints, 2833+ posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits now use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI completely preserved with zero regression. See PROJECT_LOG.md for detailed history.
+Backend: 47+ active API endpoints (69 total including legacy), 2800+ posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI preserved through responsive design. See PROJECT_LOG.md for detailed history.
 
-**Next Priority**: CDN & Image Viewer features from backlog or additional UX improvements.
+**Next Priority**: CDN & Image Viewer features from backlog.
 
 ---
 
@@ -16,27 +16,41 @@ Backend: 38+ API endpoints, 2833+ posts imported, full business logic implemente
 
 ### Access Control
 - Must be subscribed to VAMA's Patreon
+- Must have active patron status (`patron_status == "active_patron"`)
+- Must be in allowed tier whitelist (configurable via `ALLOWED_PATREON_TIER_IDS`)
 - Tier detection preserved for future use
 - All Phase 1 features available to all subscribers
+- Admins bypass subscription checks
 
 ### Posts
 - Source: vama_posts_initial.csv + Patreon imports
-- Fields: post_id, timestamp, url, title, characters[], series[], tags[], image_urls[]
+- Fields: post_id, timestamp, patreon_url, title, characters[], series[], tags[], thumbnail_url, thumbnail_urls[]
 - Searchable: title, characters, series, tags (full-text + filters)
+- Browse: Aggregated lists of characters, series, tags (with "No Tags" filter)
 - Status: 'pending', 'published', 'skipped'
 
 ### Community Requests
 - Unofficial queue tracking (not VAMA's official queue)
-- Fields: character_name, series, timestamp (when requested), description, is_private, fulfilled
-- Display: Sorted by timestamp (oldest first), private requests obscured
+- Fields: characters[] (array), series[] (array), requested_timestamp, description, is_private, fulfilled
+- Display: Sorted by requested_timestamp (oldest first), private requests obscured
 - Actions: Users mark own fulfilled, admins can delete any
 
 ### Community Edits
 - Editable: characters[], series[], tags[] on posts
 - Actions: ADD, DELETE (typo fixes = delete + add)
 - Workflow: Any subscriber suggests → different subscriber approves → immediately applied
+  - Exception: Admins can approve their own suggestions
 - Audit trail: All edits logged with suggester, approver, timestamp
 - Admin can undo edits
+
+### Global Edits
+- Condition + Action model for bulk changes across posts
+- Condition: field_name (which field to search) + pattern (what to match, supports wildcards)
+- Action: action (ADD/DELETE) + action_field (which field to modify) + action_value (value to add, NULL for DELETE)
+- Workflow: Any subscriber suggests → preview affected posts → different subscriber approves → immediately applied
+  - Exception: Admins can approve their own suggestions
+- Features: Pattern matching with wildcards, preview before approval, undo capability
+- Audit trail: All global edits logged with previous values for undo
 
 ---
 
@@ -50,13 +64,18 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     patreon_id VARCHAR(255) UNIQUE NOT NULL,
     patreon_username VARCHAR(255),
-    email VARCHAR(255),
-    tier INTEGER NOT NULL DEFAULT 1,
-    tier_name VARCHAR(100),
+    tier_id VARCHAR(50),
+    campaign_id VARCHAR(50),
+    patron_status VARCHAR(50),
+    credits INTEGER NOT NULL DEFAULT 0,
     role VARCHAR(50) NOT NULL DEFAULT 'patron',
+    last_credit_refresh TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    patreon_access_token TEXT,
+    patreon_refresh_token TEXT,
+    patreon_token_expires_at TIMESTAMP
 );
 ```
 
@@ -66,19 +85,18 @@ CREATE TABLE posts (
     id SERIAL PRIMARY KEY,
     post_id VARCHAR(255) UNIQUE NOT NULL,
     timestamp TIMESTAMP NOT NULL,
-    url TEXT NOT NULL,
+    patreon_url TEXT NOT NULL,
     title TEXT NOT NULL,
     characters TEXT[] DEFAULT '{}',
     series TEXT[] DEFAULT '{}',
     tags TEXT[] DEFAULT '{}',
-    image_urls TEXT[] DEFAULT '{}',
+    thumbnail_url TEXT,
     thumbnail_urls TEXT[] DEFAULT '{}',
     status VARCHAR(20) DEFAULT 'published',
-    raw_patreon_json JSONB,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX posts_search_idx ON posts USING GIN (to_tsvector('english', ...));
+CREATE INDEX posts_search_idx ON posts USING GIN (to_tsvector('english', title || ' ' || array_to_string(characters, ' ') || ' ' || array_to_string(series, ' ') || ' ' || array_to_string(tags, ' ')));
 CREATE INDEX idx_posts_status ON posts(status);
 ```
 
@@ -87,17 +105,19 @@ CREATE INDEX idx_posts_status ON posts(status);
 CREATE TABLE community_requests (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    character_name VARCHAR(255) NOT NULL,
-    series VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
+    characters TEXT[] NOT NULL DEFAULT '{}',
+    series TEXT[] NOT NULL DEFAULT '{}',
+    requested_timestamp TIMESTAMP NOT NULL,
     description TEXT,
     is_private BOOLEAN DEFAULT FALSE,
     fulfilled BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX idx_requests_timestamp ON community_requests(timestamp);
+CREATE INDEX idx_requests_timestamp ON community_requests(requested_timestamp);
 CREATE INDEX idx_requests_fulfilled ON community_requests(fulfilled);
+CREATE INDEX idx_community_requests_characters_gin ON community_requests USING GIN (characters);
+CREATE INDEX idx_community_requests_series_gin ON community_requests USING GIN (series);
 ```
 
 ### Post Edits
@@ -140,8 +160,8 @@ CREATE TABLE admin_settings (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     patreon_access_token TEXT,
     patreon_refresh_token TEXT,
-    token_expires_at TIMESTAMP,
-    patreon_session_id TEXT,  -- Added in migration 007
+    patreon_token_expires_at TIMESTAMP,
+    patreon_session_id TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -152,20 +172,24 @@ CREATE TABLE admin_settings (
 CREATE TABLE global_edit_suggestions (
     id SERIAL PRIMARY KEY,
     suggester_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    field_name VARCHAR(50) NOT NULL,  -- 'characters', 'series', 'tags'
-    old_value TEXT NOT NULL,
-    new_value TEXT NOT NULL,
+    field_name VARCHAR(50) NOT NULL,  -- Condition: which field to search
+    pattern TEXT NOT NULL,  -- Condition: what to match (supports wildcards)
+    action VARCHAR(10) NOT NULL DEFAULT 'ADD',  -- Action: 'ADD' or 'DELETE'
+    action_field VARCHAR(50) NOT NULL,  -- Action: which field to modify
+    action_value TEXT,  -- Action: value to add (NULL for DELETE)
     status VARCHAR(20) DEFAULT 'pending',  -- 'pending', 'approved', 'rejected'
     approver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    affected_post_ids INTEGER[] DEFAULT '{}',
-    affected_count INTEGER DEFAULT 0,
     previous_values JSONB,  -- For undo functionality
     created_at TIMESTAMP DEFAULT NOW(),
     approved_at TIMESTAMP,
     applied_at TIMESTAMP,
     CONSTRAINT check_field_name CHECK (field_name IN ('characters', 'series', 'tags')),
     CONSTRAINT check_status CHECK (status IN ('pending', 'approved', 'rejected')),
-    CONSTRAINT check_different_values CHECK (old_value != new_value)
+    CONSTRAINT check_action CHECK (action IN ('ADD', 'DELETE')),
+    CONSTRAINT check_action_value CHECK (
+        (action = 'ADD' AND action_value IS NOT NULL) OR
+        (action = 'DELETE' AND action_value IS NULL)
+    )
 );
 CREATE INDEX idx_global_edits_status ON global_edit_suggestions(status);
 CREATE INDEX idx_global_edits_suggester ON global_edit_suggestions(suggester_id);
@@ -177,14 +201,16 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 ## API Endpoints
 
 ### Authentication
-- `GET /api/auth/login` - Redirect to Patreon OAuth
+- `GET /api/auth/login` - Redirect to Patreon OAuth (supports mock auth with username param)
 - `GET /api/auth/callback` - Handle OAuth callback, return JWT
 - `POST /api/auth/logout` - Invalidate session
 - `GET /api/auth/me` - Get current user info
+- `GET /api/auth/check-subscription` - Check Patreon subscription status
 
 ### Posts
-- `GET /api/posts/search` - Search posts (q, page, limit, character, series, tag, title, order)
-- `GET /api/posts/{id}` - Get post details
+- `GET /api/posts/search` - Search posts (q, page, limit, character, series, tag, title, order, no_tags)
+- `GET /api/posts/{post_id}` - Get post details
+- `GET /api/posts/browse/{field_type}` - Browse aggregated data (characters/series/tags)
 - `GET /api/posts/autocomplete/characters` - Character autocomplete
 - `GET /api/posts/autocomplete/series` - Series autocomplete
 - `GET /api/posts/autocomplete/tags` - Tag autocomplete
@@ -192,26 +218,28 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 
 ### Community Requests
 - `POST /api/requests/` - Create request
-- `GET /api/requests/` - List all requests (page, limit)
-- `GET /api/requests/my` - List user's own requests
+- `GET /api/requests/` - List all requests (page, limit, include_fulfilled)
+- `GET /api/requests/my` - List user's own requests (include_fulfilled)
+- `PATCH /api/requests/{id}` - Update request
 - `PATCH /api/requests/{id}/fulfill` - Mark own request fulfilled
 - `DELETE /api/requests/{id}` - Delete request (own or admin)
 
 ### Post Edits
 - `POST /api/edits/suggest` - Suggest edit (post_id, field_name, action, value)
 - `GET /api/edits/pending` - List pending edits
-- `POST /api/edits/{id}/approve` - Approve edit (cannot approve own)
+- `GET /api/edits/pending-for-post/{post_id}` - Get pending edits for single post
+- `GET /api/edits/pending-for-posts` - Batch query for pending edits (post_ids param)
+- `POST /api/edits/{id}/approve` - Approve edit (admins can approve own)
 - `POST /api/edits/{id}/reject` - Reject edit
 - `GET /api/edits/history` - Get edit history (optional post_id filter)
-- `POST /api/edits/{id}/undo` - Undo edit (admin only)
-- `GET /api/edits/pending-for-posts` - Batch query for pending edits (post_ids param)
+- `POST /api/edits/history/{history_id}/undo` - Undo edit (admin only)
 
 ### Global Edits
-- `POST /api/global-edits/preview` - Preview affected posts (field_name, old_value params)
-- `POST /api/global-edits/suggest` - Create global edit suggestion
+- `POST /api/global-edits/preview` - Preview affected posts (field_name, pattern params)
+- `POST /api/global-edits/suggest` - Create global edit suggestion (pattern, action, action_field, action_value)
 - `GET /api/global-edits/pending` - List pending global edits
 - `GET /api/global-edits/{id}/preview` - Get preview for specific suggestion
-- `POST /api/global-edits/{id}/approve` - Approve and apply bulk changes (cannot approve own)
+- `POST /api/global-edits/{id}/approve` - Approve and apply bulk changes (admins can approve own)
 - `POST /api/global-edits/{id}/reject` - Reject suggestion
 - `GET /api/global-edits/history` - Get history of applied global edits
 - `POST /api/global-edits/{id}/undo` - Undo applied global edit (admin only)
@@ -220,40 +248,19 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 - `GET /api/users/leaderboard` - Top 20 users by edits suggested/approved
 
 ### Admin
-- `POST /api/admin/fetch-new-posts` - Fetch from Patreon via gallery-dl
-- `GET /api/admin/pending-posts` - List pending posts (page, limit)
+- `POST /api/admin/posts/fetch-new` - Fetch from Patreon via gallery-dl (requires session_id)
+- `GET /api/admin/posts/pending` - List pending posts (page, limit)
 - `PATCH /api/admin/posts/{id}` - Update pending post metadata
 - `POST /api/admin/posts/{id}/publish` - Publish single post
 - `POST /api/admin/posts/bulk-publish` - Publish multiple posts
 - `DELETE /api/admin/posts/{id}` - Delete pending post
-- `POST /api/admin/posts/bulk-delete` - Delete multiple posts
+- `DELETE /api/admin/posts/bulk-delete` - Delete multiple posts
 - `POST /api/admin/posts/{id}/skip` - Mark post as skipped
+- `GET /api/admin/patreon/tiers` - Fetch VAMA's Patreon tier information
 
 ---
 
 ## Feature Backlog
-
-### Priority 1: UX & Admin Improvements (🟡 Medium - 4-6 hours)
-**Browse Posts Without Tags**:
-- Add "No Tags" filter option in Browse tab
-- Backend: Query for posts where `tags = '{}'` or `tags IS NULL`
-- Frontend: Add special filter button/option
-- Use case: Find posts that need tagging
-- **Complexity**: Low - simple query modification
-
-**Mobile Layout Improvements** ✅ COMPLETE:
-- Review responsive design on mobile devices
-- Fix any layout issues (cards, forms, navigation)
-- Improve touch targets and spacing
-- Test on various screen sizes (320px, 375px, 414px)
-- **Status**: Complete - Mobile UI Refinements Round 2 deployed
-
-**Admin Self-Approval**:
-- Allow admins to approve their own edit suggestions
-- Backend: Skip `suggester_id == approver_id` check if `is_admin`
-- Frontend: Show approve button for admins on own suggestions
-- Use case: Admins can make quick fixes without needing another user
-- **Complexity**: Low - conditional logic change
 
 ### Priority 5: CDN & Image Viewer (🔴 Hard - 10-15 hours)
 **CDN Integration**:
