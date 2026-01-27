@@ -162,7 +162,15 @@ export default function ReviewEditsPage() {
 
   // Helper to render action badge (inline format)
   const renderActionBadge = (action) => {
-    return action === "ADD" ? "+ ADD" : "- DELETE";
+    return (
+      <span className={`text-xs font-semibold px-2 py-1 rounded ${
+        action === "ADD" 
+          ? "bg-green-100 text-green-800" 
+          : "bg-red-100 text-red-800"
+      }`}>
+        {action === "ADD" ? "+ ADD" : "- DELETE"}
+      </span>
+    );
   };
 
   return (
