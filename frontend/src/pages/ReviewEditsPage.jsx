@@ -160,19 +160,6 @@ export default function ReviewEditsPage() {
     return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
   };
 
-  // Helper to render action badge (inline format)
-  const renderActionBadge = (action) => {
-    return (
-      <span className={`text-xs font-semibold px-2 py-1 rounded ${
-        action === "ADD" 
-          ? "bg-green-100 text-green-800" 
-          : "bg-red-100 text-red-800"
-      }`}>
-        {action === "ADD" ? "+ ADD" : "- DELETE"}
-      </span>
-    );
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Review Edits</h1>
@@ -538,14 +525,12 @@ export default function ReviewEditsPage() {
                           <h3 className="font-semibold text-gray-900 truncate">
                             {item.post_title}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            {renderActionBadge(item.action)}
-                            <span className="text-sm text-gray-600">
-                              {formatFieldName(item.field_name)}:
-                            </span>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {formatFieldName(item.field_name)}:{" "}
                             <span
-                              className={`text-sm font-medium ${item.action === "ADD" ? "text-green-700" : "text-red-700"}`}
+                              className={`font-medium ${item.action === "ADD" ? "text-green-700" : "text-red-700"}`}
                             >
+                              {item.action === "ADD" ? "+" : "-"}
                               {item.value}
                             </span>
                           </div>
