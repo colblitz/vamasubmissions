@@ -27,7 +27,6 @@ class UserUpdate(BaseModel):
     tier_id: Optional[str] = None
     campaign_id: Optional[str] = None
     patron_status: Optional[str] = None
-    credits: Optional[int] = Field(None, ge=0)
 
 
 class User(UserBase):
@@ -35,11 +34,7 @@ class User(UserBase):
 
     id: int
     patreon_id: str
-    credits: int
     role: str
-    max_credits: int
-    credits_per_month: int
-    can_submit_multiple: bool
     created_at: datetime
     last_login: Optional[datetime] = None
 
@@ -50,7 +45,6 @@ class User(UserBase):
 class UserInDB(User):
     """Schema for user in database (includes sensitive fields)."""
 
-    last_credit_refresh: Optional[datetime] = None
     updated_at: datetime
 
     class Config:

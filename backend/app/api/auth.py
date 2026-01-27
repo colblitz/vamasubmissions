@@ -146,11 +146,7 @@ async def callback(code: str, db: Session = Depends(get_db)):
 
         token_data = token_response.json()
         access_token = token_data.get("access_token")
-        refresh_token = token_data.get("refresh_token")
-        expires_in = token_data.get("expires_in", 2592000)  # Default 30 days
-
-        # Calculate token expiry
-        token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+        # Note: OAuth tokens are no longer stored in User model (Phase 2 migration)
 
         # Fetch user info from Patreon
         user_info = await fetch_patreon_user_info(access_token)
@@ -165,12 +161,9 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 tier_id=user_info.tier_id,
                 campaign_id=user_info.campaign_id,
                 patron_status=user_info.patron_status,
-                patreon_access_token=access_token,
-                patreon_refresh_token=refresh_token,
-                patreon_token_expires_at=token_expires_at,
             )
         else:
-            # Update user info and tokens
+            # Update user info
             user = user_service.update_user(
                 db,
                 user.id,
@@ -178,9 +171,6 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 tier_id=user_info.tier_id,
                 campaign_id=user_info.campaign_id,
                 patron_status=user_info.patron_status,
-                patreon_access_token=access_token,
-                patreon_refresh_token=refresh_token,
-                patreon_token_expires_at=token_expires_at,
             )
 
         # Update last login
@@ -381,8 +371,9 @@ async def check_subscription(
     """
     Check if current user is subscribed to VAMA's Patreon.
 
-    This endpoint verifies the user's subscription status by checking their
-    stored OAuth token and membership data.
+    This endpoint returns the user's subscription status based on data
+    stored during their last login. For real-time verification, users
+    should re-authenticate through the OAuth flow.
 
     Args:
         current_user: Current authenticated user
@@ -391,106 +382,15 @@ async def check_subscription(
     Returns:
         Subscription status including tier_id and patron status
     """
-    # Check if we have a valid access token
-    if not current_user.patreon_access_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No Patreon access token found. Please log in again.",
-        )
-
-    # Check if token is expired
-    if (
-        current_user.patreon_token_expires_at
-        and current_user.patreon_token_expires_at < datetime.utcnow()
-    ):
-        # TODO: Implement token refresh logic
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Patreon access token expired. Please log in again.",
-        )
-
-    # Fetch fresh membership data from Patreon
-    async with httpx.AsyncClient() as client:
-        identity_response = await client.get(
-            f"{settings.patreon_api_url}/identity",
-            params={
-                "include": "memberships.campaign,memberships.currently_entitled_tiers",
-                "fields[user]": "email,full_name",
-                "fields[member]": "patron_status,currently_entitled_amount_cents,pledge_relationship_start",
-                "fields[campaign]": "creation_name,vanity",
-            },
-            headers={"Authorization": f"Bearer {current_user.patreon_access_token}"},
-        )
-
-        if identity_response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to fetch membership info from Patreon",
-            )
-
-        data = identity_response.json()
-        included = data.get("included", [])
-
-        # Look for membership to VAMA's campaign
-        target_campaign_id = settings.patreon_creator_id
-
-        for item in included:
-            if item.get("type") == "member":
-                # Get the campaign this membership belongs to
-                campaign_rel = item.get("relationships", {}).get("campaign", {}).get("data", {})
-                campaign_id = campaign_rel.get("id")
-
-                if campaign_id == target_campaign_id:
-                    member_attrs = item.get("attributes", {})
-                    patron_status = member_attrs.get("patron_status")
-                    amount_cents = member_attrs.get("currently_entitled_amount_cents", 0)
-                    pledge_start = member_attrs.get("pledge_relationship_start")
-
-                    # Get tier_id from currently_entitled_tiers relationship
-                    tier_id = None
-                    tiers_rel = (
-                        item.get("relationships", {})
-                        .get("currently_entitled_tiers", {})
-                        .get("data", [])
-                    )
-                    if tiers_rel and len(tiers_rel) > 0:
-                        tier_id = tiers_rel[0].get("id")
-
-                    is_active = patron_status == "active_patron"
-
-                    # Update user's info in database if it changed
-                    if (
-                        current_user.tier_id != tier_id
-                        or current_user.patron_status != patron_status
-                    ):
-                        current_user.tier_id = tier_id
-                        current_user.patron_status = patron_status
-                        current_user.campaign_id = campaign_id
-                        db.commit()
-
-                    return {
-                        "is_subscribed": is_active,
-                        "patron_status": patron_status,
-                        "tier_id": tier_id,
-                        "pledge_amount_cents": amount_cents,
-                        "pledge_amount_dollars": amount_cents / 100,
-                        "member_since": pledge_start,
-                        "campaign_id": campaign_id,
-                    }
-
-        # No active membership found
-        # Update user status if they were previously subscribed
-        if current_user.patron_status == "active_patron":
-            current_user.patron_status = "not_patron"
-            current_user.tier_id = None
-            db.commit()
-
-        return {
-            "is_subscribed": False,
-            "patron_status": "not_patron",
-            "tier_id": None,
-            "pledge_amount_cents": 0,
-            "pledge_amount_dollars": 0,
-            "member_since": None,
-            "campaign_id": None,
-        }
+    # Return subscription status based on stored user data
+    # Note: This reflects the status at last login. For real-time verification,
+    # users need to log in again through the OAuth flow.
+    is_active = current_user.patron_status == "active_patron"
+    
+    return {
+        "is_subscribed": is_active,
+        "patron_status": current_user.patron_status,
+        "tier_id": current_user.tier_id,
+        "campaign_id": current_user.campaign_id,
+        "note": "Status reflects last login. Re-authenticate for real-time verification.",
+    }

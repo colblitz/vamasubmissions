@@ -31,9 +31,6 @@ def create_user(
     tier_id: Optional[str] = None,
     campaign_id: Optional[str] = None,
     patron_status: Optional[str] = None,
-    patreon_access_token: Optional[str] = None,
-    patreon_refresh_token: Optional[str] = None,
-    patreon_token_expires_at: Optional[datetime] = None,
 ) -> User:
     """
     Create a new user.
@@ -45,9 +42,6 @@ def create_user(
         tier_id: Patreon tier ID
         campaign_id: Patreon campaign ID
         patron_status: Patreon patron status
-        patreon_access_token: Patreon OAuth access token
-        patreon_refresh_token: Patreon OAuth refresh token
-        patreon_token_expires_at: When the access token expires
 
     Returns:
         Created user
@@ -67,9 +61,6 @@ def create_user(
         role=role,
         credits=0,
         last_login=datetime.utcnow(),
-        patreon_access_token=patreon_access_token,
-        patreon_refresh_token=patreon_refresh_token,
-        patreon_token_expires_at=patreon_token_expires_at,
     )
 
     db.add(user)
@@ -91,9 +82,6 @@ def update_user(
     campaign_id: Optional[str] = None,
     patron_status: Optional[str] = None,
     credits: Optional[int] = None,
-    patreon_access_token: Optional[str] = None,
-    patreon_refresh_token: Optional[str] = None,
-    patreon_token_expires_at: Optional[datetime] = None,
 ) -> User:
     """
     Update user information.
@@ -106,9 +94,6 @@ def update_user(
         campaign_id: New campaign ID
         patron_status: New patron status
         credits: New credit amount
-        patreon_access_token: New Patreon access token
-        patreon_refresh_token: New Patreon refresh token
-        patreon_token_expires_at: New token expiration time
 
     Returns:
         Updated user
@@ -130,12 +115,6 @@ def update_user(
         user.patron_status = patron_status
     if credits is not None:
         user.credits = min(credits, user.max_credits)
-    if patreon_access_token is not None:
-        user.patreon_access_token = patreon_access_token
-    if patreon_refresh_token is not None:
-        user.patreon_refresh_token = patreon_refresh_token
-    if patreon_token_expires_at is not None:
-        user.patreon_token_expires_at = patreon_token_expires_at
 
     user.updated_at = datetime.utcnow()
     db.commit()
@@ -147,50 +126,19 @@ def update_user(
 def refresh_user_credits(db: Session, user: User) -> User:
     """
     Refresh user credits based on their patron status.
+    
+    NOTE: This is legacy code from Phase 1. Credit refresh logic has been moved
+    to the credit_service and is now triggered by Patreon webhooks.
+    This function is kept for backward compatibility but does nothing.
 
     Args:
         db: Database session
         user: User to refresh credits for
 
     Returns:
-        Updated user
+        User (unchanged)
     """
-    from app.services.credit_service import add_credits
-
-    # Only refresh for active patrons
-    if user.patron_status != "active_patron":
-        return user
-
-    # Skip if no credits are configured for this tier
-    if user.credits_per_month <= 0:
-        return user
-
-    now = datetime.utcnow()
-
-    # Check if we need to refresh (monthly)
-    if user.last_credit_refresh:
-        # Check if it's been a month
-        days_since_refresh = (now - user.last_credit_refresh).days
-        if days_since_refresh < 30:
-            return user
-
-    # Add monthly credits
-    credits_to_add = user.credits_per_month
-    new_credits = min(user.credits + credits_to_add, user.max_credits)
-
-    if new_credits > user.credits:
-        add_credits(
-            db,
-            user_id=user.id,
-            amount=new_credits - user.credits,
-            transaction_type="monthly_refresh",
-            description=f"Monthly credit refresh for patron",
-        )
-        user.credits = new_credits
-        user.last_credit_refresh = now
-        db.commit()
-        db.refresh(user)
-
+    # Legacy function - credit refresh now handled by webhooks
     return user
 
 

@@ -1,6 +1,6 @@
 # Project Plan - VAMA Community Tracker
 
-**Last Updated**: 2026-01-26 22:05
+**Last Updated**: 2026-01-26 22:14
 
 ## Current Status
 
@@ -67,15 +67,10 @@ CREATE TABLE users (
     tier_id VARCHAR(50),
     campaign_id VARCHAR(50),
     patron_status VARCHAR(50),
-    credits INTEGER NOT NULL DEFAULT 0,
     role VARCHAR(50) NOT NULL DEFAULT 'patron',
-    last_credit_refresh TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_login TIMESTAMP,
-    patreon_access_token TEXT,
-    patreon_refresh_token TEXT,
-    patreon_token_expires_at TIMESTAMP
+    last_login TIMESTAMP
 );
 ```
 
@@ -151,20 +146,6 @@ CREATE TABLE edit_history (
     applied_at TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX idx_history_post ON edit_history(post_id);
-```
-
-### Admin Settings
-```sql
-CREATE TABLE admin_settings (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    patreon_access_token TEXT,
-    patreon_refresh_token TEXT,
-    patreon_token_expires_at TIMESTAMP,
-    patreon_session_id TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
 ```
 
 ### Global Edit Suggestions
@@ -256,7 +237,6 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 - `DELETE /api/admin/posts/{id}` - Delete pending post
 - `DELETE /api/admin/posts/bulk-delete` - Delete multiple posts
 - `POST /api/admin/posts/{id}/skip` - Mark post as skipped
-- `GET /api/admin/patreon/tiers` - Fetch VAMA's Patreon tier information
 
 ---
 
