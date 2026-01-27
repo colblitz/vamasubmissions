@@ -1,14 +1,14 @@
 # Project Plan - VAMA Community Tracker
 
-**Last Updated**: 2026-01-27 21:13
+**Last Updated**: 2026-01-26 21:59
 
 ## Current Status
 
-Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edit Suggestions + **Mobile UX Overhaul + Quick Wins COMPLETE ✅**
+Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + **Global Edits Refactor COMPLETE ✅**
 
-Backend: 38+ API endpoints, 2833+ posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. **16 new features deployed** (2 quick wins + 14 mobile improvements). Mobile UI Refinements Round 2 complete. Desktop UI completely preserved with zero regression. See PROJECT_LOG.md for detailed history.
+Backend: 38+ API endpoints, 2833+ posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits now use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI completely preserved with zero regression. See PROJECT_LOG.md for detailed history.
 
-**Next Priority**: Global Edits Refactor (condition + action model) or CDN & Image Viewer features from backlog.
+**Next Priority**: CDN & Image Viewer features from backlog or additional UX improvements.
 
 ---
 
@@ -378,6 +378,29 @@ When using subagents, they must follow the same workflow:
 - Do NOT test or run servers
 - Do NOT commit without user approval
 - Return summary of changes for user review
+
+**Subagent Testing & Verification**:
+Individual subagents should:
+- **Test their changes** before returning (syntax check, imports, basic logic)
+- **Verify field names** match between related files (API calls use correct parameters)
+- **Check for typos** in variable/field names
+- **Ensure consistency** with existing code patterns
+- **Report any uncertainties** or assumptions made
+
+After using multiple subagents, Goose should:
+1. **Launch a verification subagent** to check cross-file consistency:
+   - Verify API endpoints match frontend calls (correct HTTP methods, parameters, response fields)
+   - Verify database schema matches backend models (column names, types, constraints)
+   - Verify backend schemas match API responses (field names align)
+   - Check for common issues: typos, missing fields, type mismatches
+2. **Review the verification report** before presenting to user
+3. **Fix any issues found** before user testing
+
+**Example verification checks**:
+- Frontend calls `POST /api/X` with `{field_a, field_b}` → Backend expects those exact fields
+- Backend model has `column_name` → Backend schema uses `column_name` (not `columnName`)
+- API returns `{pattern, action, action_value}` → Frontend expects those exact fields
+- Database has `VARCHAR(10)` → Backend model uses `String(10)` (matching length)
 
 **Database Migrations**:
 When adding new database columns/tables:

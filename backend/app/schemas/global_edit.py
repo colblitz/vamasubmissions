@@ -8,28 +8,91 @@ from datetime import datetime
 from app.utils.validation import normalize_text
 
 
-class GlobalEditSuggestionCreate(BaseModel):
-    """Schema for creating a global edit suggestion"""
-
+class GlobalEditPreviewRequest(BaseModel):
+    """Schema for previewing a global edit (before creating suggestion)
+    
+    Only requires field_name and pattern to show which posts match.
+    """
     field_name: str = Field(..., pattern="^(characters|series|tags)$")
-    old_value: str = Field(..., min_length=1, max_length=255)
-    new_value: str = Field(..., min_length=1, max_length=255)
+    pattern: str = Field(..., min_length=1, max_length=255)
 
-    @field_validator("old_value", "new_value")
+    @field_validator("pattern")
     @classmethod
-    def normalize_values(cls, v: str) -> str:
+    def normalize_pattern(cls, v: str) -> str:
+        """Normalize pattern value"""
+        normalized = normalize_text(v)
+        if not normalized:
+            raise ValueError("Pattern cannot be empty or whitespace only")
+        return normalized
+
+
+class GlobalEditSuggestionCreate(BaseModel):
+    """Schema for creating a global edit suggestion
+    
+    Example for ADD action:
+        {
+            "condition_field": "characters",
+            "pattern": "old_character_name",
+            "action": "ADD",
+            "action_field": "tags",
+            "action_value": "new_tag_name"
+        }
+    
+    Example for DELETE action:
+        {
+            "condition_field": "tags",
+            "pattern": "tag_to_delete",
+            "action": "DELETE",
+            "action_field": "tags"
+        }
+    """
+
+    condition_field: str = Field(..., pattern="^(characters|series|tags)$")
+    pattern: str = Field(..., min_length=1, max_length=255)
+    action: str = Field(..., pattern="^(ADD|DELETE)$")
+    action_field: str = Field(..., pattern="^(characters|series|tags)$")
+    action_value: Optional[str] = Field(None, max_length=255)
+
+    @field_validator("pattern", "action_value")
+    @classmethod
+    def normalize_values(cls, v: Optional[str]) -> Optional[str]:
         """Normalize text values"""
+        if v is None:
+            return None
         normalized = normalize_text(v)
         if not normalized:
             raise ValueError("Value cannot be empty or whitespace only")
         return normalized
 
-    @field_validator("new_value")
+    @field_validator("action_value")
     @classmethod
-    def check_different(cls, v: str, info) -> str:
-        """Ensure old_value and new_value are different"""
-        if "old_value" in info.data and v == info.data["old_value"]:
-            raise ValueError("New value must be different from old value")
+    def validate_action_value(cls, v: Optional[str], info) -> Optional[str]:
+        """Validate action_value based on action type"""
+        action = info.data.get("action")
+        
+        if action == "DELETE":
+            if v is not None:
+                raise ValueError("action_value must be None for DELETE action")
+        elif action == "ADD":
+            if v is None:
+                raise ValueError("action_value is required for ADD action")
+            pattern = info.data.get("pattern")
+            if pattern and v == pattern:
+                raise ValueError("action_value must be different from pattern for ADD action")
+        
+        return v
+
+    @field_validator("action_field")
+    @classmethod
+    def validate_action_field(cls, v: str, info) -> str:
+        """Validate action_field based on action type"""
+        action = info.data.get("action")
+        condition_field = info.data.get("condition_field")
+        
+        if action == "DELETE" and condition_field:
+            if v != condition_field:
+                raise ValueError("action_field must equal condition_field for DELETE action")
+        
         return v
 
 
@@ -50,9 +113,11 @@ class GlobalEditPreview(BaseModel):
     """Schema for preview response"""
 
     field_name: str
-    old_value: str
-    new_value: str
+    pattern: str
+    action: str
+    action_value: Optional[str]
     affected_posts: List[GlobalEditPreviewPost]
+    affected_count: int
 
 
 class GlobalEditSuggestionResponse(BaseModel):
@@ -62,8 +127,10 @@ class GlobalEditSuggestionResponse(BaseModel):
     suggester_id: Optional[int]
     suggester_username: Optional[str]
     field_name: str
-    old_value: str
-    new_value: str
+    pattern: str
+    action: str
+    action_field: str
+    action_value: Optional[str]
     status: str
     approver_id: Optional[int]
     approver_username: Optional[str]
@@ -84,8 +151,10 @@ class GlobalEditHistoryResponse(BaseModel):
     approver_id: Optional[int]
     approver_username: Optional[str]
     field_name: str
-    old_value: str
-    new_value: str
+    pattern: str
+    action: str
+    action_field: str
+    action_value: Optional[str]
     applied_at: Optional[datetime]
 
     class Config:

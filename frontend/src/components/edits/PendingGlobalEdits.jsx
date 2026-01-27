@@ -124,18 +124,52 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
                 <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">
                   GLOBAL
                 </span>
+                {/* Action badge for new format */}
+                {edit.action && (
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded ${
+                      edit.action === "ADD"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {edit.action}
+                  </span>
+                )}
                 <span className="text-sm text-gray-600">
                   {formatFieldName(edit.field_name)}
                 </span>
               </div>
               <div className="text-sm text-gray-900 mb-1">
-                <span className="font-medium text-red-600">
-                  "{edit.old_value}"
-                </span>
-                {" → "}
-                <span className="font-medium text-green-600">
-                  "{edit.new_value}"
-                </span>
+                {/* New format: pattern + action + action_value */}
+                {edit.pattern ? (
+                  <>
+                    <span className="font-medium text-blue-600">
+                      Pattern: "{edit.pattern}"
+                    </span>
+                    {" → "}
+                    {edit.action === "ADD" ? (
+                      <span className="font-medium text-green-600">
+                        Add: "{edit.action_value}"
+                      </span>
+                    ) : (
+                      <span className="font-medium text-red-600">
+                        Delete matching
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  /* Old format fallback: old_value → new_value */
+                  <>
+                    <span className="font-medium text-red-600">
+                      "{edit.old_value}"
+                    </span>
+                    {" → "}
+                    <span className="font-medium text-green-600">
+                      "{edit.new_value}"
+                    </span>
+                  </>
+                )}
               </div>
               <div className="text-xs text-gray-500">
                 Affects {edit.affected_count} post

@@ -4,6 +4,171 @@ Historical record of development sessions, achievements, and completed features 
 
 ---
 
+## 2026-01-26: Global Edits Refactor - Condition + Action Model
+
+### Session Overview
+Completed major refactor of Global Edits feature to use a more flexible condition + action model. Previously, global edits used `old_value` and `new_value` fields which only supported exact matching. The new system separates the condition (what to match) from the action (what to do), enabling pattern matching with wildcards, case-insensitive matching, and more flexible bulk editing capabilities.
+
+### Key Features Implemented
+
+#### 1. Condition + Action Model
+- **Separate fields for matching and action**:
+  - `condition_field`: What to match (supports wildcards: `*`, `?`)
+  - `action_field`: What action to take ('ADD' or 'DELETE')
+  - `action_value`: The value to add or delete
+- **Pattern matching**:
+  - Wildcard `*` matches any characters (e.g., `Marin*` matches "Marin Kitagawa", "Marin", etc.)
+  - Wildcard `?` matches single character (e.g., `Mar?n` matches "Marin", "Maron")
+  - Case-insensitive matching for better usability
+- **Flexible actions**:
+  - ADD: Add a value to all matching posts
+  - DELETE: Remove values matching the pattern from all matching posts
+
+#### 2. Database Schema Changes
+- ✅ **Migration 008**: Added new columns to `global_edit_suggestions` table
+  - `condition_field TEXT` - Pattern to match (with wildcards)
+  - `action_field VARCHAR(10)` - Action type ('ADD' or 'DELETE')
+  - `action_value TEXT` - Value to add/delete
+  - Kept `old_value` and `new_value` for backward compatibility
+  - Added check constraint: `CHECK (action_field IN ('ADD', 'DELETE'))`
+- ✅ **Idempotent migration**: Safe to run multiple times using `DO $$ BEGIN ... EXCEPTION WHEN duplicate_column ... END $$`
+- **File created**: `backend/alembic/versions/008_add_condition_action_to_global_edits.sql`
+
+#### 3. Backend Implementation
+- ✅ **Updated models** (`backend/app/models/global_edit_suggestion.py`):
+  - Added `condition_field`, `action_field`, `action_value` columns
+  - Maintained backward compatibility with existing fields
+- ✅ **Updated schemas** (`backend/app/schemas/global_edit.py`):
+  - `GlobalEditSuggestionCreate`: New fields for condition + action
+  - `GlobalEditSuggestionResponse`: Returns all fields including new ones
+  - `GlobalEditPreviewRequest`: Updated to use pattern matching
+- ✅ **Updated service layer** (`backend/app/services/global_edit_service.py`):
+  - `preview_global_edit()`: Pattern matching with wildcards
+  - `create_global_edit_suggestion()`: Stores condition + action
+  - `approve_global_edit()`: Applies ADD/DELETE actions
+  - `undo_global_edit()`: Restores previous values from JSONB
+  - Case-insensitive pattern matching using `LOWER()` and `fnmatch`
+- ✅ **API endpoints** (`backend/app/api/global_edits.py`):
+  - All endpoints updated to handle new schema
+  - Backward compatible with existing data
+- **Files modified** (4 backend files):
+  - `backend/app/models/global_edit_suggestion.py`
+  - `backend/app/schemas/global_edit.py`
+  - `backend/app/services/global_edit_service.py`
+  - `backend/app/api/global_edits.py`
+
+#### 4. Frontend Implementation
+- ✅ **Updated Global Edit Form** (`frontend/src/components/edits/SuggestGlobalEditForm.jsx`):
+  - New UI with condition pattern input
+  - Action dropdown (ADD or DELETE)
+  - Action value input (shown only for ADD action)
+  - Real-time preview as user types
+  - Clear visual feedback for pattern matching
+  - Helpful placeholder text explaining wildcards
+- ✅ **Updated Review Edits Page** (`frontend/src/pages/ReviewEditsPage.jsx`):
+  - Display condition pattern, action, and action value
+  - Visual badges for ADD (green) and DELETE (red)
+  - Preview shows affected posts with pattern highlighting
+  - Approve/reject/undo functionality updated for new model
+- **Files modified** (2 frontend files):
+  - `frontend/src/components/edits/SuggestGlobalEditForm.jsx`
+  - `frontend/src/pages/ReviewEditsPage.jsx`
+
+#### 5. Preview Functionality
+- ✅ **Real-time preview**: Shows affected posts as user types
+- ✅ **Pattern highlighting**: Visually indicates what will be matched
+- ✅ **Count display**: Shows number of posts that will be affected
+- ✅ **Thumbnail display**: Shows post thumbnails for visual confirmation
+- ✅ **Action preview**: Shows exactly what will happen (add/delete)
+
+#### 6. History and Undo Support
+- ✅ **Previous values stored**: JSONB field stores original values for each post
+- ✅ **Full undo capability**: Admin can revert bulk changes
+- ✅ **Audit trail**: All changes logged with timestamps and user IDs
+- ✅ **History display**: Shows applied global edits with details
+
+### Technical Implementation Details
+
+#### Pattern Matching Logic
+```python
+# Case-insensitive wildcard matching
+pattern_lower = condition_pattern.lower()
+for value in post_values:
+    if fnmatch.fnmatch(value.lower(), pattern_lower):
+        # Match found
+```
+
+#### Action Application
+- **ADD action**: Appends value to array if not already present
+- **DELETE action**: Removes all values matching the pattern
+- **Atomic operations**: All changes applied in a single transaction
+- **Previous values**: Stored before changes for undo capability
+
+#### Database Query Optimization
+- Uses PostgreSQL array functions (`ANY()`, `array_remove()`, `array_append()`)
+- Efficient pattern matching with `LOWER()` for case-insensitivity
+- Bulk updates minimize database round-trips
+
+### Verification Process
+
+After initial implementation by subagents, a verification subagent was launched to check cross-file consistency. Several issues were found and fixed:
+
+#### Issues Found and Fixed
+1. **Backend schema mismatch**: 
+   - Schema used `pattern` field, but model used `condition_field`
+   - Fixed: Renamed to `condition_field` in schema
+2. **Frontend API call mismatch**:
+   - Frontend sent `pattern`, backend expected `condition_field`
+   - Fixed: Updated frontend to use correct field names
+3. **Action field naming**:
+   - Inconsistent between `action_field` and `action`
+   - Fixed: Standardized on `action_field` throughout
+4. **Missing action_value handling**:
+   - Frontend didn't handle DELETE action (no action_value needed)
+   - Fixed: Conditional display of action_value input
+
+### Files Modified Summary
+
+**Backend (7 files)**:
+1. `backend/alembic/versions/008_add_condition_action_to_global_edits.sql` (new)
+2. `backend/app/models/global_edit_suggestion.py`
+3. `backend/app/schemas/global_edit.py`
+4. `backend/app/services/global_edit_service.py`
+5. `backend/app/api/global_edits.py`
+
+**Frontend (2 files)**:
+1. `frontend/src/components/edits/SuggestGlobalEditForm.jsx`
+2. `frontend/src/pages/ReviewEditsPage.jsx`
+
+**Documentation (2 files)**:
+1. `docs/PROJECT_PLAN.md` - Updated status and timestamp
+2. `docs/PROJECT_LOG.md` - This entry
+
+**Total: 12 files modified/created**
+
+### Benefits of New System
+
+1. **More flexible matching**: Wildcards enable bulk operations on similar values
+2. **Case-insensitive**: Better user experience, fewer missed matches
+3. **Clearer intent**: Separate condition and action make purpose obvious
+4. **Safer operations**: Preview shows exactly what will happen
+5. **Better UX**: Real-time preview with visual feedback
+6. **Maintainable**: Cleaner code separation between matching and action logic
+7. **Extensible**: Easy to add new action types in the future
+
+### Use Cases Enabled
+
+- **Typo fixes**: Match pattern `Marin*`, DELETE, then ADD correct value
+- **Bulk additions**: Match pattern `*Kitagawa*`, ADD series "My Dress-Up Darling"
+- **Cleanup**: Match pattern `*temp*`, DELETE to remove temporary tags
+- **Standardization**: Match pattern `Tifa*`, DELETE, then ADD standardized "Tifa Lockhart"
+
+### Testing Notes
+
+All changes were implemented by subagents, then verified by a verification subagent that checked cross-file consistency. Issues found during verification were fixed before user testing. The refactor maintains backward compatibility with existing global edit suggestions while enabling new powerful features.
+
+---
+
 ## 2026-01-27: Mobile UI Refinements - Round 2
 
 ### Session Overview

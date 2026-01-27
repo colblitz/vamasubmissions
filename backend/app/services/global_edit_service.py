@@ -21,56 +21,59 @@ class GlobalEditService:
     """Service for managing global edit suggestions"""
 
     @staticmethod
-    def preview_global_edit(db: Session, field_name: str, old_value: str) -> GlobalEditPreview:
+    def preview_global_edit(db: Session, field_name: str, pattern: str) -> GlobalEditPreview:
         """
         Preview which posts would be affected by a global edit
 
         Args:
             db: Database session
             field_name: Field to search ('characters', 'series', 'tags')
-            old_value: Value to search for
+            pattern: Pattern to search for (supports wildcards with *)
+                     Example: "Marin*" matches "Marin", "Marina", "Marine", etc.
 
         Returns:
             GlobalEditPreview with list of affected posts
         """
-        # Query posts that contain the old_value in the specified field
-        # Using array contains operator @>
-        query = db.query(Post).filter(Post.status == "published")
-
-        if field_name == "characters":
-            query = query.filter(Post.characters.contains([old_value]))
-        elif field_name == "series":
-            query = query.filter(Post.series.contains([old_value]))
-        elif field_name == "tags":
-            query = query.filter(Post.tags.contains([old_value]))
-
-        affected_posts = query.all()
+        # Convert pattern to SQL ILIKE pattern (replace * with % for SQL wildcard)
+        sql_pattern = pattern.replace('*', '%')
+        
+        # Query posts using raw SQL with EXISTS for pattern matching
+        query_text = text(f"""
+            SELECT id, post_id, title, {field_name}
+            FROM posts
+            WHERE status = 'published'
+              AND EXISTS (
+                SELECT 1 
+                FROM unnest({field_name}) AS val 
+                WHERE val ILIKE :pattern
+              )
+        """)
+        
+        result = db.execute(query_text, {"pattern": sql_pattern})
+        rows = result.fetchall()
 
         # Build preview response
         preview_posts = []
-        for post in affected_posts:
-            current_values = []
-            if field_name == "characters":
-                current_values = post.characters or []
-            elif field_name == "series":
-                current_values = post.series or []
-            elif field_name == "tags":
-                current_values = post.tags or []
+        for row in rows:
+            # Construct URL from post_id
+            post_url = f"https://www.patreon.com/posts/{row[1]}"
+            current_values = row[3] or []  # The field_name column
 
             preview_posts.append(
                 GlobalEditPreviewPost(
-                    id=post.id,
-                    post_id=post.post_id,
-                    title=post.title,
-                    url=post.url,
+                    id=row[0],
+                    post_id=row[1],
+                    title=row[2],
+                    url=post_url,
                     current_values=current_values,
                 )
             )
 
         return GlobalEditPreview(
             field_name=field_name,
-            old_value=old_value,
-            new_value="",  # Not set yet in preview
+            pattern=pattern,
+            action="",  # Not set yet in preview
+            action_value=None,
             affected_posts=preview_posts,
             affected_count=len(preview_posts),
         )
@@ -84,27 +87,35 @@ class GlobalEditService:
 
         Args:
             db: Database session
-            data: Suggestion data
+            data: Suggestion data (with condition_field, action_field, pattern, action, and action_value)
             suggester_id: ID of user creating suggestion
 
         Returns:
             Created GlobalEditSuggestion
         """
-        # Get preview to find affected posts
-        preview = GlobalEditService.preview_global_edit(db, data.field_name, data.old_value)
+        # Get preview to find affected posts based on condition_field
+        preview = GlobalEditService.preview_global_edit(db, data.condition_field, data.pattern)
 
-        # Store previous values for undo
+        # Store previous values for undo (from the action_field)
         previous_values = {}
 
+        # We need to get the current values of the action_field for affected posts
         for post_data in preview.affected_posts:
-            previous_values[str(post_data.id)] = post_data.current_values
+            # Get the post to access the action_field values
+            post = db.query(Post).filter(Post.id == post_data.id).first()
+            if post:
+                # Get the current values of the action_field
+                action_field_values = getattr(post, data.action_field, [])
+                previous_values[str(post_data.id)] = action_field_values or []
 
         # Create suggestion
         suggestion = GlobalEditSuggestion(
             suggester_id=suggester_id,
-            field_name=data.field_name,
-            old_value=data.old_value,
-            new_value=data.new_value,
+            field_name=data.condition_field,  # Store condition field as field_name
+            pattern=data.pattern,
+            action=data.action,
+            action_field=data.action_field,  # Store the field to modify
+            action_value=data.action_value,
             status="pending",
             previous_values=previous_values,
         )
@@ -139,8 +150,8 @@ class GlobalEditService:
         """
         Approve and apply a global edit suggestion
 
-        This performs a bulk update across all affected posts using PostgreSQL's
-        array_replace function for atomic operation.
+        This performs a bulk update across all affected posts using pattern matching
+        and array operations (ADD or DELETE).
 
         Args:
             db: Database session
@@ -169,30 +180,74 @@ class GlobalEditService:
             if not approver or approver.role != "admin":
                 raise ValueError("Cannot approve your own global edit suggestion")
 
-        # Update all affected posts using array_replace
-        # This is an atomic operation
-        field_column = None
-        if suggestion.field_name == "characters":
-            field_column = "characters"
-        elif suggestion.field_name == "series":
-            field_column = "series"
-        elif suggestion.field_name == "tags":
-            field_column = "tags"
+        # field_name is the condition field (where to match the pattern)
+        condition_field = suggestion.field_name
+        # action_field is where to perform the ADD/DELETE operation
+        action_field = suggestion.action_field
+        
+        # Get pattern and action from suggestion
+        pattern = suggestion.pattern
+        action = suggestion.action
+        action_value = suggestion.action_value
+        
+        # Convert pattern to SQL ILIKE pattern
+        sql_pattern = pattern.replace('*', '%')
 
-        # Use raw SQL for array_replace operation
-        # array_replace(array, old_value, new_value)
-        # Apply to all posts that contain the old value
-        update_query = text(f"""
-            UPDATE posts
-            SET {field_column} = array_replace({field_column}, :old_value, :new_value),
-                updated_at = NOW()
-            WHERE status = 'published'
-              AND :old_value = ANY({field_column})
-        """)
-
-        db.execute(
-            update_query, {"old_value": suggestion.old_value, "new_value": suggestion.new_value}
-        )
+        if action == 'ADD':
+            # ADD: Add action_value to action_field for all posts matching the pattern in condition_field
+            # Only add if the value doesn't already exist
+            update_query = text(f"""
+                UPDATE posts
+                SET {action_field} = array_append({action_field}, :action_value),
+                    updated_at = NOW()
+                WHERE status = 'published'
+                  AND EXISTS (
+                    SELECT 1 
+                    FROM unnest({condition_field}) AS val 
+                    WHERE val ILIKE :pattern
+                  )
+                  AND NOT (:action_value = ANY({action_field}))
+            """)
+            
+            db.execute(
+                update_query, 
+                {"pattern": sql_pattern, "action_value": action_value}
+            )
+            
+        elif action == 'DELETE':
+            # DELETE: Remove all values matching the pattern from action_field
+            # First, find all distinct values that match the pattern in the action_field
+            find_values_query = text(f"""
+                SELECT DISTINCT val
+                FROM posts, unnest({action_field}) AS val
+                WHERE status = 'published'
+                  AND val ILIKE :pattern
+                  AND EXISTS (
+                    SELECT 1 
+                    FROM unnest({condition_field}) AS cval 
+                    WHERE cval ILIKE :pattern
+                  )
+            """)
+            
+            result = db.execute(find_values_query, {"pattern": sql_pattern})
+            matching_values = [row[0] for row in result.fetchall()]
+            
+            # Remove each matching value from all posts that match the condition
+            for value_to_remove in matching_values:
+                delete_query = text(f"""
+                    UPDATE posts
+                    SET {action_field} = array_remove({action_field}, :value_to_remove),
+                        updated_at = NOW()
+                    WHERE status = 'published'
+                      AND EXISTS (
+                        SELECT 1 
+                        FROM unnest({condition_field}) AS cval 
+                        WHERE cval ILIKE :pattern
+                      )
+                      AND :value_to_remove = ANY({action_field})
+                """)
+                
+                db.execute(delete_query, {"value_to_remove": value_to_remove, "pattern": sql_pattern})
 
         # Update suggestion status
         suggestion.status = "approved"
@@ -286,8 +341,8 @@ class GlobalEditService:
         if not suggestion.previous_values:
             raise ValueError("No previous values stored for undo")
 
-        # Restore previous values for each post
-        field_column = suggestion.field_name
+        # Restore previous values for each post (using action_field since that's what was modified)
+        action_field = suggestion.action_field
 
         for post_id_str, previous_array in suggestion.previous_values.items():
             post_id = int(post_id_str)
@@ -295,7 +350,7 @@ class GlobalEditService:
             # Update the post with previous values
             update_query = text(f"""
                 UPDATE posts
-                SET {field_column} = :previous_values,
+                SET {action_field} = :previous_values,
                     updated_at = NOW()
                 WHERE id = :post_id
             """)

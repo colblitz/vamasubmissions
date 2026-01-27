@@ -10,15 +10,17 @@ from app.core.database import Base
 
 
 class GlobalEditSuggestion(Base):
-    """Model for global edit suggestions (bulk rename)"""
+    """Model for global edit suggestions (bulk operations like rename, add, remove)"""
 
     __tablename__ = "global_edit_suggestions"
 
     id = Column(Integer, primary_key=True, index=True)
     suggester_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    field_name = Column(String(50), nullable=False)  # 'characters', 'series', 'tags'
-    old_value = Column(Text, nullable=False)
-    new_value = Column(Text, nullable=False)
+    field_name = Column(String(50), nullable=False)  # 'characters', 'series', 'tags' - condition field
+    pattern = Column(Text, nullable=False)
+    action = Column(String(10), nullable=False, default='ADD')  # 'ADD', 'DELETE'
+    action_field = Column(String(50), nullable=False)  # 'characters', 'series', 'tags' - field to modify
+    action_value = Column(Text, nullable=True)
     status = Column(
         String(20), default="pending", nullable=False
     )  # 'pending', 'approved', 'rejected'

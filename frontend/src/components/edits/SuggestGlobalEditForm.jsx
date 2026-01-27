@@ -3,9 +3,11 @@ import api from "../../services/api";
 import { normalizeText } from "../../utils/validation";
 
 export default function SuggestGlobalEditForm({ onSuccess }) {
-  const [fieldName, setFieldName] = useState("characters");
-  const [oldValue, setOldValue] = useState("");
-  const [newValue, setNewValue] = useState("");
+  const [conditionField, setConditionField] = useState("characters");
+  const [pattern, setPattern] = useState("");
+  const [action, setAction] = useState("ADD");
+  const [actionField, setActionField] = useState("characters");
+  const [actionValue, setActionValue] = useState("");
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,23 +17,30 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
     setError("");
     setPreview(null);
 
-    const normalizedOldValue = normalizeText(oldValue);
-    if (!normalizedOldValue) {
-      setError("Old value cannot be empty");
+    const normalizedPattern = normalizeText(pattern);
+    if (!normalizedPattern) {
+      setError("Pattern cannot be empty");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await api.post("/api/global-edits/preview", null, {
-        params: {
-          field_name: fieldName,
-          old_value: normalizedOldValue,
-        },
-      });
+      // Preview only needs condition_field and pattern
+      const payload = {
+        field_name: conditionField,
+        pattern: normalizedPattern,
+      };
+      
+      const response = await api.post("/api/global-edits/preview", payload);
       setPreview(response.data);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to preview");
+      const errorMsg = err.response?.data?.detail || "Failed to preview";
+      // Handle validation errors
+      if (Array.isArray(errorMsg)) {
+        setError(errorMsg.map(e => e.msg).join(", "));
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -41,32 +50,45 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
     setError("");
     setSuccess("");
 
-    const normalizedOldValue = normalizeText(oldValue);
-    const normalizedNewValue = normalizeText(newValue);
-
-    if (!normalizedOldValue || !normalizedNewValue) {
-      setError("Both old and new values are required");
+    const normalizedPattern = normalizeText(pattern);
+    if (!normalizedPattern) {
+      setError("Pattern is required");
       return;
     }
 
-    if (normalizedOldValue === normalizedNewValue) {
-      setError("New value must be different from old value");
-      return;
+    if (action === "ADD") {
+      const normalizedActionValue = normalizeText(actionValue);
+      if (!normalizedActionValue) {
+        setError("Action value is required for ADD action");
+        return;
+      }
     }
 
     setLoading(true);
     try {
-      await api.post("/api/global-edits/suggest", {
-        field_name: fieldName,
-        old_value: normalizedOldValue,
-        new_value: normalizedNewValue,
-      });
+      const payload = {
+        condition_field: conditionField,
+        pattern: normalizedPattern,
+        action: action,
+      };
 
-      setSuccess(
-        `Global edit suggested: "${normalizedOldValue}" → "${normalizedNewValue}"`,
-      );
-      setOldValue("");
-      setNewValue("");
+      if (action === "ADD") {
+        payload.action_field = actionField;
+        payload.action_value = normalizeText(actionValue);
+      } else {
+        // For DELETE, condition_field and action_field are the same
+        payload.action_field = conditionField;
+      }
+
+      await api.post("/api/global-edits/suggest", payload);
+
+      const actionText = action === "ADD" 
+        ? `"${normalizedPattern}" → "${normalizeText(actionValue)}"` 
+        : `Delete "${normalizedPattern}"`;
+      
+      setSuccess(`Global edit suggested: ${actionText}`);
+      setPattern("");
+      setActionValue("");
       setPreview(null);
 
       if (onSuccess) {
@@ -87,8 +109,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         Suggest Global Edit
       </h2>
       <p className="text-sm text-gray-600 mb-4">
-        Fix typos or rename values across all posts at once (e.g., "Naruto
-        Uzamaki" → "Naruto Uzumaki")
+        Add or remove values across all posts at once. Supports wildcards for pattern matching (case-insensitive).
       </p>
 
       {/* Success Message */}
@@ -105,49 +126,120 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        {/* Field Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Field
-          </label>
-          <select
-            value={fieldName}
-            onChange={(e) => setFieldName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="characters">Characters</option>
-            <option value="series">Series</option>
-            <option value="tags">Tags</option>
-          </select>
+      <div className="space-y-6 mb-4">
+        {/* Condition Section */}
+        <div className="border-b pb-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Condition</h3>
+          
+          {/* Condition Field Selection */}
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Condition Field
+            </label>
+            <select
+              value={conditionField}
+              onChange={(e) => setConditionField(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="characters">Characters</option>
+              <option value="series">Series</option>
+              <option value="tags">Tags</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Which field to match the pattern on
+            </p>
+          </div>
+
+          {/* Pattern Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pattern
+            </label>
+            <input
+              type="text"
+              value={pattern}
+              onChange={(e) => setPattern(e.target.value)}
+              placeholder="e.g., Marin* or Naruto Uzamaki"
+              className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Use * for wildcards (e.g., "Marin*" matches "Marin", "Marina", "Marine"). Matching is case-insensitive.
+            </p>
+          </div>
         </div>
 
-        {/* Old Value */}
+        {/* Action Section */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Old Value (to replace)
-          </label>
-          <input
-            type="text"
-            value={oldValue}
-            onChange={(e) => setOldValue(e.target.value)}
-            placeholder="e.g., Naruto Uzamaki"
-            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Action</h3>
+          
+          {/* Action Type Selection */}
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Action Type
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="ADD"
+                  checked={action === "ADD"}
+                  onChange={(e) => setAction(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-900">Add/Replace</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="DELETE"
+                  checked={action === "DELETE"}
+                  onChange={(e) => setAction(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-900">Delete</span>
+              </label>
+            </div>
+          </div>
 
-        {/* New Value */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            New Value (replacement)
-          </label>
-          <input
-            type="text"
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-            placeholder="e.g., Naruto Uzumaki"
-            className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          {/* Action Field (only for ADD) */}
+          {action === "ADD" && (
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Action Field
+              </label>
+              <select
+                value={actionField}
+                onChange={(e) => setActionField(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="characters">Characters</option>
+                <option value="series">Series</option>
+                <option value="tags">Tags</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Which field to add the value to
+              </p>
+            </div>
+          )}
+
+          {/* Action Value (only for ADD) */}
+          {action === "ADD" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Action Value
+              </label>
+              <input
+                type="text"
+                value={actionValue}
+                onChange={(e) => setActionValue(e.target.value)}
+                placeholder="e.g., Naruto Uzumaki"
+                className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                The value to add or replace matching patterns with
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -155,14 +247,14 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
       <div className="flex gap-3">
         <button
           onClick={handlePreview}
-          disabled={!oldValue || loading}
+          disabled={!pattern || loading}
           className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Loading..." : "Preview Affected Posts"}
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!oldValue || !newValue || loading}
+          disabled={!pattern || (action === "ADD" && !actionValue) || loading}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Submitting..." : "Submit Global Edit"}
@@ -178,11 +270,11 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
           </h3>
           {preview.affected_count === 0 ? (
             <p className="text-gray-600 text-sm">
-              No posts found with "{oldValue}"
+              No posts found matching pattern "{pattern}"
             </p>
           ) : (
-            <div className="max-h-64 overflow-y-auto space-y-2">
-              {preview.affected_posts.slice(0, 10).map((post) => (
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {preview.affected_posts.map((post) => (
                 <div key={post.id} className="bg-gray-50 p-3 rounded text-sm">
                   <div className="font-medium text-gray-900">{post.title}</div>
                   <div className="text-gray-600 mt-1">
@@ -190,11 +282,6 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
                   </div>
                 </div>
               ))}
-              {preview.affected_posts.length > 10 && (
-                <p className="text-gray-500 text-sm italic">
-                  ... and {preview.affected_posts.length - 10} more posts
-                </p>
-              )}
             </div>
           )}
         </div>
