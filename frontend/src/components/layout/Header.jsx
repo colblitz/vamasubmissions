@@ -77,14 +77,6 @@ export default function Header() {
                   >
                     Review Edits
                   </Link>
-                  <Link
-                    to="/requests"
-                    className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
-                      location.pathname === '/requests' ? 'text-blue-400 bg-gray-700 rounded' : ''
-                    }`}
-                  >
-                    Requests
-                  </Link>
                   {isAdmin() && (
                     <Link
                       to="/admin/import"
@@ -213,15 +205,6 @@ export default function Header() {
                         onClick={closeMobileMenu}
                       >
                         Review Edits
-                      </Link>
-                      <Link
-                        to="/requests"
-                        className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
-                          location.pathname === '/requests' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
-                        }`}
-                        onClick={closeMobileMenu}
-                      >
-                        Requests
                       </Link>
                       {isAdmin() && (
                         <Link

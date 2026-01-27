@@ -85,6 +85,19 @@ export default function AboutPage() {
               {siteContent.about.disclaimer.text}
             </p>
           </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              {siteContent.about.roadmap.heading}
+            </h2>
+            <div className="max-w-3xl text-gray-700">
+              <ul className="list-disc list-inside space-y-2 text-base md:text-sm leading-relaxed">
+                {siteContent.about.roadmap.items.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Leaderboards */}

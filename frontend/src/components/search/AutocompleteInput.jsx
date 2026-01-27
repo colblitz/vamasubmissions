@@ -23,12 +23,13 @@ export default function AutocompleteInput({
   showNoResults = true,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [internalValue, setInternalValue] = useState(value);
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
   // Show dropdown when there are suggestions or when showing "no results"
   const shouldShowDropdown =
-    value.length >= 3 && (suggestions.length > 0 || showNoResults);
+    internalValue.length >= 3 && (suggestions.length > 0 || showNoResults);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -52,8 +53,24 @@ export default function AutocompleteInput({
     setIsOpen(shouldShowDropdown);
   }, [shouldShowDropdown]);
 
+  // Sync internal value with prop value (for external updates)
+  useEffect(() => {
+    setInternalValue(value);
+  }, [value]);
+
+  // Debounce the onChange callback (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (internalValue !== value) {
+        onChange(internalValue);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [internalValue, onChange, value]);
+
   const handleInputChange = (e) => {
-    onChange(e.target.value);
+    setInternalValue(e.target.value);
     setIsOpen(true);
   };
 
@@ -73,7 +90,7 @@ export default function AutocompleteInput({
       <input
         ref={inputRef}
         type="text"
-        value={value}
+        value={internalValue}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
         placeholder={placeholder}

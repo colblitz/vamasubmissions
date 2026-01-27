@@ -251,7 +251,6 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
           pendingEdits={pendingEdits}
           onClose={() => setEditSectionOpen(false)}
           onSuccess={(message) => {
-            setEditSectionOpen(false);
             if (onEditSuccess) {
               onEditSuccess(message);
             }

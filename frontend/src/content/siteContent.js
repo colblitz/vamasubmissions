@@ -195,6 +195,16 @@ export const siteContent = {
       text: "This is an unofficial community project and is not affiliated with or endorsed by VAMA. All character artwork and content belongs to VAMA. This platform is for organizational purposes only and requires an active Patreon subscription to access.",
     },
 
+    // Roadmap section
+    roadmap: {
+      heading: "Coming Soon",
+      items: [
+        "Ability to search for non-existent values",
+        "Make everything case insensitive",
+        "Mobile UX improvements",
+      ],
+    },
+
     // Leaderboard section
     leaderboard: {
       topContributors: {
