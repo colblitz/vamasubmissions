@@ -359,7 +359,6 @@ async def get_current_user_info(
         "campaign_id": current_user.campaign_id,
         "patron_status": current_user.patron_status,
         "role": current_user.role,
-        "can_submit_multiple": current_user.can_submit_multiple,
     }
 
 

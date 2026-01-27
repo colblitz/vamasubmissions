@@ -4,6 +4,172 @@ Historical record of development sessions, achievements, and completed features 
 
 ---
 
+## 2026-01-26: Centralized Text Content
+
+### Session Overview
+Completed centralization of all user-facing text content into a single, easily editable file. This makes it simple to rewrite all text blocks in a consistent voice without hunting through multiple component files.
+
+### Problem
+Text content was scattered across multiple frontend components:
+- LoginPage.jsx - Privacy info, OAuth scopes, subscription tiers, error messages
+- AboutPage.jsx - Welcome message, features list, how-it-works sections, disclaimer
+- CommunityRequestsPage.jsx - Disclaimer, form labels, success messages, empty states
+
+This made it difficult to:
+- Update text consistently across the site
+- Rewrite content in a unified voice
+- Find where specific text was located
+- Maintain consistent messaging
+
+### Solution: Centralized Content File
+
+Created `/frontend/src/content/siteContent.js` - a single source of truth for all text content, organized by page and section.
+
+#### File Structure
+```javascript
+export const siteContent = {
+  login: {
+    heading: "...",
+    description: "...",
+    subscriptionError: { ... },
+    tiers: [ ... ],
+    privacyInfo: {
+      oauthScopes: { ... },
+      dataStorage: { ... },
+      whyNeeded: { ... },
+      privacySecurity: { ... },
+      disclaimer: "..."
+    },
+    mockAuth: { ... }
+  },
+  about: {
+    heading: "...",
+    welcome: { ... },
+    features: { ... },
+    howItWorks: { ... },
+    disclaimer: { ... },
+    leaderboard: { ... }
+  },
+  communityRequests: {
+    heading: "...",
+    disclaimer: { ... },
+    successMessages: { ... },
+    newRequestForm: { ... },
+    myRequests: { ... },
+    knownQueue: { ... },
+    emptyState: { ... }
+  }
+};
+```
+
+#### Benefits
+1. **Single source of truth** - All text in one file
+2. **Easy to edit** - Go to one place to rewrite everything
+3. **Well-organized** - Clear structure with comments
+4. **Maintainable** - Future updates only require editing one file
+5. **Consistent** - Ensures messaging stays unified
+6. **Version controlled** - Text changes tracked in Git
+
+### Implementation Details
+
+#### 1. Created Content File
+- **File**: `frontend/src/content/siteContent.js`
+- **Structure**: Nested JavaScript object with clear hierarchy
+- **Comments**: Section headers identify where each text is used
+- **Exports**: Both named and default exports for flexibility
+
+#### 2. Updated Components
+All three pages updated to import and use `siteContent`:
+
+**LoginPage.jsx**:
+- Replaced 50+ hardcoded strings
+- Privacy info section (OAuth scopes, data storage, why needed, privacy/security)
+- Subscription error messages and tier list
+- Mock auth development mode text
+- All text now references `siteContent.login.*`
+
+**AboutPage.jsx**:
+- Replaced 30+ hardcoded strings
+- Welcome message, features list, how-it-works sections
+- Disclaimer text
+- Leaderboard labels and empty states
+- All text now references `siteContent.about.*`
+
+**CommunityRequestsPage.jsx**:
+- Replaced 40+ hardcoded strings
+- Disclaimer banner, form labels, placeholders
+- Success messages, status labels, buttons
+- Empty state messages
+- All text now references `siteContent.communityRequests.*`
+
+#### 3. No Functionality Changes
+- Zero changes to event handlers, state management, or logic
+- Zero changes to styling or className attributes
+- Zero changes to component structure
+- Only text strings replaced with siteContent references
+
+### Files Modified (4 total)
+
+**New Files (1)**:
+- `frontend/src/content/siteContent.js` (new, 300+ lines)
+
+**Modified Files (3)**:
+- `frontend/src/pages/LoginPage.jsx`
+- `frontend/src/pages/AboutPage.jsx`
+- `frontend/src/pages/CommunityRequestsPage.jsx`
+
+**Documentation (2)**:
+- `docs/PROJECT_PLAN.md` - Updated status and timestamp
+- `docs/PROJECT_LOG.md` - This entry
+
+**Total: 6 files modified/created**
+
+### Usage Example
+
+Before (hardcoded):
+```jsx
+<h1 className="text-3xl font-bold mb-6">Character Submissions</h1>
+```
+
+After (centralized):
+```jsx
+import { siteContent } from "../content/siteContent";
+
+<h1 className="text-3xl font-bold mb-6">{siteContent.login.heading}</h1>
+```
+
+### Future Maintenance
+
+To update text content:
+1. Open `frontend/src/content/siteContent.js`
+2. Find the relevant section (login, about, communityRequests)
+3. Edit the text strings
+4. Save - changes automatically appear throughout the app
+
+No need to hunt through component files or worry about missing instances.
+
+### Bug Fix: Auth Endpoint
+
+Also fixed a critical bug in the authentication system:
+- **Problem**: `/api/auth/me` endpoint returned 500 error
+- **Cause**: Tried to access `current_user.can_submit_multiple` (legacy field, doesn't exist)
+- **Fix**: Removed legacy field from response
+- **File**: `backend/app/api/auth.py`
+
+This was a leftover from the old submission system that was causing the app to crash on login.
+
+### Testing Notes
+
+All changes preserve existing functionality:
+- Login page displays correctly (both OAuth and mock auth)
+- About page shows all sections properly
+- Community Requests page displays all labels and messages
+- No visual or functional regressions
+
+The centralized content file makes it easy for the user to rewrite all text in their own voice by editing a single file.
+
+---
+
 ## 2026-01-26: Global Edits Refactor - Condition + Action Model
 
 ### Session Overview

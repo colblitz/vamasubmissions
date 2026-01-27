@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { siteContent } from "../content/siteContent";
 
 export default function CommunityRequestsPage() {
   const { user } = useAuth();
@@ -248,7 +249,7 @@ export default function CommunityRequestsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">
-        Community Requests
+        {siteContent.communityRequests.heading}
       </h1>
 
       {/* Disclaimer Banner */}
@@ -267,14 +268,10 @@ export default function CommunityRequestsPage() {
           </svg>
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-blue-900 mb-1">
-              Important Notice
+              {siteContent.communityRequests.disclaimer.heading}
             </h3>
             <p className="text-sm text-blue-800">
-              This is an <strong>unofficial community tracker</strong> for
-              character requests. Not all users record their requests here, so
-              the queue may not reflect the complete picture. This tool is meant
-              to help the community coordinate and track what has been
-              requested, but it is not managed or endorsed by VAMA.
+              {siteContent.communityRequests.disclaimer.text}
             </p>
           </div>
         </div>
@@ -283,13 +280,13 @@ export default function CommunityRequestsPage() {
       {/* Success Messages */}
       {submitSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-          Request submitted successfully!
+          {siteContent.communityRequests.successMessages.requestSubmitted}
         </div>
       )}
 
       {deleteSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-          Request marked as done and removed from queue!
+          {siteContent.communityRequests.successMessages.requestMarkedDone}
         </div>
       )}
 
@@ -313,7 +310,7 @@ export default function CommunityRequestsPage() {
           className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50 min-h-[44px]"
         >
           <span className="text-xl font-semibold text-gray-900">
-            {showForm ? "▼" : "▶"} Record a Request
+            {showForm ? "▼" : "▶"} {siteContent.communityRequests.newRequestForm.heading}
           </span>
         </button>
 
@@ -322,7 +319,7 @@ export default function CommunityRequestsPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Characters (comma-separated)
+                  {siteContent.communityRequests.newRequestForm.fields.characters.label}
                 </label>
                 <input
                   type="text"
@@ -334,7 +331,7 @@ export default function CommunityRequestsPage() {
                   onBlur={() =>
                     setTimeout(() => setShowCharacterSuggestions(false), 200)
                   }
-                  placeholder="e.g., Kafka, Himeko"
+                  placeholder={siteContent.communityRequests.newRequestForm.fields.characters.placeholder}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-600 min-h-[44px]"
                   required
                 />
@@ -357,7 +354,7 @@ export default function CommunityRequestsPage() {
 
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Series (comma-separated)
+                  {siteContent.communityRequests.newRequestForm.fields.series.label}
                 </label>
                 <input
                   type="text"
@@ -369,7 +366,7 @@ export default function CommunityRequestsPage() {
                   onBlur={() =>
                     setTimeout(() => setShowSeriesSuggestions(false), 200)
                   }
-                  placeholder="e.g., Honkai: Star Rail"
+                  placeholder={siteContent.communityRequests.newRequestForm.fields.series.placeholder}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                   required
                 />
@@ -391,7 +388,7 @@ export default function CommunityRequestsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Requested Date
+                  {siteContent.communityRequests.newRequestForm.fields.requestedDate.label}
                 </label>
                 <input
                   type="date"
@@ -403,20 +400,20 @@ export default function CommunityRequestsPage() {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  When did you submit this request to VAMA?
+                  {siteContent.communityRequests.newRequestForm.fields.requestedDate.helpText}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (optional)
+                  {siteContent.communityRequests.newRequestForm.fields.description.label}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  placeholder="Any additional details..."
+                  placeholder={siteContent.communityRequests.newRequestForm.fields.description.placeholder}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                 />
@@ -437,10 +434,10 @@ export default function CommunityRequestsPage() {
                     htmlFor="is_private"
                     className="block text-sm font-medium text-gray-700 cursor-pointer"
                   >
-                    Private Request
+                    {siteContent.communityRequests.newRequestForm.fields.isPrivate.label}
                   </label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Private requests will appear in the public queue, but the character and series details will be hidden from other users (shown as "[Private Request]"). Only you and admins can see the full details.
+                    {siteContent.communityRequests.newRequestForm.fields.isPrivate.helpText}
                   </p>
                 </div>
               </div>
@@ -449,7 +446,7 @@ export default function CommunityRequestsPage() {
                 type="submit"
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Record Request
+                {siteContent.communityRequests.newRequestForm.submitButton}
               </button>
             </form>
           </div>
@@ -459,7 +456,7 @@ export default function CommunityRequestsPage() {
       {/* My Requests Section */}
       {myRequests && myRequests.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">My Requests</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{siteContent.communityRequests.myRequests.heading}</h2>
           <div className="space-y-3">
             {myRequests.map((request) => {
               return (
@@ -482,12 +479,12 @@ export default function CommunityRequestsPage() {
                                 : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {request.status}
+                          {request.status === "pending" ? siteContent.communityRequests.myRequests.statusLabels.pending : request.status === "fulfilled" ? siteContent.communityRequests.myRequests.statusLabels.fulfilled : request.status}
                         </span>
                         {request.status === "pending" &&
                           request.queue_position && (
                             <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                              #{request.queue_position} in queue
+                              #{request.queue_position} {siteContent.communityRequests.myRequests.queuePosition}
                             </span>
                           )}
                       </div>
@@ -503,10 +500,10 @@ export default function CommunityRequestsPage() {
                       )}
 
                       <p className="text-xs text-gray-500">
-                        Requested on:{" "}
+                        {siteContent.communityRequests.myRequests.requestedOn}{" "}
                         {request.requested_timestamp
                           ? new Date(request.requested_timestamp).toLocaleDateString()
-                          : "Not specified"}
+                          : siteContent.communityRequests.myRequests.notSpecified}
                       </p>
 
                       {request.fulfilled_post_id && (
@@ -516,7 +513,7 @@ export default function CommunityRequestsPage() {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-block"
                         >
-                          View fulfilled post →
+                          {siteContent.communityRequests.myRequests.viewFulfilledPost}
                         </a>
                       )}
                     </div>
@@ -526,7 +523,7 @@ export default function CommunityRequestsPage() {
                         onClick={() => handleMarkDoneClick(request.id)}
                         className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm"
                       >
-                        Mark as Done
+                        {siteContent.communityRequests.myRequests.markAsDoneButton}
                       </button>
                     )}
                   </div>
@@ -535,21 +532,20 @@ export default function CommunityRequestsPage() {
                   {deleteConfirm === request.id && (
                     <div className="border-t border-blue-300 bg-blue-100 pt-3 mt-3 transition-all duration-300 ease-in-out">
                       <p className="text-gray-900 font-medium mb-3">
-                        Mark this request as fulfilled? It will be removed from
-                        the queue.
+                        {siteContent.communityRequests.myRequests.confirmationPrompt}
                       </p>
                       <div className="flex gap-2">
                         <button
                           onClick={confirmMarkDone}
                           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
-                          Yes, Mark as Done
+                          {siteContent.communityRequests.myRequests.confirmButton}
                         </button>
                         <button
                           onClick={cancelMarkDone}
                           className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                         >
-                          Cancel
+                          {siteContent.communityRequests.myRequests.cancelButton}
                         </button>
                       </div>
                     </div>
@@ -563,11 +559,11 @@ export default function CommunityRequestsPage() {
 
       {/* Known Queue Section */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Known Queue</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{siteContent.communityRequests.knownQueue.heading}</h2>
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <p className="mt-4 text-gray-600">{siteContent.communityRequests.knownQueue.loading}</p>
           </div>
         ) : !requests || requests.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-lg shadow">
@@ -585,23 +581,23 @@ export default function CommunityRequestsPage() {
               />
             </svg>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No Pending Requests
+              {siteContent.communityRequests.emptyState.heading}
             </h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              The community queue is currently empty! Browse existing posts or search for characters to see what's already available.
+              {siteContent.communityRequests.emptyState.description}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Link
                 to="/"
                 className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
               >
-                Browse Posts
+                {siteContent.communityRequests.emptyState.browseButton}
               </Link>
               <Link
                 to="/search"
                 className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
               >
-                Search Posts
+                {siteContent.communityRequests.emptyState.searchButton}
               </Link>
             </div>
           </div>
@@ -624,10 +620,10 @@ export default function CommunityRequestsPage() {
                 )}
 
                 <p className="text-xs text-gray-500">
-                  Requested on:{" "}
+                  {siteContent.communityRequests.knownQueue.requestedOn}{" "}
                   {request.requested_timestamp
                     ? new Date(request.requested_timestamp).toLocaleDateString()
-                    : "Not specified"}
+                    : siteContent.communityRequests.knownQueue.notSpecified}
                 </p>
               </div>
             ))}

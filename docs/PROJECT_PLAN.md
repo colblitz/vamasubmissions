@@ -1,10 +1,10 @@
 # Project Plan - VAMA Community Tracker
 
-**Last Updated**: 2026-01-26 22:14
+**Last Updated**: 2026-01-26 22:35
 
 ## Current Status
 
-Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edits Refactor + Mobile UX Overhaul + **Quick Wins COMPLETE ✅**
+Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edits Refactor + Mobile UX Overhaul + Quick Wins + **Centralized Text Content COMPLETE ✅**
 
 Backend: 47+ active API endpoints (69 total including legacy), 2800+ posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI preserved through responsive design. See PROJECT_LOG.md for detailed history.
 
@@ -242,7 +242,11 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 
 ## Feature Backlog
 
-### Priority 5: CDN & Image Viewer (🔴 Hard - 10-15 hours)
+### Priority 5: Search Improvements & Case Insensitivity
+- [ ] Ability to search for non-existent values (e.g., find posts with no characters, no series, no tags)
+- [ ] Make sure everything is case insensitive (search, filters, autocomplete, matching)
+
+### Priority 6: CDN & Image Viewer (🔴 Hard - 10-15 hours)
 **CDN Integration**:
 - Research CDN options (Cloudflare, CloudFront, Bunny CDN)
 - Serve static assets (thumbnails, images) from CDN

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { mockAuth } from "../services/mockAuth";
+import { siteContent } from "../content/siteContent";
 
 export default function LoginPage() {
   const { login, isMockAuth } = useAuth();
@@ -35,7 +36,7 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="card max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold mb-6">Character Submissions</h1>
+          <h1 className="text-3xl font-bold mb-6">{siteContent.login.heading}</h1>
 
           {error && (
             <div className="bg-red-50 border-2 border-red-500 text-red-900 px-6 py-4 rounded-lg mb-6 text-left">
@@ -53,24 +54,23 @@ export default function LoginPage() {
                 </svg>
                 <div>
                   <p className="font-bold text-lg mb-2">
-                    Subscription Required
+                    {siteContent.login.subscriptionError.title}
                   </p>
                   <p className="text-sm mb-3">{error}</p>
                   <a
-                    href="https://www.patreon.com/vama_art"
+                    href={siteContent.login.subscriptionError.patreonUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded transition-colors"
                   >
-                    Subscribe on Patreon →
+                    {siteContent.login.subscriptionError.ctaButton}
                   </a>
                   <div className="mt-3 text-xs text-red-700">
                     <p className="font-semibold mb-1">Available tiers:</p>
                     <ul className="list-disc list-inside space-y-0.5">
-                      <li>NSFW Art! Tier 1 ($5/month)</li>
-                      <li>NSFW Art! Tier 2 ($15/month)</li>
-                      <li>NSFW Art! Tier 3 ($30/month)</li>
-                      <li>NSFW Art! Support ($60/month)</li>
+                      {siteContent.login.tiers.map((tier, idx) => (
+                        <li key={idx}>{tier.name} ({tier.price})</li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
           )}
 
           <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Login with your Patreon account to submit character requests
+            {siteContent.login.description}
           </p>
           <button onClick={handleLogin} className="btn-primary w-full">
             Login with Patreon
@@ -92,7 +92,7 @@ export default function LoginPage() {
               className="w-full flex items-center justify-between text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               aria-expanded={showPrivacyInfo}
             >
-              <span>What information is collected?</span>
+              <span>{siteContent.login.privacyInfo.toggleHeading}</span>
               <svg
                 className={`w-5 h-5 transform transition-transform ${
                   showPrivacyInfo ? "rotate-180" : ""
@@ -114,102 +114,84 @@ export default function LoginPage() {
               <div className="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-400 text-left">
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    OAuth Scopes Requested
+                    {siteContent.login.privacyInfo.oauthScopes.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        identity
-                      </span>{" "}
-                      - Access your Patreon username
-                    </li>
-                    <li>
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        identity.memberships
-                      </span>{" "}
-                      - Verify your subscription tier and patron status
-                    </li>
+                    {siteContent.login.privacyInfo.oauthScopes.scopes.map((scope, idx) => (
+                      <li key={idx}>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">
+                          {scope.name}
+                        </span>{" "}
+                        - {scope.description}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    Data Stored in Our Database
+                    {siteContent.login.privacyInfo.dataStorage.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Patreon user ID (unique identifier)</li>
-                    <li>Patreon username (for display purposes)</li>
-                    <li>Subscription tier ID (to determine access level)</li>
-                    <li>Campaign ID (to verify VAMA subscription)</li>
-                    <li>Patron status (active, former, etc.)</li>
+                    {siteContent.login.privacyInfo.dataStorage.items.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
                   </ul>
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-500 italic">
-                    Note: We do NOT store your email address or any payment information.
+                    {siteContent.login.privacyInfo.dataStorage.note}
                   </p>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    Why This Information Is Needed
+                    {siteContent.login.privacyInfo.whyNeeded.heading}
                   </h3>
                   <p className="mb-2">
-                    This platform is exclusive to VAMA's Patreon subscribers. We
-                    need to verify your active subscription to grant access to:
+                    {siteContent.login.privacyInfo.whyNeeded.description}
                   </p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Browse character posts and artwork</li>
-                    <li>Submit community character requests</li>
-                    <li>Suggest and approve metadata edits</li>
-                    <li>Participate in community features</li>
+                    {siteContent.login.privacyInfo.whyNeeded.features.map((feature, idx) => (
+                      <li key={idx}>{feature}</li>
+                    ))}
                   </ul>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    Privacy & Security
+                    {siteContent.login.privacyInfo.privacySecurity.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        No payment information
-                      </span>{" "}
-                      is collected or stored
-                    </li>
-                    <li>
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        No personal data
-                      </span>{" "}
-                      beyond subscription status
-                    </li>
-                    <li>
-                      Your data is only used for{" "}
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        access control
-                      </span>{" "}
-                      and platform features
-                    </li>
-                    <li>
-                      Your subscription is checked with Patreon on each login
-                    </li>
-                    <li>
-                      You can revoke access anytime through your{" "}
-                      <a
-                        href="https://www.patreon.com/settings/apps"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                      >
-                        Patreon settings
-                      </a>
-                    </li>
+                    {siteContent.login.privacyInfo.privacySecurity.points.map((point, idx) => (
+                      <li key={idx}>
+                        {point.prefix && `${point.prefix} `}
+                        {point.label && (
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {point.label}
+                          </span>
+                        )}
+                        {point.label && point.description && " "}
+                        {point.description}
+                        {point.link && (
+                          <>
+                            {" "}
+                            <a
+                              href={point.link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                            >
+                              {point.link.text}
+                            </a>
+                          </>
+                        )}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                   <p className="text-xs text-gray-500 dark:text-gray-500">
-                    By logging in, you agree to share the above information with
-                    this platform for the purpose of subscription verification
-                    and access control.
+                    {siteContent.login.privacyInfo.disclaimer}
                   </p>
                 </div>
               </div>
@@ -227,20 +209,20 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="card max-w-md w-full">
         <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded mb-6">
-          <p className="font-semibold">[DEVELOPMENT MODE]</p>
+          <p className="font-semibold">{siteContent.login.mockAuth.banner.title}</p>
           <p className="text-sm">
-            Mock authentication is enabled. Select a user type to login.
+            {siteContent.login.mockAuth.banner.description}
           </p>
         </div>
 
         <h1 className="text-3xl font-bold mb-6 text-center">
-          Character Submissions
+          {siteContent.login.heading}
         </h1>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select User Type
+              {siteContent.login.mockAuth.selectLabel}
             </label>
             <select
               value={selectedUser}
@@ -264,7 +246,7 @@ export default function LoginPage() {
 
           <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
             <h3 className="font-semibold mb-2 text-gray-900">
-              Selected User Details:
+              {siteContent.login.mockAuth.detailsHeading}
             </h3>
             {(() => {
               const user = mockAuth.getMockUser(selectedUser);
@@ -309,7 +291,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          <p>To use real Patreon OAuth, set VITE_USE_MOCK_AUTH=false in .env</p>
+          <p>{siteContent.login.mockAuth.footer}</p>
         </div>
       </div>
     </div>
