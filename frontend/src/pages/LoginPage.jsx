@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const [selectedUser, setSelectedUser] = useState("tier2");
   const [error, setError] = useState(null);
+  const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
 
   // Check for error in URL params (from OAuth callback or tier restriction)
   useEffect(() => {
@@ -83,6 +84,137 @@ export default function LoginPage() {
           <button onClick={handleLogin} className="btn-primary w-full">
             Login with Patreon
           </button>
+
+          {/* Privacy & Data Collection Information */}
+          <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+            <button
+              onClick={() => setShowPrivacyInfo(!showPrivacyInfo)}
+              className="w-full flex items-center justify-between text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              aria-expanded={showPrivacyInfo}
+            >
+              <span>What information is collected?</span>
+              <svg
+                className={`w-5 h-5 transform transition-transform ${
+                  showPrivacyInfo ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            {showPrivacyInfo && (
+              <div className="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-400 text-left">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    OAuth Scopes Requested
+                  </h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        identity
+                      </span>{" "}
+                      - Access your Patreon username
+                    </li>
+                    <li>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        identity.memberships
+                      </span>{" "}
+                      - Verify your subscription tier and patron status
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Data Stored in Our Database
+                  </h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Patreon user ID (unique identifier)</li>
+                    <li>Patreon username (for display purposes)</li>
+                    <li>Subscription tier ID (to determine access level)</li>
+                    <li>Campaign ID (to verify VAMA subscription)</li>
+                    <li>Patron status (active, former, etc.)</li>
+                  </ul>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-500 italic">
+                    Note: We do NOT store your email address or any payment information.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Why This Information Is Needed
+                  </h3>
+                  <p className="mb-2">
+                    This platform is exclusive to VAMA's Patreon subscribers. We
+                    need to verify your active subscription to grant access to:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Browse character posts and artwork</li>
+                    <li>Submit community character requests</li>
+                    <li>Suggest and approve metadata edits</li>
+                    <li>Participate in community features</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Privacy & Security
+                  </h3>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        No payment information
+                      </span>{" "}
+                      is collected or stored
+                    </li>
+                    <li>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        No personal data
+                      </span>{" "}
+                      beyond subscription status
+                    </li>
+                    <li>
+                      Your data is only used for{" "}
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        access control
+                      </span>{" "}
+                      and platform features
+                    </li>
+                    <li>
+                      Your subscription is checked with Patreon on each login
+                    </li>
+                    <li>
+                      You can revoke access anytime through your{" "}
+                      <a
+                        href="https://www.patreon.com/settings/apps"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      >
+                        Patreon settings
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    By logging in, you agree to share the above information with
+                    this platform for the purpose of subscription verification
+                    and access control.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
