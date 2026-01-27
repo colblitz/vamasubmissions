@@ -53,22 +53,22 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
       <div 
-        className="flex flex-row cursor-pointer active:bg-gray-50"
+        className="flex flex-row cursor-pointer"
         onClick={handleCardClick}
       >
-        {/* Thumbnail - Small, on left, object-contain */}
+        {/* Thumbnail - Fixed size, edge-to-edge, object-cover */}
         {post.thumbnail_urls?.[0] ? (
           <img
             src={post.thumbnail_urls[0]}
             alt={post.title}
             loading="lazy"
-            className="w-24 flex-shrink-0 object-contain border-r border-gray-200"
+            className="w-32 h-32 flex-shrink-0 object-cover"
           />
         ) : (
-          <div className="w-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
+          <div className="w-32 h-32 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
             <div className="text-center px-2">
               <svg
-                className="w-8 h-8 mx-auto mb-1 text-gray-400"
+                className="w-10 h-10 mx-auto mb-1 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -85,7 +85,7 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
           </div>
         )}
 
-        <div className="p-3 flex-1 flex flex-col min-w-0">
+        <div className="p-3 flex-1 flex flex-col min-w-0 hover:bg-gray-50 active:bg-gray-100 transition-colors">
           {/* Title (clickable) and Date */}
           <div className="flex justify-between items-start mb-1 gap-2">
             <a 

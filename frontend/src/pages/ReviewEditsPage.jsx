@@ -449,13 +449,13 @@ export default function ReviewEditsPage() {
                 return combinedHistory.map((item) => (
                   <div
                     key={`${item.type}-${item.id}`}
-                    className="bg-white rounded-lg shadow p-4 flex gap-4 items-start"
+                    className="bg-white rounded-lg shadow overflow-hidden flex"
                   >
-                    {/* Icon/Thumbnail */}
+                    {/* Icon/Thumbnail - Fixed size, no padding */}
                     {item.type === "global" ? (
-                      <div className="w-12 h-12 flex-shrink-0 bg-purple-100 rounded flex items-center justify-center">
+                      <div className="w-24 h-24 flex-shrink-0 bg-purple-100 flex items-center justify-center">
                         <svg
-                          className="w-6 h-6 text-purple-600"
+                          className="w-8 h-8 text-purple-600"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -472,10 +472,10 @@ export default function ReviewEditsPage() {
                       <img
                         src={item.post_thumbnail}
                         alt={item.post_title}
-                        className="w-20 h-20 flex-shrink-0 object-cover rounded"
+                        className="w-24 h-24 flex-shrink-0 object-cover"
                       />
                     ) : (
-                      <div className="w-20 h-20 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                      <div className="w-24 h-24 flex-shrink-0 bg-gray-200 flex items-center justify-center">
                         <svg
                           className="w-8 h-8 text-gray-400"
                           fill="none"
@@ -493,7 +493,7 @@ export default function ReviewEditsPage() {
                     )}
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 p-4">
                       {item.type === "global" ? (
                         <>
                           <div className="flex items-center gap-2 mb-1">
@@ -543,7 +543,7 @@ export default function ReviewEditsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-2 flex-shrink-0">
+                    <div className="flex flex-col gap-2 flex-shrink-0 p-4">
                       {editSuccessMessages[item.id] ? (
                         <span className="text-green-600 font-medium text-sm whitespace-nowrap">
                           {editSuccessMessages[item.id]}
