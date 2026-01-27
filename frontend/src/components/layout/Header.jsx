@@ -1,9 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function Header() {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Close menu on ESC key
@@ -38,7 +39,12 @@ export default function Header() {
     <header className="bg-gray-800 text-white shadow-lg">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold">
+          <Link 
+            to="/" 
+            className={`text-2xl font-bold transition-colors ${
+              location.pathname === '/' ? 'text-blue-400' : 'hover:text-blue-400'
+            }`}
+          >
             VAMA Posts
           </Link>
 
@@ -49,32 +55,42 @@ export default function Header() {
                 <div className="flex items-center divide-x divide-gray-600">
                   <Link
                     to="/about"
-                    className="hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center"
+                    className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
+                      location.pathname === '/about' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                    }`}
                   >
                     About
                   </Link>
                   <Link
                     to="/search"
-                    className="hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center"
+                    className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
+                      location.pathname === '/search' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                    }`}
                   >
                     Search
                   </Link>
                   <Link
                     to="/review"
-                    className="hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center"
+                    className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
+                      location.pathname === '/review' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                    }`}
                   >
                     Review Edits
                   </Link>
                   <Link
                     to="/requests"
-                    className="hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center"
+                    className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
+                      location.pathname === '/requests' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                    }`}
                   >
                     Requests
                   </Link>
                   {isAdmin() && (
                     <Link
                       to="/admin/import"
-                      className="hover:text-yellow-400 transition-colors px-4 py-3 min-h-[44px] flex items-center"
+                      className={`hover:text-yellow-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
+                        location.pathname === '/admin/import' ? 'text-yellow-400 bg-gray-700 rounded' : ''
+                      }`}
                     >
                       Import Posts
                     </Link>
@@ -173,28 +189,36 @@ export default function Header() {
                     <div className="flex flex-col py-4">
                       <Link
                         to="/about"
-                        className="px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center"
+                        className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
+                          location.pathname === '/about' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                        }`}
                         onClick={closeMobileMenu}
                       >
                         About
                       </Link>
                       <Link
                         to="/search"
-                        className="px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center"
+                        className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
+                          location.pathname === '/search' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                        }`}
                         onClick={closeMobileMenu}
                       >
                         Search
                       </Link>
                       <Link
                         to="/review"
-                        className="px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center"
+                        className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
+                          location.pathname === '/review' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                        }`}
                         onClick={closeMobileMenu}
                       >
                         Review Edits
                       </Link>
                       <Link
                         to="/requests"
-                        className="px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center"
+                        className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
+                          location.pathname === '/requests' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                        }`}
                         onClick={closeMobileMenu}
                       >
                         Requests
@@ -202,7 +226,9 @@ export default function Header() {
                       {isAdmin() && (
                         <Link
                           to="/admin/import"
-                          className="px-6 py-3 hover:bg-gray-700 hover:text-yellow-400 transition-colors min-h-[44px] flex items-center"
+                          className={`px-6 py-3 hover:bg-gray-700 hover:text-yellow-400 transition-colors min-h-[44px] flex items-center ${
+                            location.pathname === '/admin/import' ? 'bg-gray-700 text-yellow-400 border-l-4 border-yellow-400' : ''
+                          }`}
                           onClick={closeMobileMenu}
                         >
                           Import Posts

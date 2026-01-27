@@ -160,21 +160,9 @@ export default function ReviewEditsPage() {
     return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
   };
 
-  // Helper to render action badge
+  // Helper to render action badge (inline format)
   const renderActionBadge = (action) => {
-    if (action === "ADD") {
-      return (
-        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-          + ADD
-        </span>
-      );
-    } else {
-      return (
-        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded">
-          - DELETE
-        </span>
-      );
-    }
+    return action === "ADD" ? "+ ADD" : "- DELETE";
   };
 
   return (
@@ -311,14 +299,12 @@ export default function ReviewEditsPage() {
                       <h3 className="font-semibold text-gray-900 truncate">
                         {edit.post_title}
                       </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        {renderActionBadge(edit.action)}
-                        <span className="text-sm text-gray-600">
-                          {formatFieldName(edit.field_name)}:
-                        </span>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {formatFieldName(edit.field_name)}:{" "}
                         <span
-                          className={`text-sm font-medium ${edit.action === "ADD" ? "text-green-700" : "text-red-700"}`}
+                          className={`font-medium ${edit.action === "ADD" ? "text-green-700" : "text-red-700"}`}
                         >
+                          {edit.action === "ADD" ? "+" : "-"}
                           {edit.value}
                         </span>
                       </div>
@@ -341,13 +327,13 @@ export default function ReviewEditsPage() {
                             <div className="flex flex-col gap-2">
                               <button
                                 onClick={executeAction}
-                                className="px-3 py-1.5 bg-green-700 text-white text-sm rounded hover:bg-green-800 font-medium whitespace-nowrap"
+                                className="px-2 py-1 bg-green-700 text-white text-sm rounded hover:bg-green-800 font-normal whitespace-nowrap"
                               >
                                 ✓ Confirm Approve
                               </button>
                               <button
                                 onClick={cancelConfirmation}
-                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
+                                className="px-2 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
                               >
                                 Cancel
                               </button>
@@ -366,13 +352,13 @@ export default function ReviewEditsPage() {
                               />
                               <button
                                 onClick={executeAction}
-                                className="px-3 py-1.5 bg-red-700 text-white text-sm rounded hover:bg-red-800 font-medium whitespace-nowrap"
+                                className="px-2 py-1 bg-red-700 text-white text-sm rounded hover:bg-red-800 font-normal whitespace-nowrap"
                               >
                                 ✓ Confirm Reject
                               </button>
                               <button
                                 onClick={cancelConfirmation}
-                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
+                                className="px-2 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
                               >
                                 Cancel
                               </button>
@@ -575,13 +561,13 @@ export default function ReviewEditsPage() {
                         <div className="flex flex-col gap-2">
                           <button
                             onClick={executeAction}
-                            className="px-3 py-1.5 bg-yellow-700 text-white text-sm rounded hover:bg-yellow-800 font-medium whitespace-nowrap"
+                            className="px-2 py-1 bg-yellow-700 text-white text-sm rounded hover:bg-yellow-800 font-normal whitespace-nowrap"
                           >
                             ✓ Confirm Undo
                           </button>
                           <button
                             onClick={cancelConfirmation}
-                            className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
+                            className="px-2 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 whitespace-nowrap"
                           >
                             Cancel
                           </button>

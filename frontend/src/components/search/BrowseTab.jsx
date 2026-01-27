@@ -134,7 +134,7 @@ export default function BrowseTab({ onSelectItem }) {
       {/* Items Grid */}
       {!loading && !error && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {items.map((item, idx) => (
               <button
                 key={idx}
@@ -147,7 +147,7 @@ export default function BrowseTab({ onSelectItem }) {
                       : "border-purple-200 hover:border-purple-400 bg-purple-50 hover:bg-purple-100"
                 }`}
               >
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <span
                     className="font-medium text-gray-900 text-sm md:text-base break-words md:truncate"
                     title={item.name}

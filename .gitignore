@@ -174,3 +174,10 @@ create_production_env.sh
 # Local development overrides
 local_config.py
 local_settings.py
+
+# Screenshot directories
+vama/
+vama (1).zip
+vama (2)/
+vama (2).zip
+vama.zip

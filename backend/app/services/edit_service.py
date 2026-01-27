@@ -427,8 +427,8 @@ def get_pending_edits(
 
         # Get thumbnail URL if available
         post_thumbnail = None
-        if post and post.thumbnail_url:
-            post_thumbnail = post.thumbnail_url
+        if post and post.thumbnail_urls:
+            post_thumbnail = post.thumbnail_urls[0] if post.thumbnail_urls else None
 
         edit_detail = PostEditWithDetails(
             id=edit.id,
@@ -503,8 +503,8 @@ def get_edit_history(
 
         # Get thumbnail URL if available
         post_thumbnail = None
-        if post and post.thumbnail_url:
-            post_thumbnail = post.thumbnail_url
+        if post and post.thumbnail_urls:
+            post_thumbnail = post.thumbnail_urls[0] if post.thumbnail_urls else None
 
         history_detail = EditHistoryEntry(
             id=entry.id,

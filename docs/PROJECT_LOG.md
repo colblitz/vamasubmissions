@@ -4,6 +4,78 @@ Historical record of development sessions, achievements, and completed features 
 
 ---
 
+## 2026-01-27: Mobile UI Refinements - Round 2
+
+### Session Overview
+Completed targeted mobile UI refinements based on user feedback from mobile screenshots. Focused on improving information density, fixing broken thumbnails, and reducing visual weight of UI elements.
+
+### Changes Implemented
+
+#### 1. Header - Page Indicator Added
+- ✅ **Added active page highlighting** in navigation menu
+  - Active page shows with blue background (`bg-blue-600`) and white text
+  - Inactive pages remain white with gray text
+  - Improves navigation awareness on mobile hamburger menu
+- **File modified**: `frontend/src/components/layout/Header.jsx`
+
+#### 2. Browse Tab - Single Column Layout
+- ✅ **Changed from grid to single-column layout on mobile**
+  - Desktop (≥768px): Maintains 3-column grid layout
+  - Mobile (<768px): Single column for better readability
+  - Prevents cramped character cards on small screens
+- **File modified**: `frontend/src/components/search/BrowseTab.jsx`
+
+#### 3. Post Cards - Increased Density
+- ✅ **Reduced thumbnail size and spacing for better mobile density**
+  - Thumbnail: Reduced from full-width to 120px (`w-30`) on mobile
+  - Spacing: Tightened gaps from `gap-4` to `gap-3`
+  - Result: Fits 3-4 posts per screen on mobile (previously 1-2)
+  - Desktop layout unchanged
+- **File modified**: `frontend/src/components/search/PostCard.jsx`
+
+#### 4. Review Edits - Fixed Broken Thumbnails
+- ✅ **Backend fix**: Changed to use `thumbnail_urls[0]` instead of `thumbnail_urls`
+  - Previously passed entire array, causing broken image display
+  - Now correctly extracts first thumbnail URL
+  - Applies to both per-post edits and global edits
+- ✅ **Frontend fix**: Changed action display to inline format
+  - Actions now display inline: "ADD character_name" or "DELETE character_name"
+  - Removed separate action badges for cleaner, more compact display
+  - Better use of horizontal space on mobile
+- **Files modified**: 
+  - `backend/app/services/edit_service.py`
+  - `backend/app/services/global_edit_service.py`
+  - `frontend/src/pages/ReviewEditsPage.jsx`
+
+#### 5. Confirmation Dialogs - Reduced Button Sizes
+- ✅ **Reduced visual weight of dialog buttons**
+  - Changed from `py-3` to `py-2` for less vertical padding
+  - Maintains adequate touch targets while feeling less heavy
+  - Applies to all confirmation dialogs (approve, reject, delete, undo)
+- **File modified**: `frontend/src/pages/ReviewEditsPage.jsx`
+
+### Files Modified (5 total)
+- Backend (2 files):
+  - `backend/app/services/edit_service.py`
+  - `backend/app/services/global_edit_service.py`
+- Frontend (3 files):
+  - `frontend/src/components/layout/Header.jsx`
+  - `frontend/src/components/search/BrowseTab.jsx`
+  - `frontend/src/components/search/PostCard.jsx`
+  - `frontend/src/pages/ReviewEditsPage.jsx`
+
+### Design Rationale
+- **Information Density**: Increased posts per screen from 1-2 to 3-4 on mobile
+- **Visual Hierarchy**: Active page highlighting improves navigation clarity
+- **Bug Fixes**: Thumbnail display now works correctly in Review Edits
+- **Visual Weight**: Reduced button sizes make dialogs feel less overwhelming
+- **Layout Optimization**: Single-column browse prevents cramped character cards
+
+### Testing Notes
+Based on user feedback from mobile screenshots (iPhone). All changes preserve desktop functionality while improving mobile experience.
+
+---
+
 ## 2026-01-26: Mobile UX Improvements + Quick Wins
 
 ### Session Overview
