@@ -41,19 +41,31 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
     return getPendingDeletions(fieldName).some((edit) => edit.value === value);
   };
 
+  const handleCardClick = () => {
+    setEditSectionOpen(!editSectionOpen);
+  };
+
+  const handleTitleClick = (e) => {
+    // Prevent card click when clicking title
+    e.stopPropagation();
+  };
+
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-      <div className="flex flex-row">
+      <div 
+        className="flex flex-row cursor-pointer active:bg-gray-50"
+        onClick={handleCardClick}
+      >
         {/* Thumbnail - Small, on left, object-contain */}
         {post.thumbnail_urls?.[0] ? (
           <img
             src={post.thumbnail_urls[0]}
             alt={post.title}
             loading="lazy"
-            className="w-24 h-24 flex-shrink-0 object-contain border-r border-gray-200"
+            className="w-24 flex-shrink-0 object-contain border-r border-gray-200"
           />
         ) : (
-          <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
+          <div className="w-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
             <div className="text-center px-2">
               <svg
                 className="w-8 h-8 mx-auto mb-1 text-gray-400"
@@ -79,7 +91,8 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
             <a 
               href={post.patreon_url} 
               target="_blank" 
-              rel="noopener noreferrer" 
+              rel="noopener noreferrer"
+              onClick={handleTitleClick}
               className="font-semibold text-base text-gray-900 hover:text-blue-600 flex items-start gap-1 min-w-0"
             >
               <span className="break-words">{post.title}</span>
@@ -233,16 +246,6 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Actions - Only Suggest Edit button */}
-          <div className="mt-2 pt-2 border-t border-gray-100">
-            <button
-              onClick={() => setEditSectionOpen(!editSectionOpen)}
-              className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium min-h-[44px]"
-            >
-              {editSectionOpen ? "Close Edit" : "Suggest Edit"}
-            </button>
           </div>
         </div>
       </div>
