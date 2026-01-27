@@ -2,14 +2,21 @@ import { useState } from "react";
 import EditSection from "./EditSection";
 
 /**
- * PostCard component - Displays a single post with metadata and pending edits
+ * MobilePostCard component - Mobile-optimized post card (< 768px)
+ * 
+ * Key differences from desktop PostCard:
+ * - Smaller thumbnail (w-24 h-24) on left with object-contain
+ * - Title is clickable link with external icon
+ * - No "View on Patreon" button (title serves this purpose)
+ * - "Suggest Edit" button always visible and functional
  *
  * @param {object} post - Post object with title, characters, series, tags, etc.
  * @param {array} pendingEdits - Array of pending edit suggestions for this post
  * @param {function} onEditSuccess - Callback when edit is successfully submitted
  */
-export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
+export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess }) {
   const [editSectionOpen, setEditSectionOpen] = useState(false);
+  
   // Helper to get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {
     return pendingEdits.filter((edit) => edit.field_name === fieldName);
@@ -37,19 +44,19 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
       <div className="flex flex-row">
-        {/* Thumbnail */}
+        {/* Thumbnail - Small, on left, object-contain */}
         {post.thumbnail_urls?.[0] ? (
           <img
             src={post.thumbnail_urls[0]}
             alt={post.title}
             loading="lazy"
-            className="w-48 h-48 flex-shrink-0 object-cover border-r border-gray-200"
+            className="w-24 h-24 flex-shrink-0 object-contain border-r border-gray-200"
           />
         ) : (
-          <div className="w-48 h-48 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
-            <div className="text-center px-4">
+          <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-r border-gray-200">
+            <div className="text-center px-2">
               <svg
-                className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                className="w-8 h-8 mx-auto mb-1 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -66,29 +73,47 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
           </div>
         )}
 
-        <div className="p-3 flex-1 flex flex-col">
-          {/* Title and Date */}
-          <div className="flex justify-between items-start mb-1">
-            <h3 className="font-semibold text-lg text-gray-900">
-              {post.title}
-            </h3>
+        <div className="p-3 flex-1 flex flex-col min-w-0">
+          {/* Title (clickable) and Date */}
+          <div className="flex justify-between items-start mb-1 gap-2">
+            <a 
+              href={post.patreon_url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="font-semibold text-base text-gray-900 hover:text-blue-600 flex items-start gap-1 min-w-0"
+            >
+              <span className="break-words">{post.title}</span>
+              <svg
+                className="w-4 h-4 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
             {post.timestamp && (
-              <span className="text-xs text-gray-500 ml-4 whitespace-nowrap">
+              <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
                 {new Date(post.timestamp).toLocaleDateString()}
               </span>
             )}
           </div>
 
           {/* Metadata with Pending Edits */}
-          <div className="space-y-1 flex-1">
+          <div className="space-y-1 flex-1 text-sm">
             {/* Characters */}
             {(post.characters?.length > 0 ||
               getPendingAdditions("characters").length > 0) && (
               <div>
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-xs font-medium text-gray-600">
                   Characters:{" "}
                 </span>
-                <span className="text-sm text-gray-900">
+                <span className="text-xs text-gray-900">
                   {post.characters?.map((char, idx) => {
                     const isDeleting = isPendingDeletion("characters", char);
                     return (
@@ -129,10 +154,10 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
             {(post.series?.length > 0 ||
               getPendingAdditions("series").length > 0) && (
               <div>
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-xs font-medium text-gray-600">
                   Series:{" "}
                 </span>
-                <span className="text-sm text-gray-900">
+                <span className="text-xs text-gray-900">
                   {post.series?.map((s, idx) => {
                     const isDeleting = isPendingDeletion("series", s);
                     return (
@@ -173,7 +198,7 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
             {(post.tags?.length > 0 ||
               getPendingAdditions("tags").length > 0) && (
               <div>
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-xs font-medium text-gray-600">
                   Tags:{" "}
                 </span>
                 <div className="inline-flex flex-wrap gap-1">
@@ -182,7 +207,7 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
                     return (
                       <span
                         key={idx}
-                        className={`px-2 py-1 rounded text-xs ${
+                        className={`px-1.5 py-0.5 rounded text-xs ${
                           isDeleting
                             ? "bg-gray-200 text-gray-400 line-through"
                             : "bg-gray-100 text-gray-700"
@@ -200,7 +225,7 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
                   {getPendingAdditions("tags").map((edit, idx) => (
                     <span
                       key={`pending-${idx}`}
-                      className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs"
+                      className="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
                     >
                       {edit.value} <span className="text-xs">(pending)</span>
                     </span>
@@ -210,33 +235,11 @@ export default function PostCard({ post, pendingEdits = [], onEditSuccess }) {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="mt-2 pt-3 border-t border-gray-100 flex flex-row gap-3 justify-between items-center">
-            <a
-              href={post.patreon_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center text-blue-600 hover:text-blue-800 text-sm font-medium py-3 min-h-[44px]"
-            >
-              View on Patreon
-              <svg
-                className="w-4 h-4 ml-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-            </a>
-
+          {/* Actions - Only Suggest Edit button */}
+          <div className="mt-2 pt-2 border-t border-gray-100">
             <button
               onClick={() => setEditSectionOpen(!editSectionOpen)}
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium min-h-[44px]"
+              className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium min-h-[44px]"
             >
               {editSectionOpen ? "Close Edit" : "Suggest Edit"}
             </button>

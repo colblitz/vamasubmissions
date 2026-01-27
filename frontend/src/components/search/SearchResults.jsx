@@ -1,4 +1,5 @@
 import PostCard from "./PostCard";
+import MobilePostCard from "./MobilePostCard";
 
 /**
  * SearchResults component - Displays search results with pagination
@@ -97,12 +98,24 @@ export default function SearchResults({
       {/* Results List */}
       <div className="space-y-4">
         {results.map((post) => (
-          <PostCard
-            key={post.post_id}
-            post={post}
-            pendingEdits={post.pending_edits || []}
-            onEditSuccess={onEditSuccess}
-          />
+          <div key={post.post_id}>
+            {/* Desktop: Standard PostCard */}
+            <div className="hidden md:block">
+              <PostCard
+                post={post}
+                pendingEdits={post.pending_edits || []}
+                onEditSuccess={onEditSuccess}
+              />
+            </div>
+            {/* Mobile: MobilePostCard */}
+            <div className="md:hidden">
+              <MobilePostCard
+                post={post}
+                pendingEdits={post.pending_edits || []}
+                onEditSuccess={onEditSuccess}
+              />
+            </div>
+          </div>
         ))}
       </div>
 
