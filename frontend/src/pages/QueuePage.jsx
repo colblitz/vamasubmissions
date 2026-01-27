@@ -164,7 +164,7 @@ export default function QueuePage() {
   return (
     <div className="space-y-6">
       <div className="card">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Submission Queues
         </h1>
         <p className="text-gray-600">

@@ -175,7 +175,7 @@ export default function ReviewEditsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">Review Edits</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Review Edits</h1>
 
       {/* Tabs */}
       <div className="flex gap-2 sm:gap-4 mb-6 border-b overflow-x-auto">

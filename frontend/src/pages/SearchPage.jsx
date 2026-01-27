@@ -204,7 +204,7 @@ export default function SearchPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">VAMA Posts</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">VAMA Posts</h1>
 
       {/* Tab Buttons */}
       <div className="flex gap-2 border-b border-gray-200 mb-6">
