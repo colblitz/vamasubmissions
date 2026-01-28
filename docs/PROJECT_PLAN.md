@@ -8,9 +8,9 @@ Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimi
 
 Backend: 47+ active API endpoints (69 total including legacy), 2833 posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI preserved through responsive design.
 
-**CDN Preparation Complete**: Thumbnail redownload script with parallel downloads (10x faster), UUID-based naming (`[postid]-t-[ordinal]-[uuid].ext`), idempotent/resumable, ready for production use. See `scripts/README.md` for usage.
+**CDN Preparation (Phases 1-4) Complete**: Thumbnail redownload script with parallel downloads (10x faster), UUID-based naming (`[postid]-t-[ordinal]-[uuid].ext`), idempotent/resumable, ready for production use. Import post feature updated to use same logic. See `scripts/README.md` for usage.
 
-**Next Priority**: Update import post feature to use new thumbnail naming (Phase 4).
+**Next Priority**: Frontend updates for multiple thumbnails (Phase 5).
 
 ---
 
@@ -293,12 +293,16 @@ gallery-dl/patreon/carza/
 
 ### Priority 5: CDN & Multiple Thumbnails - Remaining Phases
 
-**Phase 4: Update Import Post Feature** (🟡 Medium - 2-3 hours)
-- [ ] Update `backend/app/services/import_service.py` to use new thumbnail naming
-- [ ] Use same parallel download logic from redownload script
-- [ ] Generate UUIDs for all images: `[postid]-t-[ordinal]-[uuid].ext`
-- [ ] Store all URLs in `thumbnail_urls` array
-- [ ] Test import flow with new post
+**Phase 4: Update Import Post Feature** ✅ COMPLETE (2-3 hours)
+- [x] Updated `backend/app/services/patreon_service.py` to use new thumbnail naming
+- [x] Use same parallel download logic from redownload script
+- [x] Generate UUIDs for all images: `[postid]-t-[ordinal]-[uuid].ext`
+- [x] Store all URLs in `thumbnail_urls` array
+- [x] Updated `fetch_posts_with_gallery_dl` to use `--write-info-json`
+- [x] Added `_download_single_image` and `_download_images_parallel` methods
+- [x] Updated `extract_post_data_from_gallery_dl` to process info.json format
+- [x] Parallel downloads with 10 workers, timing metrics included
+- [ ] Test import flow with new post (USER TESTING)
 
 **Phase 5: Frontend Updates** (🟡 Medium - 3-4 hours)
 - [ ] Design decision: How to display multiple thumbnails
