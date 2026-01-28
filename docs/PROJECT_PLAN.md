@@ -1,14 +1,16 @@
 # Project Plan - VAMA Community Tracker
 
-**Last Updated**: 2026-01-26 22:35
+**Last Updated**: 2026-01-28 12:33
 
 ## Current Status
 
-Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edits Refactor + Mobile UX Overhaul + Quick Wins + **Centralized Text Content COMPLETE ✅**
+Phase 1 + Post Import + SearchPage Refactoring + Browse Tab + Performance Optimizations + Production Deployment + Global Edits Refactor + Mobile UX Overhaul + Quick Wins + Centralized Text Content + **CDN Preparation (Phases 1-3) COMPLETE ✅**
 
-Backend: 47+ active API endpoints (69 total including legacy), 2800+ posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI preserved through responsive design. See PROJECT_LOG.md for detailed history.
+Backend: 47+ active API endpoints (69 total including legacy), 2833 posts imported, full business logic implemented. Frontend: Fully responsive mobile-first design with hamburger navigation, improved touch targets (44px+), WCAG AA contrast compliance, and helpful empty states. SearchPage (refactored + Browse tab with "No Tags" filter), CommunityRequestsPage, ReviewEditsPage (3 tabs with consistent counts), ImportPostsPage (admin), AboutPage. Admin self-approval enabled. All features use non-blocking banner notifications. Real Patreon OAuth deployed. Performance optimizations eliminate N+1 queries (31 API calls → 1), reduce bandwidth by 85%. Global Edits use condition + action model with pattern matching, wildcards, preview, and undo. Desktop UI preserved through responsive design.
 
-**Next Priority**: CDN & Image Viewer features from backlog.
+**CDN Preparation Complete**: Thumbnail redownload script with parallel downloads (10x faster), UUID-based naming (`[postid]-t-[ordinal]-[uuid].ext`), idempotent/resumable, ready for production use. See `scripts/README.md` for usage.
+
+**Next Priority**: Update import post feature to use new thumbnail naming (Phase 4).
 
 ---
 
@@ -240,13 +242,101 @@ CREATE INDEX idx_global_edits_created ON global_edit_suggestions(created_at DESC
 
 ---
 
+## Gallery-dl Usage
+
+**Command for downloading posts with metadata:**
+```bash
+gallery-dl --cookies-from-browser chrome:"Profile 1" \
+  --write-info-json \
+  https://www.patreon.com/posts/[POST_ID]
+```
+
+**Output structure:**
+```
+gallery-dl/patreon/carza/
+├── info.json                              # Single JSON with all metadata
+├── [post_id]_[title]_01.png              # Image files
+├── [post_id]_[title]_02.png
+├── ...
+└── [post_id]_[title]_34.zip              # Attachments
+```
+
+**info.json structure:**
+```json
+{
+  "id": "129090487",
+  "title": "Sailor pluto 481 pics",
+  "published_at": "2025-01-20T18:17:36.000+00:00",
+  "images": [
+    {
+      "file_name": "00000-2698488310.png",
+      "download_url": "https://c10.patreonusercontent.com/...",
+      "metadata": {"dimensions": {"h": 1296, "w": 896}}
+    }
+    // ... more images
+  ],
+  "attachments_media": [
+    {"file_name": "00488-1697752924.zip", "download_url": "..."}
+  ]
+}
+```
+
+**Key points:**
+- Use `--write-info-json` (not `--write-metadata`) for single JSON file
+- Parse `info.json` to get list of images
+- Iterate over `images` array (ignore `attachments_media`)
+- Each image has `file_name`, `download_url`, and `dimensions`
+
+---
+
 ## Feature Backlog
 
-### Priority 5: Search Improvements & Case Insensitivity
+### Priority 5: CDN & Multiple Thumbnails - Remaining Phases
+
+**Phase 4: Update Import Post Feature** (🟡 Medium - 2-3 hours)
+- [ ] Update `backend/app/services/import_service.py` to use new thumbnail naming
+- [ ] Use same parallel download logic from redownload script
+- [ ] Generate UUIDs for all images: `[postid]-t-[ordinal]-[uuid].ext`
+- [ ] Store all URLs in `thumbnail_urls` array
+- [ ] Test import flow with new post
+
+**Phase 5: Frontend Updates** (🟡 Medium - 3-4 hours)
+- [ ] Design decision: How to display multiple thumbnails
+  - Option A: Grid view shows first thumbnail only
+  - Option B: Grid view shows small gallery (first 4 thumbnails)
+  - Option C: Grid view shows thumbnail count badge
+- [ ] Update `PostCard` component based on design
+- [ ] Create post detail/lightbox view (optional, can defer)
+- [ ] Ensure responsive design
+- [ ] Lazy loading for performance
+
+**Phase 6: Cloudflare CDN Setup** (🟡 Medium - 2-3 hours)
+- [ ] Sign up for Cloudflare account
+- [ ] Add domain to Cloudflare
+- [ ] Update DNS nameservers
+- [ ] Configure Page Rules:
+  - Cache everything under `/static/*` (1 month edge, 1 day browser)
+  - Bypass cache for `/api/*`
+- [ ] Test caching with `curl -I` (check `CF-Cache-Status` header)
+- [ ] Monitor performance improvements
+
+**Phase 7: Production Deployment** (🔴 Hard - 4-6 hours)
+- [ ] Backup production database
+- [ ] Run redownload script on production (all 2833 posts)
+  - Estimated time: ~20-40 hours (parallelized)
+  - Can run in batches or overnight
+- [ ] Verify all thumbnails downloaded correctly
+- [ ] Run SQL update script to update database
+- [ ] Deploy frontend changes
+- [ ] Verify all posts display correctly
+- [ ] Clean up old thumbnail files (optional)
+- [ ] Document new process
+
+### Priority 6: Search Improvements & Case Insensitivity
 - [ ] Ability to search for non-existent values (e.g., find posts with no characters, no series, no tags)
 - [ ] Make sure everything is case insensitive (search, filters, autocomplete, matching)
 
-### Priority 6: CDN & Image Viewer (🔴 Hard - 10-15 hours)
+### Priority 7: Image Viewer & Lightbox (🔴 Hard - 5-7 hours)
 **CDN Integration**:
 - Research CDN options (Cloudflare, CloudFront, Bunny CDN)
 - Serve static assets (thumbnails, images) from CDN
