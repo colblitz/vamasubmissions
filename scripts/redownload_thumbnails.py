@@ -432,21 +432,28 @@ def process_post_images(
             print(f"[WARNING] Could not determine extension for {file_name}, skipping")
             continue
         
-        # Get download URL from info.json
-        download_url = image.get('download_url')
-        if not download_url:
-            print(f"[WARNING] Image {ordinal} missing download_url, skipping")
+        # Get thumbnail URL from info.json (360x360 square, much smaller than original)
+        # Prefer thumbnail over full download_url for better performance
+        image_urls = image.get('image_urls', {})
+        thumbnail_url = image_urls.get('thumbnail')
+        
+        if not thumbnail_url:
+            print(f"[WARNING] Image {ordinal} missing thumbnail URL, trying download_url")
+            thumbnail_url = image.get('download_url')
+        
+        if not thumbnail_url:
+            print(f"[WARNING] Image {ordinal} missing both thumbnail and download_url, skipping")
             continue
         
         # Generate new filename
         new_filename = generate_thumbnail_filename(post_id, ordinal, extension)
         
         if dry_run:
-            print(f"[DRY-RUN] Would download: {new_filename} from {download_url[:50]}...")
+            print(f"[DRY-RUN] Would download: {new_filename} from {thumbnail_url[:50]}...")
         else:
             images_info.append({
                 'ordinal': ordinal,
-                'url': download_url,
+                'url': thumbnail_url,
                 'filename': new_filename,
                 'extension': extension
             })
