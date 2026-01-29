@@ -171,6 +171,27 @@ def fetch_posts_from_db(post_id: Optional[str] = None, limit: Optional[int] = No
         sys.exit(1)
 
 
+def create_posts_from_ids(post_ids: List[str]) -> List[Dict]:
+    """
+    Create post dicts from post IDs without database access.
+    Used when --from-file is specified and database is not available.
+    
+    Args:
+        post_ids: List of post IDs
+    
+    Returns:
+        List of post dicts with keys: id, post_id, title (title will be empty)
+    """
+    return [
+        {
+            'id': None,
+            'post_id': post_id,
+            'title': f"Post {post_id}"  # Generic title since we don't have DB access
+        }
+        for post_id in post_ids
+    ]
+
+
 def dump_post_ids_to_file(output_file: str, limit: Optional[int] = None):
     """
     Dump all post IDs from database to a file (one per line).
@@ -621,14 +642,15 @@ def main():
             print("[ERROR] Try specifying manually with --browser 'chrome:Profile 1'")
             sys.exit(1)
     
-    # Fetch posts from database
-    print("[INFO] Fetching posts from database...")
-    
+    # Fetch posts
     if args.from_file:
-        # Read post IDs from file
+        # Read post IDs from file - no database needed
+        print("[INFO] Reading post IDs from file (no database required)...")
         post_ids = read_post_ids_from_file(args.from_file)
-        posts = fetch_posts_from_db(post_ids=post_ids)
+        posts = create_posts_from_ids(post_ids)
     else:
+        # Fetch from database (requires psycopg2 and database connection)
+        print("[INFO] Fetching posts from database...")
         posts = fetch_posts_from_db(post_id=args.post_id, limit=args.limit)
     
     if not posts:
@@ -651,10 +673,9 @@ def main():
     
     for i, post in enumerate(posts, 1):
         post_id = post['post_id']
-        title = post['title']
         
         post_start_time = time.time()
-        print(f"\n[{i}/{len(posts)}] Processing post {post_id}: {title}")
+        print(f"\n[{i}/{len(posts)}] Processing post {post_id}...")
         
         # Create temp directory for this post
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -664,12 +685,16 @@ def main():
                 post_id, browser_str, temp_dir, dry_run=args.dry_run
             )
             metadata_time = time.time() - metadata_start
-            print(f"[TIMING] Metadata fetch: {metadata_time:.2f}s")
             
             if not info_data:
                 print(f"[ERROR] Failed to download post {post_id}")
                 error_count += 1
                 continue
+            
+            # Get title from metadata
+            title = info_data.get('title', f'Post {post_id}')
+            print(f"[INFO] Post title: {title}")
+            print(f"[TIMING] Metadata fetch: {metadata_time:.2f}s")
             
             # Download images in parallel
             download_start = time.time()
