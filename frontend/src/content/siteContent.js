@@ -12,7 +12,7 @@ export const siteContent = {
   login: {
     // Main heading and description
     heading: "Character Submissions",
-    description: "Login with your Patreon account to submit character requests",
+    description: "Login with your Patreon account to browse VAMA's posts",
 
     // Subscription error section (shown when user doesn't have required tier)
     subscriptionError: {
@@ -69,7 +69,6 @@ export const siteContent = {
           "This platform is exclusive to VAMA's Patreon subscribers. We need to verify your active subscription to grant access to:",
         features: [
           "Browse character posts and artwork",
-          "Submit community character requests",
           "Suggest and approve metadata edits",
           "Participate in community features",
         ],
