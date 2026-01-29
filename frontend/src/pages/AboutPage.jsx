@@ -51,21 +51,6 @@ export default function AboutPage() {
 
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              {siteContent.about.features.heading}
-            </h2>
-            <div className="max-w-3xl text-gray-700">
-              <ul className="list-disc list-inside space-y-3 text-base md:text-sm leading-relaxed">
-                {siteContent.about.features.list.map((feature, idx) => (
-                  <li key={idx}>
-                    <strong>{feature.title}:</strong> {feature.description}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               {siteContent.about.howItWorks.heading}
             </h2>
             <div className="max-w-3xl text-gray-700">
@@ -75,15 +60,6 @@ export default function AboutPage() {
                 </p>
               ))}
             </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-blue-900 mb-3">
-              {siteContent.about.disclaimer.heading}
-            </h2>
-            <p className="text-base md:text-sm text-blue-800 leading-relaxed max-w-3xl">
-              {siteContent.about.disclaimer.text}
-            </p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
@@ -97,6 +73,15 @@ export default function AboutPage() {
                 ))}
               </ul>
             </div>
+          </div>
+
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-green-900 mb-3">
+              {siteContent.about.contact.heading}
+            </h2>
+            <p className="text-base md:text-sm text-green-800 leading-relaxed max-w-3xl">
+              {siteContent.about.contact.text}
+            </p>
           </div>
         </div>
 

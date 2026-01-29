@@ -133,31 +133,7 @@ export const siteContent = {
     welcome: {
       heading: "Welcome!",
       paragraphs: [
-        "Welcome to the VAMA Community Tracker, an unofficial community-driven platform for tracking and searching VAMA's Patreon character posts.",
-        "This platform was created by fans, for fans, to help the community organize and discover VAMA's amazing character artwork. All content belongs to VAMA and their Patreon supporters.",
-      ],
-    },
-
-    // Features section
-    features: {
-      heading: "Features",
-      list: [
-        {
-          title: "Search & Browse",
-          description: "Find character posts by name, series, or tags",
-        },
-        {
-          title: "Community Requests",
-          description: "Track unofficial request queue (not everyone uses this)",
-        },
-        {
-          title: "Collaborative Editing",
-          description: "Suggest improvements to character metadata",
-        },
-        {
-          title: "Community Moderation",
-          description: "All edits require peer approval",
-        },
+        "Welcome to the VAMA Posts Search Tool, an unofficial tool for searching and browsing VAMA's old posts. This site is an unofficial personal project and is not affiliated with or endorsed by VAMA. All character artwork and content belongs to VAMA.",
       ],
     },
 
@@ -180,28 +156,24 @@ export const siteContent = {
           description:
             "Visit the Review Edits page to see pending suggestions from other users. Help keep the database accurate by approving good edits!",
         },
-        {
-          title: "Request Tracking",
-          description:
-            "The Community Requests page lets you record when you've submitted a request to VAMA. This is unofficial and not everyone uses it, but it can help you track your own requests.",
-        },
       ],
-    },
-
-    // Disclaimer section
-    disclaimer: {
-      heading: "Disclaimer",
-      text: "This is an unofficial community project and is not affiliated with or endorsed by VAMA. All character artwork and content belongs to VAMA. This platform is for organizational purposes only and requires an active Patreon subscription to access.",
     },
 
     // Roadmap section
     roadmap: {
       heading: "Coming Soon",
       items: [
+        "View all post thumbnails",
         "Ability to search for non-existent values",
         "Make everything case insensitive",
         "Mobile UX improvements",
       ],
+    },
+
+    // Contact section
+    contact: {
+      heading: "Questions or Feedback?",
+      text: "If you have any questions, suggestions, or run into any issues, feel free to contact colblitz on Discord.",
     },
 
     // Leaderboard section
