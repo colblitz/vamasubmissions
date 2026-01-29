@@ -59,7 +59,6 @@ def create_user(
         campaign_id=campaign_id,
         patron_status=patron_status,
         role=role,
-        credits=0,
         last_login=datetime.utcnow(),
     )
 
