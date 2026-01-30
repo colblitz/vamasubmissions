@@ -409,6 +409,17 @@ gallery-dl/patreon/carza/
 - **No auto-commits** without explicit user approval
 - **No auto-testing** - let user verify functionality
 
+**⚠️ GIT PUSH RULES - CRITICAL ⚠️**:
+- **NEVER push to origin without explicit user approval**
+- **ALWAYS verify with user what commits are about to be pushed**
+- Before pushing:
+  1. Show: `git log origin/master..HEAD --oneline`
+  2. Ask: "These commits will be pushed. Proceed? (yes/no)"
+  3. Wait for explicit "yes" confirmation
+  4. Only then: `git push origin master`
+- If user says no or anything other than "yes", DO NOT PUSH
+- Accidental pushes can break production - always double check
+
 **Subagent Usage (IMPORTANT - Use Frequently)**:
 Goose should **actively use subagents** for well-defined tasks to save context and work in parallel. Use subagents when:
 
