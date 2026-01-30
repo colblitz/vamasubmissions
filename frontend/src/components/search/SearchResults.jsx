@@ -1,5 +1,6 @@
-import PostCard from "./PostCard";
-import MobilePostCard from "./MobilePostCard";
+import { useState } from "react";
+import PostCardV2 from "./PostCardV2";
+import PostLightboxModal from "./PostLightboxModal";
 
 /**
  * SearchResults component - Displays search results with pagination
@@ -25,7 +26,26 @@ export default function SearchResults({
   sortParams,
   onSortChange,
 }) {
+  const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
   const totalPages = Math.ceil(total / pagination.limit);
+
+  const handleThumbnailClick = (index) => {
+    setModalState({ isOpen: true, postIndex: index });
+  };
+
+  const handleModalNavigate = (direction) => {
+    setModalState((prev) => {
+      const newIndex = direction === 'next' ? prev.postIndex + 1 : prev.postIndex - 1;
+      if (newIndex >= 0 && newIndex < results.length) {
+        return { ...prev, postIndex: newIndex };
+      }
+      return prev;
+    });
+  };
+
+  const handleModalClose = () => {
+    setModalState({ isOpen: false, postIndex: null });
+  };
 
   if (loading) {
     return (
@@ -95,27 +115,16 @@ export default function SearchResults({
         </div>
       </div>
 
-      {/* Results List */}
-      <div className="space-y-4">
-        {results.map((post) => (
-          <div key={post.post_id}>
-            {/* Desktop: Standard PostCard */}
-            <div className="hidden md:block">
-              <PostCard
-                post={post}
-                pendingEdits={post.pending_edits || []}
-                onEditSuccess={onEditSuccess}
-              />
-            </div>
-            {/* Mobile: MobilePostCard */}
-            <div className="md:hidden">
-              <MobilePostCard
-                post={post}
-                pendingEdits={post.pending_edits || []}
-                onEditSuccess={onEditSuccess}
-              />
-            </div>
-          </div>
+      {/* Results Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {results.map((post, index) => (
+          <PostCardV2
+            key={post.post_id}
+            post={post}
+            pendingEdits={post.pending_edits || []}
+            onEditSuccess={onEditSuccess}
+            onThumbnailClick={() => handleThumbnailClick(index)}
+          />
         ))}
       </div>
 
@@ -140,6 +149,20 @@ export default function SearchResults({
             Next
           </button>
         </div>
+      )}
+
+      {/* Post Lightbox Modal */}
+      {modalState.isOpen && modalState.postIndex !== null && (
+        <PostLightboxModal
+          isOpen={modalState.isOpen}
+          onClose={handleModalClose}
+          post={results[modalState.postIndex]}
+          pendingEdits={results[modalState.postIndex]?.pending_edits || []}
+          allPosts={results}
+          currentIndex={modalState.postIndex}
+          onNavigate={handleModalNavigate}
+          onEditSuccess={onEditSuccess}
+        />
       )}
     </>
   );
