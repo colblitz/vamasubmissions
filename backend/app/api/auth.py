@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import httpx
+import logging
 from typing import Optional
 
 from app.core.database import get_db
@@ -15,6 +16,7 @@ from app.services import user_service, session_service
 from app.models.user import User
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/login")
@@ -151,8 +153,47 @@ async def callback(code: str, db: Session = Depends(get_db)):
         # Fetch user info from Patreon
         user_info = await fetch_patreon_user_info(access_token)
 
-        # Create or update user in database
-        user = user_service.get_user_by_patreon_id(db, user_info.patreon_id)
+        # Check if user is an existing admin (before validation)
+        existing_user = user_service.get_user_by_patreon_id(db, user_info.patreon_id)
+        is_admin = existing_user and existing_user.role == "admin"
+
+        # Validate Patreon data BEFORE creating/updating user (skip for admins)
+        if not is_admin:
+            # Step 1: Check if user is patron of VAMA's campaign
+            if user_info.campaign_id != settings.patreon_creator_id:
+                logger.warning(
+                    f"[LOGIN BLOCKED] {user_info.username} (patreon_id={user_info.patreon_id}) "
+                    f"- not a patron of VAMA's campaign (campaign_id={user_info.campaign_id})"
+                )
+                error_message = "This site is only accessible to VAMA Patreon subscribers. Please subscribe to access."
+                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+                return RedirectResponse(url=frontend_redirect)
+
+            # Step 2: Check if user is active patron
+            if user_info.patron_status != "active_patron":
+                logger.warning(
+                    f"[LOGIN BLOCKED] {user_info.username} (patreon_id={user_info.patreon_id}) "
+                    f"- patron_status={user_info.patron_status} (not active_patron)"
+                )
+                error_message = "Your subscription is required to access this site. Please renew your VAMA Patreon subscription."
+                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+                return RedirectResponse(url=frontend_redirect)
+
+            # Step 3: Check if user's tier is in the allowed whitelist
+            allowed_tier_ids = settings.allowed_patreon_tier_ids.split(",")
+            if user_info.tier_id not in allowed_tier_ids:
+                logger.warning(
+                    f"[LOGIN BLOCKED] {user_info.username} (patreon_id={user_info.patreon_id}) "
+                    f"- tier_id={user_info.tier_id} not in allowed tiers"
+                )
+                error_message = "Your subscription tier does not have access to this site. Please upgrade your VAMA Patreon subscription."
+                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
+                return RedirectResponse(url=frontend_redirect)
+
+        # Create or update user in database (only after validation passes)
+        user = existing_user
+        is_new_user = user is None
+        
         if not user:
             user = user_service.create_user(
                 db,
@@ -161,6 +202,10 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 tier_id=user_info.tier_id,
                 campaign_id=user_info.campaign_id,
                 patron_status=user_info.patron_status,
+            )
+            logger.info(
+                f"[LOGIN SUCCESS - NEW USER] {user.patreon_username} (patreon_id={user.patreon_id}, "
+                f"tier={get_tier_name_from_id(user.tier_id)}, role={user.role})"
             )
         else:
             # Update user info
@@ -172,31 +217,16 @@ async def callback(code: str, db: Session = Depends(get_db)):
                 campaign_id=user_info.campaign_id,
                 patron_status=user_info.patron_status,
             )
+            logger.info(
+                f"[LOGIN SUCCESS] {user.patreon_username} (patreon_id={user.patreon_id}, "
+                f"tier={get_tier_name_from_id(user.tier_id)}, role={user.role})"
+            )
 
         # Update last login
         user.last_login = datetime.utcnow()
         db.commit()
 
-        # Two-step access control (skip for admins)
-        if user.role != "admin":
-            # Step 1: Check if user is patron of VAMA's campaign
-            if user_info.campaign_id != settings.patreon_creator_id:
-                error_message = "This site is only accessible to VAMA Patreon subscribers. Please subscribe to access."
-                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
-                return RedirectResponse(url=frontend_redirect)
-
-            # Step 2: Check if user is active patron
-            if user_info.patron_status != "active_patron":
-                error_message = "Your subscription is required to access this site. Please renew your VAMA Patreon subscription."
-                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
-                return RedirectResponse(url=frontend_redirect)
-
-            # Step 3: Check if user's tier is in the allowed whitelist
-            allowed_tier_ids = settings.allowed_patreon_tier_ids.split(",")
-            if user_info.tier_id not in allowed_tier_ids:
-                error_message = "Your subscription tier does not have access to this site. Please upgrade your VAMA Patreon subscription."
-                frontend_redirect = f"{settings.frontend_url}/auth/callback?error={error_message}"
-                return RedirectResponse(url=frontend_redirect)
+        # Access control already validated above, no need to check again
 
         # Create JWT token
         jwt_token = create_access_token(data={"user_id": user.id, "patreon_id": user.patreon_id})
