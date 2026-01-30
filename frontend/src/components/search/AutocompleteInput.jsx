@@ -80,6 +80,13 @@ export default function AutocompleteInput({
   };
 
   const handleKeyPress = (e) => {
+    // Allow Enter key to add current value as filter
+    if (e.key === "Enter" && internalValue.trim()) {
+      e.preventDefault();
+      onSelect(internalValue.trim());
+      setIsOpen(false);
+    }
+    
     if (onKeyPress) {
       onKeyPress(e);
     }
