@@ -100,22 +100,33 @@ echo ""
 cd "$APP_DIR"
 
 echo "Current commit:"
+PREVIOUS_COMMIT=$(git rev-parse HEAD)
 git log -1 --oneline
 echo ""
 
 echo "Fetching latest code..."
 git fetch origin
 
+echo ""
+echo "Commits to be deployed:"
+git log --oneline HEAD..origin/master
+echo ""
+
+# Confirmation prompt
+read -p "Do you want to proceed with deployment? (yes/no): " -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+    echo -e "${YELLOW}Deployment cancelled by user${NC}"
+    exit 0
+fi
+
 echo "Pulling latest changes..."
 git pull origin master
 
 echo ""
-echo "Latest commit:"
+echo "New commit:"
+NEW_COMMIT=$(git rev-parse HEAD)
 git log -1 --oneline
-echo ""
-
-echo "Recent commits:"
-git log --oneline -5
 echo ""
 
 # ==========================================
@@ -255,6 +266,9 @@ echo -e "${GREEN}✓ Dependencies updated${NC}"
 echo -e "${GREEN}✓ Frontend rebuilt and deployed${NC}"
 echo -e "${GREEN}✓ Backend service restarted${NC}"
 echo ""
+echo "Deployed commits:"
+git log --oneline $PREVIOUS_COMMIT..$NEW_COMMIT
+echo ""
 echo "Backup location: $BACKUP_DIR/vamasubmissions-$TIMESTAMP.sql"
 echo ""
 echo "Next steps:"
@@ -264,7 +278,7 @@ echo "3. Monitor logs: sudo journalctl -u $SERVICE_NAME -f"
 echo ""
 echo "If something went wrong, rollback with:"
 echo "  cd $APP_DIR"
-echo "  git reset --hard PREVIOUS_COMMIT"
+echo "  git reset --hard $PREVIOUS_COMMIT"
 echo "  sudo -u postgres psql $DB_NAME < $BACKUP_DIR/vamasubmissions-$TIMESTAMP.sql"
 echo "  bash deployment-scripts/deploy.sh"
 echo ""
