@@ -156,11 +156,15 @@ def approve_global_edit(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Approve and apply a global edit suggestion
+    Approve and apply a global edit suggestion (admin only)
 
     This will perform a bulk update across all affected posts.
-    Cannot approve your own suggestion.
+    Only admins can approve global edits.
     """
+    # Check if user is admin
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required to approve global edits")
+
     try:
         suggestion = GlobalEditService.approve_suggestion(db, suggestion_id, current_user.id)
 
@@ -271,7 +275,7 @@ def undo_global_edit(
     This restores the previous values for all affected posts.
     """
     # Check if user is admin
-    if not current_user.is_admin:
+    if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
     try:
