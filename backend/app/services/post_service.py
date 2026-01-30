@@ -134,25 +134,30 @@ def search_posts(
 
     if characters:
         # Filter by multiple characters (must have ALL specified characters)
-        # Use raw SQL for array comparison since SQLAlchemy's array operations are limited
+        # Use LIKE for partial/substring matching
         for character in characters:
+            search_char = f"%{character.lower()}%"
             q = q.filter(
-                text("EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) = :char)")
-            ).params(char=character.lower())
+                text("EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) LIKE :char)")
+            ).params(char=search_char)
 
     if series_list:
         # Filter by multiple series (must have ALL specified series)
+        # Use LIKE for partial/substring matching
         for series_name in series_list:
+            search_series = f"%{series_name.lower()}%"
             q = q.filter(
-                text("EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) = :ser)")
-            ).params(ser=series_name.lower())
+                text("EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) LIKE :ser)")
+            ).params(ser=search_series)
 
     if tags:
         # Filter by multiple tags (must have ALL specified tags)
+        # Use LIKE for partial/substring matching
         for tag in tags:
+            search_tag = f"%{tag.lower()}%"
             q = q.filter(
-                text("EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) = :tag)")
-            ).params(tag=tag.lower())
+                text("EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) LIKE :tag)")
+            ).params(tag=search_tag)
 
     if no_tags:
         # Filter for posts without any tags (empty array or NULL)
