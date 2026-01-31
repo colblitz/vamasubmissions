@@ -109,8 +109,8 @@ export default function SearchResults({
         </div>
       </div>
 
-      {/* Results Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Results Grid - auto-fit with max 360px cards */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,360px))] gap-4 justify-center">
         {results.map((post, index) => (
           <PostCardV2
             key={post.post_id}
