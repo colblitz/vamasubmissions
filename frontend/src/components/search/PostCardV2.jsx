@@ -99,41 +99,37 @@ export default function PostCardV2({
           {(post.characters?.length > 0 ||
             getPendingAdditions("characters").length > 0) && (
             <div>
-              <span className="font-medium text-gray-600">Characters: </span>
-              <span className="text-gray-900">
+              <span className="text-sm font-medium text-gray-600 block mb-1">Characters:</span>
+              <div className="flex flex-wrap gap-1">
                 {post.characters?.map((char, idx) => {
                   const isDeleting = isPendingDeletion("characters", char);
                   return (
-                    <span key={idx}>
-                      {idx > 0 && ", "}
-                      {isDeleting ? (
-                        <span className="line-through text-gray-400">
-                          {char}{" "}
-                          <span className="text-xs text-amber-600">
-                            (pending removal)
-                          </span>
+                    <span
+                      key={idx}
+                      className={`px-2 py-0.5 rounded text-xs ${
+                        isDeleting
+                          ? "bg-gray-200 text-gray-400 line-through"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {char}
+                      {isDeleting && (
+                        <span className="ml-1 text-amber-600 no-underline">
+                          (pending removal)
                         </span>
-                      ) : (
-                        char
                       )}
                     </span>
                   );
                 })}
-                {getPendingAdditions("characters").length > 0 && (
-                  <>
-                    {post.characters?.length > 0 && ", "}
-                    {getPendingAdditions("characters").map((edit, idx) => (
-                      <span key={`pending-${idx}`}>
-                        {idx > 0 && ", "}
-                        <span className="text-amber-600">
-                          {edit.value}{" "}
-                          <span className="text-xs">(pending)</span>
-                        </span>
-                      </span>
-                    ))}
-                  </>
-                )}
-              </span>
+                {getPendingAdditions("characters").map((edit, idx) => (
+                  <span
+                    key={`pending-${idx}`}
+                    className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                  >
+                    {edit.value} <span className="text-xs">(pending)</span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
@@ -141,41 +137,37 @@ export default function PostCardV2({
           {(post.series?.length > 0 ||
             getPendingAdditions("series").length > 0) && (
             <div>
-              <span className="font-medium text-gray-600">Series: </span>
-              <span className="text-gray-900">
+              <span className="text-sm font-medium text-gray-600 block mb-1">Series:</span>
+              <div className="flex flex-wrap gap-1">
                 {post.series?.map((s, idx) => {
                   const isDeleting = isPendingDeletion("series", s);
                   return (
-                    <span key={idx}>
-                      {idx > 0 && ", "}
-                      {isDeleting ? (
-                        <span className="line-through text-gray-400">
-                          {s}{" "}
-                          <span className="text-xs text-amber-600">
-                            (pending removal)
-                          </span>
+                    <span
+                      key={idx}
+                      className={`px-2 py-0.5 rounded text-xs ${
+                        isDeleting
+                          ? "bg-gray-200 text-gray-400 line-through"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
+                    >
+                      {s}
+                      {isDeleting && (
+                        <span className="ml-1 text-amber-600 no-underline">
+                          (pending removal)
                         </span>
-                      ) : (
-                        s
                       )}
                     </span>
                   );
                 })}
-                {getPendingAdditions("series").length > 0 && (
-                  <>
-                    {post.series?.length > 0 && ", "}
-                    {getPendingAdditions("series").map((edit, idx) => (
-                      <span key={`pending-${idx}`}>
-                        {idx > 0 && ", "}
-                        <span className="text-amber-600">
-                          {edit.value}{" "}
-                          <span className="text-xs">(pending)</span>
-                        </span>
-                      </span>
-                    ))}
-                  </>
-                )}
-              </span>
+                {getPendingAdditions("series").map((edit, idx) => (
+                  <span
+                    key={`pending-${idx}`}
+                    className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                  >
+                    {edit.value} <span className="text-xs">(pending)</span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

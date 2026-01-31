@@ -10,6 +10,9 @@ import EditSection from "./EditSection";
  * @param {array} pendingEdits - Array of pending edits for current post
  * @param {array} allPosts - Array of all posts in results
  * @param {number} currentIndex - Current post index
+ * @param {number} currentPage - Current page number
+ * @param {number} pageSize - Number of items per page
+ * @param {number} totalResults - Total number of results
  * @param {function} onNavigate - Callback to navigate to different post (receives index)
  * @param {function} onEditSuccess - Callback when edit is submitted
  */
@@ -20,10 +23,13 @@ export default function PostLightboxModal({
   pendingEdits = [],
   allPosts = [],
   currentIndex,
+  currentPage = 1,
+  pageSize = 20,
+  totalResults = 0,
   onNavigate,
   onEditSuccess,
 }) {
-  const [editSectionOpen, setEditSectionOpen] = useState(false);
+  const [editSectionOpen, setEditSectionOpen] = useState(true);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -61,6 +67,10 @@ export default function PostLightboxModal({
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < allPosts.length - 1;
 
+  // Calculate global index for display
+  const globalIndex = (currentPage - 1) * pageSize + currentIndex + 1;
+  const displayTotal = totalResults > 0 ? totalResults : allPosts.length;
+
   return (
     <div
       className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
@@ -74,15 +84,40 @@ export default function PostLightboxModal({
         {/* Header */}
         <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            {/* Title and Date */}
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-gray-900 truncate">
-                {post.title}
-              </h2>
+            {/* Title and Date on same line */}
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
+              {post.patreon_url ? (
+                <a
+                  href={post.patreon_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold text-gray-900 hover:text-blue-600 truncate flex items-center gap-2 transition-colors"
+                  title="View on Patreon"
+                >
+                  {post.title}
+                  <svg
+                    className="w-5 h-5 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
+              ) : (
+                <h2 className="text-xl font-bold text-gray-900 truncate">
+                  {post.title}
+                </h2>
+              )}
               {post.timestamp && (
-                <p className="text-sm text-gray-600 mt-1">
+                <span className="text-sm text-gray-600 flex-shrink-0">
                   {new Date(post.timestamp).toLocaleDateString()}
-                </p>
+                </span>
               )}
             </div>
 
@@ -117,7 +152,7 @@ export default function PostLightboxModal({
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Images ({post.thumbnail_urls.length})
               </h3>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 max-h-[400px] overflow-y-auto">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 max-h-[600px] overflow-y-auto">
                 {post.thumbnail_urls.map((url, idx) => (
                   <div
                     key={idx}
@@ -135,108 +170,19 @@ export default function PostLightboxModal({
             </div>
           )}
 
-          {/* Metadata Section */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              Metadata
-            </h3>
-
-            {/* Characters */}
-            {post.characters && post.characters.length > 0 && (
-              <div>
-                <span className="text-sm font-medium text-gray-700">
-                  Characters:{" "}
-                </span>
-                <span className="text-sm text-gray-900">
-                  {post.characters.join(", ")}
-                </span>
-              </div>
-            )}
-
-            {/* Series */}
-            {post.series && post.series.length > 0 && (
-              <div>
-                <span className="text-sm font-medium text-gray-700">
-                  Series:{" "}
-                </span>
-                <span className="text-sm text-gray-900">
-                  {post.series.join(", ")}
-                </span>
-              </div>
-            )}
-
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <div>
-                <span className="text-sm font-medium text-gray-700 block mb-2">
-                  Tags:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-sm"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* View on Patreon Link */}
-            {post.patreon_url && (
-              <div className="pt-3 border-t border-gray-200">
-                <a
-                  href={post.patreon_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  View on Patreon
-                  <svg
-                    className="w-4 h-4 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
-                </a>
-              </div>
-            )}
-          </div>
-
-          {/* Edit Section Toggle */}
-          <div className="mb-4">
-            <button
-              onClick={() => setEditSectionOpen(!editSectionOpen)}
-              className="w-full md:w-auto px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-            >
-              {editSectionOpen ? "Hide Edit Section" : "Suggest Edits"}
-            </button>
-          </div>
-
           {/* Edit Section */}
-          {editSectionOpen && (
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
-              <EditSection
-                post={post}
-                pendingEdits={pendingEdits}
-                onClose={() => setEditSectionOpen(false)}
-                onSuccess={(message) => {
-                  if (onEditSuccess) {
-                    onEditSuccess(message);
-                  }
-                }}
-              />
-            </div>
-          )}
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
+            <EditSection
+              post={post}
+              pendingEdits={pendingEdits}
+              onClose={() => setEditSectionOpen(false)}
+              onSuccess={(message) => {
+                if (onEditSuccess) {
+                  onEditSuccess(message);
+                }
+              }}
+            />
+          </div>
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
@@ -263,7 +209,7 @@ export default function PostLightboxModal({
             </button>
 
             <span className="text-sm text-gray-600">
-              {currentIndex + 1} of {allPosts.length}
+              {globalIndex} of {displayTotal}
             </span>
 
             <button

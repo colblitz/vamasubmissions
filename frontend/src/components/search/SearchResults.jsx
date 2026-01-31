@@ -33,14 +33,8 @@ export default function SearchResults({
     setModalState({ isOpen: true, postIndex: index });
   };
 
-  const handleModalNavigate = (direction) => {
-    setModalState((prev) => {
-      const newIndex = direction === 'next' ? prev.postIndex + 1 : prev.postIndex - 1;
-      if (newIndex >= 0 && newIndex < results.length) {
-        return { ...prev, postIndex: newIndex };
-      }
-      return prev;
-    });
+  const handleModalNavigate = (newIndex) => {
+    setModalState({ isOpen: true, postIndex: newIndex });
   };
 
   const handleModalClose = () => {
@@ -130,23 +124,96 @@ export default function SearchResults({
 
       {/* Pagination */}
       {total > pagination.limit && (
-        <div className="flex justify-center gap-3 mt-8">
+        <div className="flex justify-center items-center gap-2 mt-8">
+          {/* Previous Button */}
           <button
-            onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
+            onClick={() => onPageChange(pagination.page - 1)}
             disabled={pagination.page === 1}
             className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
+            aria-label="Previous page"
           >
-            Previous
+            ←
           </button>
-          <span className="px-4 py-3 text-gray-900 flex items-center">
-            Page {pagination.page} of {totalPages}
-          </span>
+
+          {/* Page Numbers */}
+          {(() => {
+            const pages = [];
+            const maxVisible = 7;
+            const current = pagination.page;
+
+            if (totalPages <= maxVisible) {
+              // Show all pages
+              for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+              }
+            } else {
+              // Show with ellipsis
+              if (current <= 4) {
+                // Near start: 1 2 3 4 5 ... 20
+                for (let i = 1; i <= 5; i++) {
+                  pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+              } else if (current >= totalPages - 3) {
+                // Near end: 1 ... 16 17 18 19 20
+                pages.push(1);
+                pages.push('...');
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                  pages.push(i);
+                }
+              } else {
+                // In middle: 1 ... 5 6 7 ... 20
+                pages.push(1);
+                pages.push('...');
+                for (let i = current - 1; i <= current + 1; i++) {
+                  pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+              }
+            }
+
+            return pages.map((page, index) => {
+              if (page === '...') {
+                return (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-4 py-3 text-gray-900 flex items-center min-h-[44px]"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const isCurrentPage = page === current;
+              return (
+                <button
+                  key={page}
+                  onClick={() => onPageChange(page)}
+                  disabled={isCurrentPage}
+                  className={`px-4 py-3 rounded min-h-[44px] ${
+                    isCurrentPage
+                      ? 'bg-blue-600 text-white cursor-default'
+                      : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                  }`}
+                  aria-label={`Page ${page}`}
+                  aria-current={isCurrentPage ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              );
+            });
+          })()}
+
+          {/* Next Button */}
           <button
             onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page >= totalPages}
             className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
+            aria-label="Next page"
           >
-            Next
+            →
           </button>
         </div>
       )}
@@ -162,6 +229,9 @@ export default function SearchResults({
           currentIndex={modalState.postIndex}
           onNavigate={handleModalNavigate}
           onEditSuccess={onEditSuccess}
+          currentPage={pagination.page}
+          pageSize={pagination.limit}
+          totalResults={total}
         />
       )}
     </>
