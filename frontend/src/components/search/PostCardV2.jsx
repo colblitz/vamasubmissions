@@ -15,7 +15,7 @@ export default function PostCardV2({
   onEditSuccess,
   onThumbnailClick,
 }) {
-  const [isEditSectionOpen, setIsEditSectionOpen] = useState(false);
+  const [showingEdit, setShowingEdit] = useState(false);
 
   // Helper to get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {
@@ -94,125 +94,129 @@ export default function PostCardV2({
           )}
         </div>
 
-        <div className="space-y-1 flex-1 text-sm">
-          {/* Characters */}
-          {(post.characters?.length > 0 ||
-            getPendingAdditions("characters").length > 0) && (
-            <div>
-              <span className="text-sm font-medium text-gray-600 block mb-1">Characters:</span>
-              <div className="flex flex-wrap gap-1">
-                {post.characters?.map((char, idx) => {
-                  const isDeleting = isPendingDeletion("characters", char);
-                  return (
-                    <span
-                      key={idx}
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        isDeleting
-                          ? "bg-gray-200 text-gray-400 line-through"
-                          : "bg-blue-100 text-blue-700"
-                      }`}
-                    >
-                      {char}
-                      {isDeleting && (
-                        <span className="ml-1 text-amber-600 no-underline">
-                          (pending removal)
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-                {getPendingAdditions("characters").map((edit, idx) => (
+        {/* Metadata or Edit Section - Toggle between them */}
+        {!showingEdit ? (
+          <div
+            className="flex-1 cursor-pointer hover:bg-gray-50 transition-colors p-2 -m-2 rounded"
+            onClick={() => setShowingEdit(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setShowingEdit(true);
+              }
+            }}
+            aria-label="Click to suggest edits"
+          >
+            {/* All badges inline - no labels */}
+            <div className="flex flex-wrap gap-1 text-sm">
+              {/* Characters (blue) */}
+              {post.characters?.map((char, idx) => {
+                const isDeleting = isPendingDeletion("characters", char);
+                return (
                   <span
-                    key={`pending-${idx}`}
-                    className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                    key={`char-${idx}`}
+                    className={`px-2 py-0.5 rounded text-xs ${
+                      isDeleting
+                        ? "bg-gray-200 text-gray-400 line-through"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
                   >
-                    {edit.value} <span className="text-xs">(pending)</span>
+                    {char}
+                    {isDeleting && (
+                      <span className="ml-1 text-amber-600 no-underline">
+                        (pending removal)
+                      </span>
+                    )}
                   </span>
-                ))}
-              </div>
-            </div>
-          )}
+                );
+              })}
+              {getPendingAdditions("characters").map((edit, idx) => (
+                <span
+                  key={`char-pending-${idx}`}
+                  className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                >
+                  {edit.value} <span className="text-xs">(pending)</span>
+                </span>
+              ))}
 
-          {/* Series */}
-          {(post.series?.length > 0 ||
-            getPendingAdditions("series").length > 0) && (
-            <div>
-              <span className="text-sm font-medium text-gray-600 block mb-1">Series:</span>
-              <div className="flex flex-wrap gap-1">
-                {post.series?.map((s, idx) => {
-                  const isDeleting = isPendingDeletion("series", s);
-                  return (
-                    <span
-                      key={idx}
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        isDeleting
-                          ? "bg-gray-200 text-gray-400 line-through"
-                          : "bg-purple-100 text-purple-700"
-                      }`}
-                    >
-                      {s}
-                      {isDeleting && (
-                        <span className="ml-1 text-amber-600 no-underline">
-                          (pending removal)
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-                {getPendingAdditions("series").map((edit, idx) => (
+              {/* Series (purple) */}
+              {post.series?.map((s, idx) => {
+                const isDeleting = isPendingDeletion("series", s);
+                return (
                   <span
-                    key={`pending-${idx}`}
-                    className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                    key={`series-${idx}`}
+                    className={`px-2 py-0.5 rounded text-xs ${
+                      isDeleting
+                        ? "bg-gray-200 text-gray-400 line-through"
+                        : "bg-purple-100 text-purple-700"
+                    }`}
                   >
-                    {edit.value} <span className="text-xs">(pending)</span>
+                    {s}
+                    {isDeleting && (
+                      <span className="ml-1 text-amber-600 no-underline">
+                        (pending removal)
+                      </span>
+                    )}
                   </span>
-                ))}
-              </div>
-            </div>
-          )}
+                );
+              })}
+              {getPendingAdditions("series").map((edit, idx) => (
+                <span
+                  key={`series-pending-${idx}`}
+                  className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                >
+                  {edit.value} <span className="text-xs">(pending)</span>
+                </span>
+              ))}
 
-          {/* Tags */}
-          {(post.tags?.length > 0 || getPendingAdditions("tags").length > 0) && (
-            <div>
-              <span className="font-medium text-gray-600">Tags: </span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {post.tags?.slice(0, 5).map((tag, idx) => {
-                  const isDeleting = isPendingDeletion("tags", tag);
-                  return (
-                    <span
-                      key={idx}
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        isDeleting
-                          ? "bg-gray-200 text-gray-400 line-through"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {tag}
-                      {isDeleting && (
-                        <span className="ml-1 text-amber-600 no-underline">
-                          (pending removal)
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-                {post.tags?.length > 5 && (
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
-                    +{post.tags.length - 5}
-                  </span>
-                )}
-                {getPendingAdditions("tags").map((edit, idx) => (
+              {/* Tags (gray) */}
+              {post.tags?.slice(0, 5).map((tag, idx) => {
+                const isDeleting = isPendingDeletion("tags", tag);
+                return (
                   <span
-                    key={`pending-${idx}`}
-                    className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                    key={`tag-${idx}`}
+                    className={`px-2 py-0.5 rounded text-xs ${
+                      isDeleting
+                        ? "bg-gray-200 text-gray-400 line-through"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
                   >
-                    {edit.value} <span className="text-xs">(pending)</span>
+                    {tag}
+                    {isDeleting && (
+                      <span className="ml-1 text-amber-600 no-underline">
+                        (pending removal)
+                      </span>
+                    )}
                   </span>
-                ))}
-              </div>
+                );
+              })}
+              {post.tags?.length > 5 && (
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                  +{post.tags.length - 5}
+                </span>
+              )}
+              {getPendingAdditions("tags").map((edit, idx) => (
+                <span
+                  key={`tag-pending-${idx}`}
+                  className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs"
+                >
+                  {edit.value} <span className="text-xs">(pending)</span>
+                </span>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex-1">
+            <EditSection
+              post={post}
+              pendingEdits={pendingEdits}
+              onClose={() => setShowingEdit(false)}
+              onSuccess={handleEditSuccess}
+            />
+          </div>
+        )}
 
         {/* Actions */}
         <div className="mt-2 pt-2 border-t border-gray-100 flex gap-2 justify-between items-center">
@@ -228,24 +232,14 @@ export default function PostCardV2({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setIsEditSectionOpen(!isEditSectionOpen);
+              setShowingEdit(!showingEdit);
             }}
             className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium min-h-[44px]"
           >
-            Suggest Edit
+            {showingEdit ? "View Metadata" : "Suggest Edit"}
           </button>
         </div>
       </div>
-
-      {/* Edit Section */}
-      {isEditSectionOpen && (
-        <EditSection
-          post={post}
-          pendingEdits={pendingEdits}
-          onClose={() => setIsEditSectionOpen(false)}
-          onSuccess={handleEditSuccess}
-        />
-      )}
     </div>
   );
 }
