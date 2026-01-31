@@ -111,7 +111,7 @@ export default function PostCardV2({
           >
             {/* All badges inline - no labels */}
             <div className="flex flex-wrap gap-1 text-sm">
-              {/* Characters (blue) */}
+              {/* Characters (red - hair color) */}
               {post.characters?.map((char, idx) => {
                 const isDeleting = isPendingDeletion("characters", char);
                 return (
@@ -120,8 +120,9 @@ export default function PostCardV2({
                     className={`px-2 py-0.5 rounded text-xs ${
                       isDeleting
                         ? "bg-gray-200 text-gray-400 line-through"
-                        : "bg-blue-100 text-blue-700"
+                        : ""
                     }`}
+                    style={!isDeleting ? { backgroundColor: 'hsl(0deg 75% 36%)', color: '#ffffff' } : {}}
                   >
                     {char}
                     {isDeleting && (
@@ -141,7 +142,7 @@ export default function PostCardV2({
                 </span>
               ))}
 
-              {/* Series (purple) */}
+              {/* Series (peach) */}
               {post.series?.map((s, idx) => {
                 const isDeleting = isPendingDeletion("series", s);
                 return (
@@ -150,8 +151,9 @@ export default function PostCardV2({
                     className={`px-2 py-0.5 rounded text-xs ${
                       isDeleting
                         ? "bg-gray-200 text-gray-400 line-through"
-                        : "bg-purple-100 text-purple-700"
+                        : ""
                     }`}
+                    style={!isDeleting ? { backgroundColor: 'hsl(19deg 33% 90%)', color: 'hsl(19deg 33% 20%)' } : {}}
                   >
                     {s}
                     {isDeleting && (
@@ -171,7 +173,7 @@ export default function PostCardV2({
                 </span>
               ))}
 
-              {/* Tags (gray) */}
+              {/* Tags (green) */}
               {post.tags?.slice(0, 5).map((tag, idx) => {
                 const isDeleting = isPendingDeletion("tags", tag);
                 return (
@@ -180,7 +182,7 @@ export default function PostCardV2({
                     className={`px-2 py-0.5 rounded text-xs ${
                       isDeleting
                         ? "bg-gray-200 text-gray-400 line-through"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-slate-700 text-white"
                     }`}
                   >
                     {tag}

@@ -18,6 +18,7 @@ import ImportPostsPage from "./pages/admin/ImportPostsPage";
 
 // Test pages
 import LayoutTestPage from "./pages/LayoutTestPage";
+import ColorTestPage from "./pages/ColorTestPage";
 
 // Legacy pages (hidden but preserved)
 // import DashboardPageV2 from './pages/DashboardPageV2';
@@ -102,6 +103,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LayoutTestPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/color-test"
+              element={
+                <ProtectedRoute>
+                  <ColorTestPage />
                 </ProtectedRoute>
               }
             />

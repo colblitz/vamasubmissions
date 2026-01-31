@@ -172,12 +172,13 @@ export default function EditSection({
               post.characters.map((char, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                  style={{ backgroundColor: 'hsl(0deg 75% 36%)', color: '#ffffff' }}
                 >
                   {char}
                   <button
                     onClick={() => handleRemove("characters", char)}
-                    className="text-blue-600 hover:text-red-600 transition-colors"
+                    className="text-white hover:text-red-200 transition-colors"
                     title="Suggest removing this"
                   >
                     <svg
@@ -201,7 +202,7 @@ export default function EditSection({
             {getPendingEditsForField("characters").map((edit, idx) => (
               <span
                 key={`pending-${idx}`}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm border border-amber-300"
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs border border-amber-300"
                 title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || "user"}`}
               >
                 {edit.action === "ADD" ? `+${edit.value}` : `−${edit.value}`}
@@ -225,7 +226,7 @@ export default function EditSection({
                   )
                 }
                 placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-red-600 focus:border-transparent"
               />
               <button
                 onClick={() =>
@@ -237,7 +238,10 @@ export default function EditSection({
                   )
                 }
                 disabled={!newCharacter.trim()}
-                className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ backgroundColor: 'hsl(0deg 75% 36%)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0deg 75% 30%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0deg 75% 36%)'}
                 title="Add character"
               >
                 <svg
@@ -284,12 +288,14 @@ export default function EditSection({
               post.series.map((s, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                  style={{ backgroundColor: 'hsl(19deg 33% 90%)', color: 'hsl(19deg 33% 20%)' }}
                 >
                   {s}
                   <button
                     onClick={() => handleRemove("series", s)}
-                    className="text-green-600 hover:text-red-600 transition-colors"
+                    className="hover:text-red-600 transition-colors"
+                    style={{ color: 'hsl(19deg 33% 20%)' }}
                     title="Suggest removing this"
                   >
                     <svg
@@ -313,7 +319,7 @@ export default function EditSection({
             {getPendingEditsForField("series").map((edit, idx) => (
               <span
                 key={`pending-${idx}`}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm border border-amber-300"
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs border border-amber-300"
                 title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || "user"}`}
               >
                 {edit.action === "ADD" ? `+${edit.value}` : `−${edit.value}`}
@@ -337,7 +343,7 @@ export default function EditSection({
                   )
                 }
                 placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-green-500 focus:border-transparent"
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={() =>
@@ -349,7 +355,10 @@ export default function EditSection({
                   )
                 }
                 disabled={!newSeries.trim()}
-                className="p-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ backgroundColor: 'hsl(19deg 33% 50%)', color: '#ffffff' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(19deg 33% 45%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(19deg 33% 50%)'}
                 title="Add series"
               >
                 <svg
@@ -396,12 +405,12 @@ export default function EditSection({
               post.tags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 text-white rounded text-xs"
                 >
                   {tag}
                   <button
                     onClick={() => handleRemove("tags", tag)}
-                    className="text-purple-600 hover:text-red-600 transition-colors"
+                    className="text-white hover:text-gray-300 transition-colors"
                     title="Suggest removing this"
                   >
                     <svg
@@ -425,7 +434,7 @@ export default function EditSection({
             {getPendingEditsForField("tags").map((edit, idx) => (
               <span
                 key={`pending-${idx}`}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm border border-amber-300"
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs border border-amber-300"
                 title={`Pending ${edit.action.toLowerCase()}: suggested by ${edit.suggester_username || "user"}`}
               >
                 {edit.action === "ADD" ? `+${edit.value}` : `−${edit.value}`}
@@ -444,14 +453,14 @@ export default function EditSection({
                   handleAdd("tags", newTag, setNewTag, setTagSuggestions)
                 }
                 placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-purple-500 focus:border-transparent"
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-slate-500 focus:border-transparent"
               />
               <button
                 onClick={() =>
                   handleAdd("tags", newTag, setNewTag, setTagSuggestions)
                 }
                 disabled={!newTag.trim()}
-                className="p-1 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1 bg-slate-600 text-white rounded hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Add tag"
               >
                 <svg
