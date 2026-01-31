@@ -9,12 +9,14 @@ import { normalizeText } from "../../utils/validation";
  * @param {array} pendingEdits - Array of pending edits for this post
  * @param {function} onClose - Callback to close the section
  * @param {function} onSuccess - Callback when edit is successfully submitted
+ * @param {boolean} compact - If true, hide labels and use longer placeholders
  */
 export default function EditSection({
   post,
   pendingEdits = [],
   onClose,
   onSuccess,
+  compact = false,
 }) {
   // Input states for each field
   const [newCharacter, setNewCharacter] = useState("");
@@ -163,9 +165,11 @@ export default function EditSection({
         <div className="space-y-3">
           {/* CHARACTERS SECTION - Inline */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-gray-700 mr-2">
-              Characters:
-            </span>
+            {!compact && (
+              <span className="font-semibold text-gray-700 text-xs mr-2">
+                Characters:
+              </span>
+            )}
 
             {/* Current Characters */}
             {post.characters?.length > 0 &&
@@ -225,8 +229,8 @@ export default function EditSection({
                     setCharacterSuggestions,
                   )
                 }
-                placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-red-600 focus:border-transparent"
+                placeholder={compact ? "Add character..." : "Add..."}
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-red-600 focus:border-transparent"
               />
               <button
                 onClick={() =>
@@ -281,7 +285,9 @@ export default function EditSection({
 
           {/* SERIES SECTION - Inline */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-gray-700 mr-2">Series:</span>
+            {!compact && (
+              <span className="font-semibold text-gray-700 text-xs mr-2">Series:</span>
+            )}
 
             {/* Current Series */}
             {post.series?.length > 0 &&
@@ -342,8 +348,8 @@ export default function EditSection({
                     setSeriesSuggestions,
                   )
                 }
-                placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                placeholder={compact ? "Add series..." : "Add..."}
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-orange-500 focus:border-transparent"
               />
               <button
                 onClick={() =>
@@ -398,7 +404,9 @@ export default function EditSection({
 
           {/* TAGS SECTION - Inline */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-gray-700 mr-2">Tags:</span>
+            {!compact && (
+              <span className="font-semibold text-gray-700 text-xs mr-2">Tags:</span>
+            )}
 
             {/* Current Tags */}
             {post.tags?.length > 0 &&
@@ -452,8 +460,8 @@ export default function EditSection({
                   e.key === "Enter" &&
                   handleAdd("tags", newTag, setNewTag, setTagSuggestions)
                 }
-                placeholder="Add..."
-                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-slate-500 focus:border-transparent"
+                placeholder={compact ? "Add tag..." : "Add..."}
+                className="w-32 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-slate-500 focus:border-transparent"
               />
               <button
                 onClick={() =>

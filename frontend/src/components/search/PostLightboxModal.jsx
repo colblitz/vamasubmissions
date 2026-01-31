@@ -156,13 +156,13 @@ export default function PostLightboxModal({
                 {post.thumbnail_urls.map((url, idx) => (
                   <div
                     key={idx}
-                    className="aspect-square bg-gray-100 rounded overflow-hidden"
+                    className="bg-gray-100 rounded overflow-hidden"
                   >
                     <img
                       src={url}
                       alt={`${post.title} - Image ${idx + 1}`}
                       loading="lazy"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                      className="w-[200px] h-[200px] object-cover"
                     />
                   </div>
                 ))}

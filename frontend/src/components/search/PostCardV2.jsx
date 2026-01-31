@@ -216,6 +216,7 @@ export default function PostCardV2({
               pendingEdits={pendingEdits}
               onClose={() => setShowingEdit(false)}
               onSuccess={handleEditSuccess}
+              compact={true}
             />
           </div>
         )}
