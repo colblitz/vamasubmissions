@@ -233,3 +233,36 @@ async def browse_posts(
         List of items with their post counts and pagination info
     """
     return post_service.get_browse_data(db, field_type, page, limit)
+
+
+@router.get("/latest-date")
+async def get_latest_post_date(db: Session = Depends(get_db)):
+    """
+    Get the latest published post date.
+    Public endpoint (no auth required) for use by local import script.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Dict with latest_date and post_id, or empty dict if no posts exist
+    """
+    from app.models.post import Post as PostModel
+
+    latest_post = (
+        db.query(PostModel)
+        .filter(PostModel.status == "published")
+        .order_by(PostModel.timestamp.desc())
+        .first()
+    )
+
+    if latest_post:
+        return {
+            "latest_date": latest_post.timestamp.isoformat(),
+            "post_id": latest_post.post_id
+        }
+    else:
+        return {
+            "latest_date": None,
+            "post_id": None
+        }
