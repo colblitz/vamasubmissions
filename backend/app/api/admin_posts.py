@@ -31,11 +31,18 @@ router = APIRouter()
 # ============================================================================
 
 
+from pydantic import BaseModel
+
+class FetchPostsRequest(BaseModel):
+    """Request body for fetching new posts"""
+    session_id: str
+    creator_username: str = "vama"
+    since_days: int = 7
+
+
 @router.post("/posts/fetch-new")
 async def fetch_new_posts(
-    session_id: str,
-    creator_username: str = "vama",
-    since_days: int = 2,  # Changed default to 2 days for testing
+    request: FetchPostsRequest,
     current_user: User = Depends(user_service.get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -44,9 +51,7 @@ async def fetch_new_posts(
     Posts are imported with status='pending' for review.
 
     Args:
-        session_id: Patreon session_id cookie value for gallery-dl authentication
-        creator_username: Patreon creator username (default: vama)
-        since_days: Look back N days for new posts (default 2, only used if no posts exist yet)
+        request: Request body containing session_id, creator_username, and since_days
         current_user: Current admin user
         db: Database session
 
@@ -57,6 +62,9 @@ async def fetch_new_posts(
         If posts already exist in the database, fetches posts since the most recent post.
         The since_days parameter is only used as a fallback when the database is empty.
     """
+    session_id = request.session_id
+    creator_username = request.creator_username
+    since_days = request.since_days
     print(f"[FETCH-NEW-POSTS] Starting fetch for user {current_user.patreon_username}")
     print(f"[FETCH-NEW-POSTS] Creator: {creator_username}, Since days: {since_days}")
 
