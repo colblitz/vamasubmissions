@@ -152,17 +152,17 @@ export default function PostLightboxModal({
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Images ({post.thumbnail_urls.length})
               </h3>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 max-h-[600px] overflow-y-auto">
+              <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto">
                 {post.thumbnail_urls.map((url, idx) => (
                   <div
                     key={idx}
-                    className="bg-gray-100 rounded overflow-hidden"
+                    className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden border border-gray-200"
                   >
                     <img
                       src={url}
                       alt={`${post.title} - Image ${idx + 1}`}
                       loading="lazy"
-                      className="w-[200px] h-[200px] object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 ))}
