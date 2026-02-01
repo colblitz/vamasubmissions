@@ -5,6 +5,9 @@ Export Patreon cookies from Chrome to Netscape format for gallery-dl.
 This script extracts all Patreon cookies from your Chrome browser
 and saves them in Netscape format that gallery-dl can use.
 
+Requirements:
+    pip install pycookiecheat
+
 Usage:
     python export_patreon_cookies.py
 
@@ -12,30 +15,40 @@ Output:
     patreon_cookies.txt - Cookie file in Netscape format
 """
 
-import sqlite3
 import os
 import shutil
+import sqlite3
 from pathlib import Path
 from datetime import datetime
 
+try:
+    from pycookiecheat import chrome_cookies
+except ImportError:
+    print("[ERROR] pycookiecheat not installed!")
+    print("[INFO] Install with: pip install pycookiecheat")
+    print("[INFO] Or: python3 -m pip install pycookiecheat")
+    exit(1)
 
-def find_chrome_cookies_db():
-    """Find Chrome's cookies database file with Patreon cookies."""
+
+def find_chrome_profile_with_patreon():
+    """Find which Chrome profile has Patreon cookies."""
     # macOS path
-    chrome_cookies = Path.home() / "Library/Application Support/Google/Chrome"
+    chrome_base = Path.home() / "Library/Application Support/Google/Chrome"
     
     # Try different profiles
     profiles = [
-        ("Default", chrome_cookies / "Default/Cookies"),
-        ("Profile 1", chrome_cookies / "Profile 1/Cookies"),
-        ("Profile 2", chrome_cookies / "Profile 2/Cookies"),
-        ("Profile 3", chrome_cookies / "Profile 3/Cookies"),
-        ("Profile 4", chrome_cookies / "Profile 4/Cookies"),
+        "Default",
+        "Profile 1",
+        "Profile 2",
+        "Profile 3",
+        "Profile 4",
     ]
     
     print("[INFO] Searching for Chrome profile with Patreon cookies...")
     
-    for profile_name, profile_path in profiles:
+    for profile_name in profiles:
+        profile_path = chrome_base / profile_name / "Cookies"
+        
         if not profile_path.exists():
             continue
         
@@ -60,7 +73,7 @@ def find_chrome_cookies_db():
             
             if count > 0:
                 print(f"[INFO] Found Patreon cookies in Chrome {profile_name} ({count} cookies)")
-                return profile_path
+                return profile_name
             else:
                 print(f"[INFO] Chrome {profile_name} has no Patreon cookies, skipping")
         
@@ -75,7 +88,7 @@ def find_chrome_cookies_db():
 
 def export_patreon_cookies(output_file="patreon_cookies.txt"):
     """
-    Export Patreon cookies from Chrome to Netscape format.
+    Export Patreon cookies from Chrome to Netscape format using pycookiecheat.
     
     Args:
         output_file: Output file path
@@ -83,44 +96,33 @@ def export_patreon_cookies(output_file="patreon_cookies.txt"):
     Returns:
         True if successful, False otherwise
     """
-    cookies_db = find_chrome_cookies_db()
+    # First, find which profile has Patreon cookies
+    profile_name = find_chrome_profile_with_patreon()
     
-    if not cookies_db:
-        print("[ERROR] Chrome cookies database not found!")
-        print("[INFO] Make sure Chrome is installed and you've visited Patreon")
+    if not profile_name:
+        print("[ERROR] No Chrome profile with Patreon cookies found!")
+        print("[INFO] Make sure you're logged into Patreon in Chrome")
         return False
     
-    # Copy database to temp location (Chrome locks the original)
-    temp_db = "/tmp/chrome_cookies_copy.db"
-    try:
-        shutil.copy2(cookies_db, temp_db)
-    except Exception as e:
-        print(f"[ERROR] Failed to copy cookies database: {e}")
-        print("[INFO] Make sure Chrome is closed, or try again")
-        return False
+    print(f"[INFO] Using Chrome {profile_name}")
+    print("[INFO] Extracting and decrypting cookies...")
     
     try:
-        # Connect to copied database
-        conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
+        # Use pycookiecheat to get decrypted cookies for patreon.com
+        # This handles Chrome's encryption automatically
+        # Pass the profile name to use the correct profile
+        cookies_dict = chrome_cookies(
+            'https://www.patreon.com',
+            browser='chrome',
+            cookie_file=str(Path.home() / "Library/Application Support/Google/Chrome" / profile_name / "Cookies")
+        )
         
-        # Query Patreon cookies
-        cursor.execute("""
-            SELECT host_key, name, value, path, expires_utc, is_secure, is_httponly
-            FROM cookies
-            WHERE host_key LIKE '%patreon.com%'
-            ORDER BY host_key, name
-        """)
-        
-        cookies = cursor.fetchall()
-        conn.close()
-        
-        if not cookies:
+        if not cookies_dict:
             print("[ERROR] No Patreon cookies found!")
             print("[INFO] Make sure you're logged into Patreon in Chrome")
             return False
         
-        print(f"[INFO] Found {len(cookies)} Patreon cookies")
+        print(f"[INFO] Found {len(cookies_dict)} Patreon cookies")
         
         # Write to Netscape format
         with open(output_file, 'w') as f:
@@ -128,27 +130,16 @@ def export_patreon_cookies(output_file="patreon_cookies.txt"):
             f.write("# This file was generated by export_patreon_cookies.py\n")
             f.write("# Edit at your own risk.\n\n")
             
-            for cookie in cookies:
-                host_key, name, value, path, expires_utc, is_secure, is_httponly = cookie
+            for name, value in cookies_dict.items():
+                # pycookiecheat returns simple name:value dict
+                # We need to construct full Netscape format
+                # Use sensible defaults for Patreon cookies
                 
-                # Convert Chrome's expires_utc to Unix timestamp
-                # Chrome uses microseconds since 1601-01-01
-                # Unix uses seconds since 1970-01-01
-                if expires_utc:
-                    # Chrome epoch: 1601-01-01
-                    # Unix epoch: 1970-01-01
-                    # Difference: 11644473600 seconds
-                    unix_timestamp = (expires_utc / 1000000) - 11644473600
-                    expires = int(unix_timestamp)
-                else:
-                    expires = 0
-                
-                # Netscape format:
-                # domain flag path secure expiration name value
-                domain = host_key
-                flag = "TRUE" if domain.startswith('.') else "FALSE"
-                path = path or "/"
-                secure = "TRUE" if is_secure else "FALSE"
+                domain = ".patreon.com"
+                flag = "TRUE"
+                path = "/"
+                secure = "TRUE"
+                expires = "0"  # Session cookie
                 
                 line = f"{domain}\t{flag}\t{path}\t{secure}\t{expires}\t{name}\t{value}\n"
                 f.write(line)
@@ -158,21 +149,16 @@ def export_patreon_cookies(output_file="patreon_cookies.txt"):
         
         # Show important cookies
         important = ['session_id', '__cf_bm', 'cf_clearance']
-        for cookie in cookies:
-            name = cookie[1]
+        for name, value in cookies_dict.items():
             if name in important or 'cf' in name.lower():
-                print(f"  - {name}: {cookie[2][:20]}...")
+                print(f"  - {name}: {value[:20]}..." if len(value) > 20 else f"  - {name}: {value}")
         
         return True
         
     except Exception as e:
         print(f"[ERROR] Failed to export cookies: {e}")
+        print(f"[INFO] Error details: {type(e).__name__}: {str(e)}")
         return False
-    
-    finally:
-        # Clean up temp file
-        if os.path.exists(temp_db):
-            os.remove(temp_db)
 
 
 if __name__ == "__main__":
