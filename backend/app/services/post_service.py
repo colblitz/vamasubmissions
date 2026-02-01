@@ -8,6 +8,7 @@ from datetime import datetime
 
 from app.models.post import Post
 from app.schemas.post import PostCreate, PostUpdate, PostSearchResult
+from app.utils.thumbnail_sort import sort_thumbnails
 
 
 def get_post_by_id(db: Session, post_id: int) -> Optional[Post]:
@@ -176,6 +177,11 @@ def search_posts(
     # Apply pagination
     offset = (page - 1) * limit
     posts = q.offset(offset).limit(limit).all()
+
+    # Sort thumbnail_urls by ordinal for each post (defensive)
+    for post in posts:
+        if post.thumbnail_urls:
+            post.thumbnail_urls = sort_thumbnails(post.thumbnail_urls)
 
     # Fetch pending edits for all posts in batch if user is authenticated
     if current_user_id and posts:

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import EditSection from "./EditSection";
+import { sortThumbnails } from "../../utils/thumbnailSort";
 
 /**
  * PostLightboxModal component - Full-screen modal for viewing all thumbnails and post details
@@ -70,6 +71,9 @@ export default function PostLightboxModal({
   // Calculate global index for display
   const globalIndex = (currentPage - 1) * pageSize + currentIndex + 1;
   const displayTotal = totalResults > 0 ? totalResults : allPosts.length;
+
+  // Sort thumbnails by ordinal (defensive - backend should already sort)
+  const sortedThumbnails = post.thumbnail_urls ? sortThumbnails(post.thumbnail_urls) : [];
 
   return (
     <div
@@ -153,7 +157,7 @@ export default function PostLightboxModal({
                 Images ({post.thumbnail_urls.length})
               </h3>
               <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto">
-                {post.thumbnail_urls.map((url, idx) => (
+                {sortedThumbnails.map((url, idx) => (
                   <div
                     key={idx}
                     className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden"
