@@ -80,16 +80,19 @@ class PatreonService:
 
     BASE_URL = "https://www.patreon.com/api/oauth2/v2"
 
-    def __init__(self, access_token: str):
+    def __init__(self, access_token: Optional[str] = None):
         """
-        Initialize Patreon service with access token.
+        Initialize Patreon service with optional access token.
+        
+        Access token is only required for OAuth API methods.
+        For gallery-dl methods (fetch_posts_with_gallery_dl), access token is not needed.
 
         Args:
-            access_token: Patreon OAuth access token
+            access_token: Patreon OAuth access token (optional)
         """
         self.access_token = access_token
         self.headers = {
-            "Authorization": f"Bearer {access_token}",
+            "Authorization": f"Bearer {access_token}" if access_token else "",
             "Content-Type": "application/json",
         }
 
