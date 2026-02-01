@@ -736,7 +736,8 @@ export default function EditSection({
               )}
             </div>
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
