@@ -53,7 +53,7 @@ export default function PostCardV2({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden flex flex-col">
+    <div className="bg-white rounded-lg overflow-hidden flex flex-col">
       {/* Thumbnail */}
       <div
         className="relative aspect-square cursor-pointer group"
