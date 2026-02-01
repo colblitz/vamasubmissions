@@ -259,6 +259,11 @@ class PatreonService:
                 "--no-download",  # Do not download any files (but still write metadata)
                 "--option",
                 f"base-directory={temp_dir}",
+                # Spoof browser User-Agent to avoid Cloudflare detection
+                "--option",
+                "browser=true",  # Enable browser mode
+                "--option",
+                'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             ]
 
             # Add cookies (prefer cookie_file over session_id)
