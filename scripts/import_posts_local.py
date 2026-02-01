@@ -81,7 +81,7 @@ def run_gallery_dl(creator_username: str, since_date: datetime, chrome_profile: 
         chrome_profile: Chrome profile name
 
     Returns:
-        List of post metadata dicts
+        List of post metadata dicts (filtered by since_date in Python)
     """
     print(f"[2/6] Running gallery-dl for {creator_username} since {since_date.date()}...")
 
@@ -89,13 +89,14 @@ def run_gallery_dl(creator_username: str, since_date: datetime, chrome_profile: 
         temp_path = Path(temp_dir)
 
         # Build gallery-dl command
+        # NOTE: Removed date filter to get ALL posts, we'll filter in Python
+        # The gallery-dl date filter with abort() was stopping after first mismatch
         cmd = [
             "gallery-dl",
             "--write-info-json",
             "--no-download",
             "--option", f"base-directory={temp_dir}",
             "--cookies-from-browser", f"chrome:{chrome_profile}",
-            "--filter", f"date >= datetime({since_date.year}, {since_date.month}, {since_date.day}) or abort()",
             f"https://www.patreon.com/{creator_username}/posts"
         ]
 
@@ -111,20 +112,44 @@ def run_gallery_dl(creator_username: str, since_date: datetime, chrome_profile: 
 
             # Find all info.json files
             info_files = list(temp_path.rglob("info.json"))
-            print(f"[INFO] Found {len(info_files)} posts")
+            print(f"[INFO] gallery-dl found {len(info_files)} total posts")
 
+            # Parse and filter by date in Python
             posts = []
+            filtered_out = 0
+            
             for info_file in info_files:
                 try:
                     with open(info_file, 'r') as f:
                         metadata = json.load(f)
                         post_id = str(metadata.get("id", ""))
-                        if post_id:
-                            posts.append(metadata)
-                            print(f"[INFO]   - Post {post_id}: {metadata.get('title', 'Untitled')}")
+                        
+                        if not post_id:
+                            continue
+                        
+                        # Parse post date
+                        date_str = metadata.get("published_at") or metadata.get("date")
+                        if date_str:
+                            try:
+                                if isinstance(date_str, str):
+                                    post_date = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                                else:
+                                    post_date = date_str
+                                
+                                # Filter by since_date
+                                if post_date < since_date:
+                                    filtered_out += 1
+                                    continue
+                            except:
+                                pass  # Include if we can't parse date
+                        
+                        posts.append(metadata)
+                        print(f"[INFO]   - Post {post_id}: {metadata.get('title', 'Untitled')} ({date_str})")
+                
                 except Exception as e:
                     print(f"[WARNING] Failed to parse {info_file}: {e}")
 
+            print(f"[INFO] Found {len(posts)} new posts (filtered out {filtered_out} older posts)")
             return posts
 
         except subprocess.TimeoutExpired:
