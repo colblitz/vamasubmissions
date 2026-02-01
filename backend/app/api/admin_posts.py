@@ -75,6 +75,35 @@ async def fetch_new_posts(
         content = await cookies_file.read()
         temp_file.write(content)
         print(f"[FETCH-NEW-POSTS] Saved cookie file to: {cookie_file_path}")
+        print(f"[FETCH-NEW-POSTS] Cookie file size: {len(content)} bytes")
+    
+    # Log cookie file contents for debugging
+    try:
+        with open(cookie_file_path, 'r') as f:
+            lines = f.readlines()
+            print(f"[FETCH-NEW-POSTS] Cookie file has {len(lines)} lines")
+            
+            # Parse and show cookie names and value lengths
+            cookie_count = 0
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                
+                parts = line.split('\t')
+                if len(parts) >= 7:
+                    domain, flag, path, secure, expires, name, value = parts[:7]
+                    value_preview = value[:20] + "..." if len(value) > 20 else value
+                    value_len = len(value)
+                    print(f"[FETCH-NEW-POSTS]   Cookie: {name} = {value_preview} (length: {value_len})")
+                    cookie_count += 1
+            
+            print(f"[FETCH-NEW-POSTS] Total valid cookies: {cookie_count}")
+            
+            if cookie_count == 0:
+                print("[FETCH-NEW-POSTS] WARNING: No valid cookies found in file!")
+    except Exception as e:
+        print(f"[FETCH-NEW-POSTS] Error reading cookie file for logging: {e}")
 
     try:
         # Initialize Patreon service (no OAuth token needed, uses gallery-dl with cookies)
