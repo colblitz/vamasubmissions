@@ -222,6 +222,7 @@ class PatreonService:
         creator_username: str,
         since_date: Optional[datetime] = None,
         session_id: Optional[str] = None,
+        cookie_file: Optional[str] = None,
     ) -> List[Dict]:
         """
         Fetch posts from Patreon using gallery-dl with --write-info-json.
@@ -230,7 +231,8 @@ class PatreonService:
         Args:
             creator_username: Patreon creator username (e.g., 'vama')
             since_date: Only fetch posts after this date
-            session_id: Patreon session_id cookie (required for patron-only content)
+            session_id: Patreon session_id cookie (legacy, use cookie_file instead)
+            cookie_file: Path to Netscape-format cookie file with all Patreon cookies
 
         Returns:
             List of post data dicts with images
@@ -242,6 +244,7 @@ class PatreonService:
         if since_date:
             print(f"[GALLERY-DL] Filtering posts since: {since_date}")
         print(f"[GALLERY-DL] Has session_id: {session_id is not None}")
+        print(f"[GALLERY-DL] Has cookie_file: {cookie_file is not None}")
 
         # Create temporary directory for metadata
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -258,18 +261,22 @@ class PatreonService:
                 f"base-directory={temp_dir}",
             ]
 
-            # Add session cookie if provided
-            if session_id:
-                # Create temporary cookie file with session_id
-                cookie_file = temp_path / "cookies.txt"
+            # Add cookies (prefer cookie_file over session_id)
+            if cookie_file:
+                # Use provided cookie file path
+                cmd.extend(["--cookies", cookie_file])
+                print(f"[GALLERY-DL] Using cookie file: {cookie_file}")
+            elif session_id:
+                # Legacy: Create temporary cookie file with just session_id
+                temp_cookie_file = temp_path / "cookies.txt"
                 cookie_content = f"""# Netscape HTTP Cookie File
 .patreon.com	TRUE	/	TRUE	0	session_id	{session_id}
 """
-                with open(cookie_file, "w") as f:
+                with open(temp_cookie_file, "w") as f:
                     f.write(cookie_content)
 
-                cmd.extend(["--cookies", str(cookie_file)])
-                print(f"[GALLERY-DL] Using session_id cookie from parameter")
+                cmd.extend(["--cookies", str(temp_cookie_file)])
+                print(f"[GALLERY-DL] Using session_id cookie from parameter (legacy)")
 
             # Add date filter if provided
             if since_date:

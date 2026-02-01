@@ -9,10 +9,13 @@ TODO (Phase 2 Cleanup):
 - Update token refresh logic to use new PatreonToken model
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
+import tempfile
+import os
+from pathlib import Path
 
 from app.core.database import get_db
 from app.core.config import settings
@@ -31,27 +34,22 @@ router = APIRouter()
 # ============================================================================
 
 
-from pydantic import BaseModel
-
-class FetchPostsRequest(BaseModel):
-    """Request body for fetching new posts"""
-    session_id: str
-    creator_username: str = "vama"
-    since_days: int = 7
-
-
 @router.post("/posts/fetch-new")
 async def fetch_new_posts(
-    request: FetchPostsRequest,
+    cookies_file: UploadFile = File(...),
+    creator_username: str = Form("vama"),
+    since_days: int = Form(7),
     current_user: User = Depends(user_service.get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
-    Fetch new posts from Patreon using gallery-dl with session_id cookie.
+    Fetch new posts from Patreon using gallery-dl with full cookie file.
     Posts are imported with status='pending' for review.
 
     Args:
-        request: Request body containing session_id, creator_username, and since_days
+        cookies_file: Netscape-format cookie file (exported from browser)
+        creator_username: Patreon creator username (default: vama)
+        since_days: Look back N days for new posts (default 7, only used if no posts exist yet)
         current_user: Current admin user
         db: Database session
 
@@ -61,44 +59,60 @@ async def fetch_new_posts(
     Note:
         If posts already exist in the database, fetches posts since the most recent post.
         The since_days parameter is only used as a fallback when the database is empty.
+        
+        Cookie file should be in Netscape format with all Patreon cookies including:
+        - session_id
+        - cf_clearance (Cloudflare)
+        - __cf_bm (Cloudflare bot management)
     """
-    session_id = request.session_id
-    creator_username = request.creator_username
-    since_days = request.since_days
     print(f"[FETCH-NEW-POSTS] Starting fetch for user {current_user.patreon_username}")
     print(f"[FETCH-NEW-POSTS] Creator: {creator_username}, Since days: {since_days}")
+    print(f"[FETCH-NEW-POSTS] Cookie file: {cookies_file.filename}")
 
-    # Initialize Patreon service (no OAuth token needed, uses gallery-dl with session_id)
-    patreon = PatreonService()
+    # Save uploaded cookie file to temporary location
+    with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.txt') as temp_file:
+        cookie_file_path = temp_file.name
+        content = await cookies_file.read()
+        temp_file.write(content)
+        print(f"[FETCH-NEW-POSTS] Saved cookie file to: {cookie_file_path}")
 
-    # Get the most recent post date from database
-    most_recent_post = db.query(Post).order_by(Post.timestamp.desc()).first()
-
-    if most_recent_post:
-        # Fetch posts since the most recent one
-        since_date = most_recent_post.timestamp
-        print(
-            f"[FETCH-NEW-POSTS] Using most recent post date: {since_date} (post_id: {most_recent_post.post_id})"
-        )
-    else:
-        # No posts yet, fetch from N days ago
-        since_date = datetime.utcnow() - timedelta(days=since_days)
-        print(
-            f"[FETCH-NEW-POSTS] No existing posts, using fallback: {since_days} days ago = {since_date}"
-        )
-
-    # Fetch posts using gallery-dl (with session_id cookie for authentication)
     try:
-        posts_metadata = patreon.fetch_posts_with_gallery_dl(
-            creator_username=creator_username,
-            since_date=since_date,
-            session_id=session_id,
-        )
-    except PatreonAPIError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to fetch posts from Patreon: {str(e)}",
-        )
+        # Initialize Patreon service (no OAuth token needed, uses gallery-dl with cookies)
+        patreon = PatreonService()
+
+        # Get the most recent post date from database
+        most_recent_post = db.query(Post).order_by(Post.timestamp.desc()).first()
+
+        if most_recent_post:
+            # Fetch posts since the most recent one
+            since_date = most_recent_post.timestamp
+            print(
+                f"[FETCH-NEW-POSTS] Using most recent post date: {since_date} (post_id: {most_recent_post.post_id})"
+            )
+        else:
+            # No posts yet, fetch from N days ago
+            since_date = datetime.utcnow() - timedelta(days=since_days)
+            print(
+                f"[FETCH-NEW-POSTS] No existing posts, using fallback: {since_days} days ago = {since_date}"
+            )
+
+        # Fetch posts using gallery-dl (with full cookie file for authentication)
+        try:
+            posts_metadata = patreon.fetch_posts_with_gallery_dl(
+                creator_username=creator_username,
+                since_date=since_date,
+                cookie_file=cookie_file_path,
+            )
+        except PatreonAPIError as e:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Failed to fetch posts from Patreon: {str(e)}",
+            )
+    finally:
+        # Clean up temporary cookie file
+        if os.path.exists(cookie_file_path):
+            os.remove(cookie_file_path)
+            print(f"[FETCH-NEW-POSTS] Cleaned up cookie file")
 
     # Step 1: Extract post IDs from metadata
     print(f"[IMPORT] Processing {len(posts_metadata)} posts from gallery-dl")

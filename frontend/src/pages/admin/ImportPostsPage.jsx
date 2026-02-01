@@ -15,8 +15,8 @@ export default function ImportPostsPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Session ID for fetching
-  const [sessionIdInput, setSessionIdInput] = useState("");
+  // Cookie file for fetching
+  const [cookieFile, setCookieFile] = useState(null);
 
   // Bulk selection
   const [selectedPosts, setSelectedPosts] = useState([]);
@@ -69,10 +69,10 @@ export default function ImportPostsPage() {
 
   // Fetch new posts from Patreon
   const handleFetchNew = async () => {
-    // Validate session_id is provided
-    if (!sessionIdInput.trim()) {
+    // Validate cookie file is provided
+    if (!cookieFile) {
       setError(
-        "Please enter your Patreon session_id cookie to fetch new posts",
+        "Please select a cookie file to fetch new posts",
       );
       return;
     }
@@ -82,9 +82,16 @@ export default function ImportPostsPage() {
     setSuccess(null);
 
     try {
-      const response = await api.post("/api/admin/posts/fetch-new", {
-        since_days: 7,
-        session_id: sessionIdInput.trim(),
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("cookies_file", cookieFile);
+      formData.append("creator_username", "vama");
+      formData.append("since_days", "7");
+
+      const response = await api.post("/api/admin/posts/fetch-new", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       setSuccess(
@@ -92,6 +99,7 @@ export default function ImportPostsPage() {
       );
       fetchPendingPosts(); // Refresh list
       fetchTotalCount();
+      setCookieFile(null); // Clear file after successful import
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to fetch new posts");
     } finally {
@@ -227,8 +235,8 @@ export default function ImportPostsPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Import Posts</h1>
 
         <FetchNewPostsForm
-          sessionIdInput={sessionIdInput}
-          setSessionIdInput={setSessionIdInput}
+          cookieFile={cookieFile}
+          setCookieFile={setCookieFile}
           fetching={fetching}
           latestPublishedDate={latestPublishedDate}
           onFetchNew={handleFetchNew}
