@@ -16,6 +16,10 @@ import AboutPage from "./pages/AboutPage";
 // Admin pages
 import ImportPostsPage from "./pages/admin/ImportPostsPage";
 
+// Test pages
+import LayoutTestPage from "./pages/LayoutTestPage";
+import ColorTestPage from "./pages/ColorTestPage";
+
 // Legacy pages (hidden but preserved)
 // import DashboardPageV2 from './pages/DashboardPageV2';
 // import RequestsPage from './pages/RequestsPage';
@@ -89,6 +93,24 @@ function App() {
               element={
                 <ProtectedRoute requireAdmin>
                   <ImportPostsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Test routes */}
+            <Route
+              path="/layout-test"
+              element={
+                <ProtectedRoute>
+                  <LayoutTestPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/color-test"
+              element={
+                <ProtectedRoute>
+                  <ColorTestPage />
                 </ProtectedRoute>
               }
             />

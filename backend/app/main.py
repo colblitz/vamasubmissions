@@ -77,7 +77,7 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads"
 # Mount static files (thumbnails and archives)
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    app.mount("/static", StaticFiles(directory=static_dir, follow_symlink=True), name="static")
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])

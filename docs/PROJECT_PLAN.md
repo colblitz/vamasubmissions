@@ -536,6 +536,100 @@ The deployment script automatically:
 
 See `deployment-scripts/README.md` for details.
 
+**Staging Environment**:
+Staging allows testing changes on production-like data without affecting live users.
+
+**Setup (one-time):**
+```bash
+# 1. Push feature branch to remote
+git push origin feature/BRANCH_NAME
+
+# 2. Run setup script on server
+scp deployment-scripts/setup-staging.sh deploy@YOUR_SERVER_IP:~/
+ssh deploy@YOUR_SERVER_IP
+bash ~/setup-staging.sh
+
+# 3. Create staging database (copy from production)
+sudo -u postgres createdb vamasubmissions_staging
+sudo -u postgres pg_dump vamasubmissions | sudo -u postgres psql vamasubmissions_staging
+
+# 4. Update staging .env to use staging database
+cd ~/vamasubmissions-staging/backend
+sed -i "s|DATABASE_URL=postgresql://[^/]*/vamasubmissions|DATABASE_URL=postgresql://deploy:PASSWORD@localhost/vamasubmissions_staging|g" .env
+sed -i "s|FRONTEND_URL=.*|FRONTEND_URL=http://staging.vamarequests.com|g" .env
+sed -i "s|PATREON_REDIRECT_URI=.*|PATREON_REDIRECT_URI=http://staging.vamarequests.com/api/auth/callback|g" .env
+
+# 5. Restart staging backend
+sudo systemctl restart vamasubmissions-backend-staging
+
+# 6. Add staging redirect URI to Patreon OAuth app:
+#    http://staging.vamarequests.com/api/auth/callback
+```
+
+**Update staging with new changes:**
+```bash
+ssh deploy@YOUR_SERVER_IP
+cd ~/vamasubmissions-staging
+bash deployment-scripts/deploy-staging.sh
+```
+
+**Refresh staging database from production:**
+```bash
+ssh deploy@YOUR_SERVER_IP
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS vamasubmissions_staging;"
+sudo -u postgres createdb vamasubmissions_staging
+sudo -u postgres pg_dump vamasubmissions | sudo -u postgres psql vamasubmissions_staging
+sudo systemctl restart vamasubmissions-backend-staging
+```
+
+**Useful staging commands:**
+```bash
+# View staging logs
+sudo journalctl -u vamasubmissions-backend-staging -f
+
+# Restart staging
+sudo systemctl restart vamasubmissions-backend-staging
+
+# Check staging status
+sudo systemctl status vamasubmissions-backend-staging
+
+# Access staging
+http://staging.vamarequests.com
+```
+
+**Promote staging to production:**
+```bash
+# After thorough testing on staging:
+cd ~/vamasubmissions
+git checkout master
+git merge feature/BRANCH_NAME
+git push origin master
+bash deployment-scripts/deploy.sh
+```
+
+**Remove staging environment:**
+```bash
+ssh deploy@YOUR_SERVER_IP
+sudo systemctl stop vamasubmissions-backend-staging
+sudo systemctl disable vamasubmissions-backend-staging
+sudo rm /etc/systemd/system/vamasubmissions-backend-staging.service
+sudo rm /etc/nginx/sites-enabled/staging.vamarequests.com
+sudo rm /etc/nginx/sites-available/staging.vamarequests.com
+sudo rm -rf /var/www/vamarequests-staging
+sudo rm -rf ~/vamasubmissions-staging
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS vamasubmissions_staging;"
+sudo systemctl daemon-reload
+sudo systemctl reload nginx
+```
+
+**Staging configuration:**
+- URL: http://staging.vamarequests.com (or https if SSL configured)
+- Backend: localhost:8001
+- Frontend: /var/www/vamarequests-staging
+- Database: vamasubmissions_staging (copy of production)
+- Service: vamasubmissions-backend-staging
+- Branch: feature/postcard-redesign (or other feature branches)
+
 ---
 
 ## UI/UX Design Guidelines
