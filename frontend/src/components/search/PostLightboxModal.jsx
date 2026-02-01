@@ -156,7 +156,7 @@ export default function PostLightboxModal({
                 {post.thumbnail_urls.map((url, idx) => (
                   <div
                     key={idx}
-                    className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden border border-gray-200"
+                    className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden"
                   >
                     <img
                       src={url}
