@@ -147,16 +147,16 @@ export default function EditSection({
 
   return (
     <div 
-      className="border-t border-gray-200 bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden relative"
+      className="border-t border-gray-200 bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden cursor-pointer"
+      onClick={onClose}
     >
-      {/* Clickable overlay to close - behind content */}
-      <div 
-        className="absolute inset-0 cursor-pointer"
-        onClick={onClose}
-        title="Click to close edit section"
-      />
-      {/* Content layer - above overlay */}
-      <div className="p-4 relative z-10">
+      {/* Content layer - prevent close when clicking interactive elements */}
+      <div className="p-4" onClick={(e) => {
+        // Only stop propagation if clicking on interactive elements
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('input')) {
+          e.stopPropagation();
+        }
+      }}>
         {/* Success Message */}
         {successMessage && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded mb-3 text-sm transition-all duration-300">
