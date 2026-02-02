@@ -92,6 +92,8 @@ export default function ImportPostsPage() {
     
     try {
       const edits = postEdits[postId];
+      console.log(`[AUTO-SAVE] Post ${postId}:`, edits);
+      
       await api.patch(`/api/admin/posts/${postId}`, {
         characters: edits.characters,
         series: edits.series,
@@ -106,6 +108,8 @@ export default function ImportPostsPage() {
             : p
         )
       );
+      
+      console.log(`[AUTO-SAVE] Success for post ${postId}`);
     } catch (err) {
       console.error("Auto-save failed:", err);
       setError(err.response?.data?.detail || "Failed to auto-save changes");
