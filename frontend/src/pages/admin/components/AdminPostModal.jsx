@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import api from "../../../services/api";
 
@@ -32,22 +32,12 @@ export default function AdminPostModal({
 }) {
   const [modalError, setModalError] = useState(null);
   const [modalSuccess, setModalSuccess] = useState(null);
+  const [publishing, setPublishing] = useState(false);
 
-  // Character autocomplete
+  // Input states for inline editing
   const [characterInput, setCharacterInput] = useState("");
-  const [characterSuggestions, setCharacterSuggestions] = useState([]);
-  const [characterSeriesMap, setCharacterSeriesMap] = useState({});
-
-  // Series autocomplete
   const [seriesInput, setSeriesInput] = useState("");
-  const [seriesSuggestions, setSeriesSuggestions] = useState([]);
-
-  // Tags input
   const [tagInput, setTagInput] = useState("");
-
-  // Refs for click-away detection
-  const characterRef = useRef(null);
-  const seriesRef = useRef(null);
 
   const canPublish = characters.length > 0 && series.length > 0;
 
@@ -81,91 +71,6 @@ export default function AdminPostModal({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
-
-  // Fetch character suggestions with series
-  const fetchCharacterSuggestions = async (query) => {
-    if (!query || query.length < 2) {
-      setCharacterSuggestions([]);
-      setCharacterSeriesMap({});
-      return;
-    }
-
-    try {
-      const response = await api.get(
-        "/api/posts/autocomplete/characters-with-series",
-        {
-          params: { q: query, limit: 10 },
-        },
-      );
-
-      const data = response.data || [];
-      const charSeriesMap = {};
-      const charNames = [];
-
-      data.forEach((item) => {
-        charSeriesMap[item.character] = item.series;
-        charNames.push(item.character);
-      });
-
-      setCharacterSeriesMap(charSeriesMap);
-      setCharacterSuggestions(charNames);
-    } catch (err) {
-      console.error("Failed to fetch character suggestions:", err);
-    }
-  };
-
-  // Fetch series suggestions
-  const fetchSeriesSuggestions = async (query) => {
-    if (!query || query.length < 2) {
-      setSeriesSuggestions([]);
-      return;
-    }
-
-    try {
-      const response = await api.get("/api/posts/autocomplete/series", {
-        params: { q: query, limit: 10 },
-      });
-      setSeriesSuggestions(response.data || []);
-    } catch (err) {
-      console.error("Failed to fetch series suggestions:", err);
-    }
-  };
-
-  // Click-away detection for autocomplete dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        characterRef.current &&
-        !characterRef.current.contains(event.target)
-      ) {
-        setCharacterSuggestions([]);
-        setCharacterSeriesMap({});
-      }
-      if (seriesRef.current && !seriesRef.current.contains(event.target)) {
-        setSeriesSuggestions([]);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  // Debounced autocomplete
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (characterInput) fetchCharacterSuggestions(characterInput);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [characterInput]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (seriesInput) fetchSeriesSuggestions(seriesInput);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [seriesInput]);
 
   // Auto-fill from title
   const handleAutoFill = () => {
@@ -306,7 +211,7 @@ export default function AdminPostModal({
                 <h2 className="text-xl font-bold text-gray-900 truncate">
                   {post.title}
                 </h2>
-                <span className="px-2 py-1 bg-yellow-500 text-white text-xs font-bold rounded">
+                <span className={`px-2 py-1 text-white text-xs font-bold rounded ${canPublish ? "bg-green-500" : "bg-yellow-500"}`}>
                   PENDING
                 </span>
                 {isSaving && (
@@ -419,7 +324,7 @@ export default function AdminPostModal({
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Images ({post.thumbnail_urls.length})
                 </h3>
-                <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto">
+                <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[750px] overflow-y-auto">
                   {post.thumbnail_urls.map((url, idx) => (
                     <div
                       key={idx}
@@ -437,28 +342,90 @@ export default function AdminPostModal({
               </div>
             )}
 
-            {/* Editing Section */}
+            {/* Editing Section - Compact Inline Style */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Edit Metadata
                 </h3>
                 <button
                   onClick={handleAutoFill}
-                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium"
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium text-sm"
                   title="Auto-fill character and series from title"
                 >
                   Auto-fill from Title
                 </button>
               </div>
 
-              {/* Characters Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Characters * (Required for publishing)
-                </label>
-                <div className="relative" ref={characterRef}>
-                  <div className="flex gap-2">
+              {/* Compact inline editing - badges first, then inputs */}
+              <div className="space-y-2">
+                {/* All badges together */}
+                <div className="flex flex-wrap gap-1">
+                  {/* Characters */}
+                  {characters.map((char, idx) => (
+                    <span
+                      key={`char-${idx}`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                      style={{ backgroundColor: 'hsl(0deg 75% 36%)', color: '#ffffff' }}
+                    >
+                      {char}
+                      <button
+                        onClick={() => onCharactersChange(characters.filter((_, i) => i !== idx))}
+                        className="text-white hover:text-red-200 transition-colors"
+                        title="Remove this character"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+
+                  {/* Series */}
+                  {series.map((s, idx) => (
+                    <span
+                      key={`series-${idx}`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                      style={{ backgroundColor: 'hsl(19deg 33% 90%)', color: 'hsl(19deg 33% 20%)' }}
+                    >
+                      {s}
+                      <button
+                        onClick={() => onSeriesChange(series.filter((_, i) => i !== idx))}
+                        className="hover:text-red-600 transition-colors"
+                        style={{ color: 'hsl(19deg 33% 20%)' }}
+                        title="Remove this series"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+
+                  {/* Tags */}
+                  {tags.map((tag, idx) => (
+                    <span
+                      key={`tag-${idx}`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 text-white rounded text-xs"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => onTagsChange(tags.filter((_, i) => i !== idx))}
+                        className="text-white hover:text-gray-300 transition-colors"
+                        title="Remove this tag"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                {/* All inputs in a row */}
+                <div className="flex flex-wrap gap-2">
+                  {/* Character input */}
+                  <div className="inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={characterInput}
@@ -470,95 +437,31 @@ export default function AdminPostModal({
                             onCharactersChange([...characters, characterInput.trim()]);
                           }
                           setCharacterInput("");
-                          setCharacterSuggestions([]);
-                          setCharacterSeriesMap({});
                         }
                       }}
-                      placeholder="Type character name and press Enter..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Add character..."
+                      className="w-32 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-red-600 focus:border-transparent"
                     />
                     <button
                       onClick={() => {
-                        if (
-                          characterInput.trim() &&
-                          !characters.includes(characterInput.trim())
-                        ) {
+                        if (characterInput.trim() && !characters.includes(characterInput.trim())) {
                           onCharactersChange([...characters, characterInput.trim()]);
                           setCharacterInput("");
-                          setCharacterSuggestions([]);
-                          setCharacterSeriesMap({});
                         }
                       }}
                       disabled={!characterInput.trim()}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ backgroundColor: 'hsl(0deg 75% 36%)' }}
+                      title="Add character"
                     >
-                      Add
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
                     </button>
                   </div>
-                  {characterSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {characterSuggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            if (!characters.includes(suggestion)) {
-                              onCharactersChange([...characters, suggestion]);
-                            }
 
-                            const associatedSeries = characterSeriesMap[suggestion];
-                            if (
-                              associatedSeries &&
-                              !series.includes(associatedSeries)
-                            ) {
-                              onSeriesChange([...series, associatedSeries]);
-                            }
-
-                            setCharacterInput("");
-                            setCharacterSuggestions([]);
-                            setCharacterSeriesMap({});
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">{suggestion}</span>
-                            {characterSeriesMap[suggestion] && (
-                              <span className="text-xs text-gray-500 ml-2">
-                                {characterSeriesMap[suggestion]}
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {characters.map((char, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                    >
-                      {char}
-                      <button
-                        onClick={() =>
-                          onCharactersChange(characters.filter((_, i) => i !== idx))
-                        }
-                        className="hover:text-blue-600 font-bold"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Series Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Series * (Required for publishing)
-                </label>
-                <div className="relative" ref={seriesRef}>
-                  <div className="flex gap-2">
+                  {/* Series input */}
+                  <div className="inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={seriesInput}
@@ -570,121 +473,63 @@ export default function AdminPostModal({
                             onSeriesChange([...series, seriesInput.trim()]);
                           }
                           setSeriesInput("");
-                          setSeriesSuggestions([]);
                         }
                       }}
-                      placeholder="Type series name and press Enter..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Add series..."
+                      className="w-32 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                     />
                     <button
                       onClick={() => {
-                        if (
-                          seriesInput.trim() &&
-                          !series.includes(seriesInput.trim())
-                        ) {
+                        if (seriesInput.trim() && !series.includes(seriesInput.trim())) {
                           onSeriesChange([...series, seriesInput.trim()]);
                           setSeriesInput("");
-                          setSeriesSuggestions([]);
                         }
                       }}
                       disabled={!seriesInput.trim()}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ backgroundColor: 'hsl(19deg 33% 50%)', color: '#ffffff' }}
+                      title="Add series"
                     >
-                      Add
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
                     </button>
                   </div>
-                  {seriesSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {seriesSuggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            if (!series.includes(suggestion)) {
-                              onSeriesChange([...series, suggestion]);
-                            }
-                            setSeriesInput("");
-                            setSeriesSuggestions([]);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-900"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {series.map((s, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                    >
-                      {s}
-                      <button
-                        onClick={() =>
-                          onSeriesChange(series.filter((_, i) => i !== idx))
-                        }
-                        className="hover:text-green-600 font-bold"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
 
-              {/* Tags Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter" && tagInput.trim()) {
-                        e.preventDefault();
-                        if (!tags.includes(tagInput.trim())) {
+                  {/* Tag input */}
+                  <div className="inline-flex items-center gap-1">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter" && tagInput.trim()) {
+                          e.preventDefault();
+                          if (!tags.includes(tagInput.trim())) {
+                            onTagsChange([...tags, tagInput.trim()]);
+                          }
+                          setTagInput("");
+                        }
+                      }}
+                      placeholder="Add tag..."
+                      className="w-32 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-600 focus:ring-1 focus:ring-slate-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => {
+                        if (tagInput.trim() && !tags.includes(tagInput.trim())) {
                           onTagsChange([...tags, tagInput.trim()]);
+                          setTagInput("");
                         }
-                        setTagInput("");
-                      }
-                    }}
-                    placeholder="Type tag and press Enter..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  />
-                  <button
-                    onClick={() => {
-                      if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-                        onTagsChange([...tags, tagInput.trim()]);
-                        setTagInput("");
-                      }
-                    }}
-                    disabled={!tagInput.trim()}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                      }}
+                      disabled={!tagInput.trim()}
+                      className="p-1 bg-slate-600 text-white rounded hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Add tag"
                     >
-                      {tag}
-                      <button
-                        onClick={() =>
-                          onTagsChange(tags.filter((_, i) => i !== idx))
-                        }
-                        className="hover:text-purple-600 font-bold"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
