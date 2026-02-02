@@ -10,11 +10,20 @@ import os
 import logging
 
 # Configure logging
+import os
+log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.StreamHandler(),
+        logging.StreamHandler(),  # Still goes to journald
+        logging.handlers.RotatingFileHandler(
+            os.path.join(log_dir, "backend.log"),
+            maxBytes=10*1024*1024,  # 10MB per file
+            backupCount=5  # Keep 5 old files (50MB total)
+        )
     ],
 )
 
