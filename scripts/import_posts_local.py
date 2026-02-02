@@ -387,10 +387,11 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
     """
     print(f"[3/6] Running gallery-dl for {len(post_infos)} individual posts...")
     
-    # TESTING: Limit to first 3 posts
+    # TESTING: Limit to last 3 posts (oldest) to avoid chronological gaps
     if len(post_infos) > 3:
-        print(f"[DEBUG] TESTING MODE: Limiting to first 3 posts (out of {len(post_infos)})")
-        post_infos = post_infos[:3]
+        print(f"[DEBUG] TESTING MODE: Limiting to last 3 posts (oldest) out of {len(post_infos)}")
+        print(f"[DEBUG] This avoids chronological gaps - we'll import oldest first")
+        post_infos = post_infos[-3:]
     
     print()
     print(f"[INFO] Will fetch metadata for {len(post_infos)} posts:")
