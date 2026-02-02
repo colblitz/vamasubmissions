@@ -86,25 +86,24 @@ export default function ImportPostsPage() {
     });
   };
 
-  // Auto-save function with debouncing
-  const autoSave = async (postId) => {
+  // Auto-save function with debouncing - takes explicit edits to avoid stale state
+  const autoSave = async (postId, editsToSave) => {
     setSavingPosts((prev) => ({ ...prev, [postId]: true }));
     
     try {
-      const edits = postEdits[postId];
-      console.log(`[AUTO-SAVE] Post ${postId}:`, edits);
+      console.log(`[AUTO-SAVE] Post ${postId}:`, editsToSave);
       
       await api.patch(`/api/admin/posts/${postId}`, {
-        characters: edits.characters,
-        series: edits.series,
-        tags: edits.tags,
+        characters: editsToSave.characters,
+        series: editsToSave.series,
+        tags: editsToSave.tags,
       });
 
       // Update the post in the list
       setPendingPosts((prev) =>
         prev.map((p) =>
           p.id === postId
-            ? { ...p, characters: edits.characters, series: edits.series, tags: edits.tags }
+            ? { ...p, characters: editsToSave.characters, series: editsToSave.series, tags: editsToSave.tags }
             : p
         )
       );
@@ -118,53 +117,58 @@ export default function ImportPostsPage() {
     }
   };
 
-  // Trigger auto-save with debouncing
-  const triggerAutoSave = (postId) => {
+  // Trigger auto-save with debouncing - pass the new edits explicitly
+  const triggerAutoSave = (postId, newEdits) => {
     // Clear existing timer for this post
     if (saveTimers.current[postId]) {
       clearTimeout(saveTimers.current[postId]);
     }
 
-    // Set new timer
+    // Set new timer - pass the edits to avoid stale state
     saveTimers.current[postId] = setTimeout(() => {
-      autoSave(postId);
+      autoSave(postId, newEdits);
     }, 500); // 500ms debounce
   };
 
   // Update characters for a post
   const updatePostCharacters = (postId, characters) => {
+    const newEdits = {
+      ...postEdits[postId],
+      characters,
+    };
     setPostEdits((prev) => ({
       ...prev,
-      [postId]: {
-        ...prev[postId],
-        characters,
-      },
+      [postId]: newEdits,
     }));
-    triggerAutoSave(postId);
+    triggerAutoSave(postId, newEdits);
   };
 
   // Update series for a post
   const updatePostSeries = (postId, series) => {
+    const newEdits = {
+      ...postEdits[postId],
+      series,
+    };
     setPostEdits((prev) => ({
       ...prev,
-      [postId]: {
-        ...prev[postId],
-        series,
-      },
+      [postId]: newEdits,
     }));
-    triggerAutoSave(postId);
+    triggerAutoSave(postId, newEdits);
   };
 
   // Update tags for a post
   const updatePostTags = (postId, tags) => {
+    console.log(`[UPDATE-TAGS] Post ${postId}, new tags:`, tags);
+    const newEdits = {
+      ...postEdits[postId],
+      tags,
+    };
+    console.log(`[UPDATE-TAGS] New edits for post ${postId}:`, newEdits);
     setPostEdits((prev) => ({
       ...prev,
-      [postId]: {
-        ...prev[postId],
-        tags,
-      },
+      [postId]: newEdits,
     }));
-    triggerAutoSave(postId);
+    triggerAutoSave(postId, newEdits);
   };
 
   // Save changes for a single post
