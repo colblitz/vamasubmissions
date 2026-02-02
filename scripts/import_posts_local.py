@@ -609,21 +609,24 @@ def rsync_to_server(local_dir: Path, server: str, remote_path: str) -> bool:
     return True
 
 
-def create_metadata_file(posts_metadata: list, post_thumbnails: dict, output_path: Path):
+def create_sql_file(posts_metadata: list, post_thumbnails: dict, output_path: Path):
     """
-    Create metadata JSON file with post data and thumbnail mappings.
+    Create SQL file to insert posts into database.
 
     Args:
         posts_metadata: List of post metadata from gallery-dl
         post_thumbnails: Dict mapping post_id to thumbnail filenames
-        output_path: Path to save metadata.json
+        output_path: Path to save insert_posts.sql
     """
-    print("[INFO] Creating metadata file...")
+    print("[INFO] Creating SQL file...")
 
-    import_data = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "posts": []
-    }
+    sql_lines = [
+        "-- Insert posts from import",
+        "-- Generated: " + datetime.now(timezone.utc).isoformat(),
+        "",
+        "BEGIN;",
+        ""
+    ]
 
     for metadata in posts_metadata:
         post_id = str(metadata.get("id", ""))
@@ -643,26 +646,52 @@ def create_metadata_file(posts_metadata: list, post_thumbnails: dict, output_pat
             except:
                 timestamp = datetime.now().isoformat()
 
-        post_data = {
-            "post_id": post_id,
-            "title": metadata.get("title", "Untitled"),
-            "patreon_url": metadata.get("url", ""),
-            "timestamp": timestamp,
-            "thumbnail_filenames": post_thumbnails[post_id],
-            "raw_patreon_json": metadata
-        }
+        # Escape single quotes in strings
+        title = metadata.get("title", "Untitled").replace("'", "''")
+        patreon_url = metadata.get("url", "").replace("'", "''")
+        
+        # Build thumbnail_urls array
+        thumbnail_urls = [f"/static/thumbnails/{filename}" for filename in post_thumbnails[post_id]]
+        thumbnail_urls_str = "{" + ",".join(f'"{url}"' for url in thumbnail_urls) + "}"
+        
+        # First thumbnail as thumbnail_url
+        thumbnail_url = thumbnail_urls[0] if thumbnail_urls else ""
 
-        import_data["posts"].append(post_data)
+        # Generate INSERT statement
+        sql = f"""
+-- Post: {title}
+INSERT INTO posts (post_id, title, patreon_url, timestamp, thumbnail_url, thumbnail_urls, status, characters, series, tags, created_at, updated_at)
+VALUES (
+    '{post_id}',
+    '{title}',
+    '{patreon_url}',
+    '{timestamp}',
+    '{thumbnail_url}',
+    ARRAY{thumbnail_urls_str}::text[],
+    'pending',
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    NOW(),
+    NOW()
+)
+ON CONFLICT (post_id) DO NOTHING;
+"""
+        sql_lines.append(sql)
+
+    sql_lines.append("")
+    sql_lines.append("COMMIT;")
+    sql_lines.append("")
 
     with open(output_path, 'w') as f:
-        json.dump(import_data, f, indent=2, default=str)
+        f.write('\n'.join(sql_lines))
 
-    print(f"[INFO] Saved metadata for {len(import_data['posts'])} posts")
+    print(f"[INFO] Saved SQL for {len(posts_metadata)} posts")
 
 
 def run_server_ingest(server: str, staging_path: str) -> bool:
     """
-    SSH to server and run ingest script.
+    SSH to server to move thumbnails and apply SQL.
 
     Args:
         server: Server address
@@ -671,20 +700,53 @@ def run_server_ingest(server: str, staging_path: str) -> bool:
     Returns:
         True if successful
     """
-    print(f"[5/6] Running ingest script on server...")
+    print(f"[6/6] Ingesting posts on server...")
 
-    ssh_cmd = [
+    # Step 1: Move thumbnails to production directory
+    print("[INFO] Moving thumbnails to production...")
+    move_cmd = [
         "ssh", server,
-        f"cd ~/vamasubmissions && python3 scripts/ingest_imports.py --staging-dir {staging_path}"
+        f"mv {staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/"
     ]
-
-    result = subprocess.run(ssh_cmd, capture_output=True, text=True)
-
-    print(result.stdout)
-
+    
+    result = subprocess.run(move_cmd, capture_output=True, text=True)
+    
     if result.returncode != 0:
-        print(f"[ERROR] Ingest script failed: {result.stderr}")
+        print(f"[ERROR] Failed to move thumbnails: {result.stderr}")
         return False
+    
+    print("[INFO] Thumbnails moved successfully")
+
+    # Step 2: Apply SQL to database
+    print("[INFO] Applying SQL to database...")
+    sql_cmd = [
+        "ssh", server,
+        f"sudo -u postgres psql -d vamasubmissions -f {staging_path}/insert_posts.sql"
+    ]
+    
+    result = subprocess.run(sql_cmd, capture_output=True, text=True)
+    
+    if result.returncode != 0:
+        print(f"[ERROR] Failed to apply SQL: {result.stderr}")
+        return False
+    
+    print(result.stdout)
+    print("[INFO] SQL applied successfully")
+
+    # Step 3: Clean up staging area
+    print("[INFO] Cleaning up staging area...")
+    cleanup_cmd = [
+        "ssh", server,
+        f"rm -rf {staging_path}"
+    ]
+    
+    result = subprocess.run(cleanup_cmd, capture_output=True, text=True)
+    
+    if result.returncode != 0:
+        print(f"[WARNING] Failed to clean up staging area: {result.stderr}")
+        # Don't fail on cleanup error
+    else:
+        print("[INFO] Staging area cleaned up")
 
     return True
 
@@ -764,9 +826,9 @@ def main():
 
         print()
 
-        # Create metadata file
-        metadata_file = temp_path / "import_metadata.json"
-        create_metadata_file(posts_metadata, post_thumbnails, metadata_file)
+        # Create SQL file
+        sql_file = temp_path / "insert_posts.sql"
+        create_sql_file(posts_metadata, post_thumbnails, sql_file)
 
         print()
 
@@ -792,7 +854,10 @@ def main():
         if confirm != "yes":
             print("[INFO] Ingest cancelled. Files remain in staging area:")
             print(f"[INFO]   {args.server}:{args.staging_path}")
-            print(f"[INFO] You can manually run: ssh {args.server} 'cd ~/vamasubmissions && python3 scripts/ingest_imports.py'")
+            print(f"[INFO] You can manually run:")
+            print(f"[INFO]   ssh {args.server}")
+            print(f"[INFO]   mv {args.staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/")
+            print(f"[INFO]   sudo -u postgres psql -d vamasubmissions -f {args.staging_path}/insert_posts.sql")
             return
 
         print()
