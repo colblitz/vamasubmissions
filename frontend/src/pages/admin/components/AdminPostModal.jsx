@@ -24,10 +24,12 @@ export default function AdminPostModal({
   totalPosts,
   characters,
   series,
+  tags,
   onCharactersChange,
   onSeriesChange,
+  onTagsChange,
+  isSaving,
 }) {
-  const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [modalError, setModalError] = useState(null);
   const [modalSuccess, setModalSuccess] = useState(null);
@@ -41,16 +43,12 @@ export default function AdminPostModal({
   const [seriesInput, setSeriesInput] = useState("");
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
 
+  // Tags input
+  const [tagInput, setTagInput] = useState("");
+
   // Refs for click-away detection
   const characterRef = useRef(null);
   const seriesRef = useRef(null);
-
-  // Track unsaved changes
-  const hasUnsavedChanges =
-    JSON.stringify(characters.sort()) !==
-      JSON.stringify((post?.characters || []).sort()) ||
-    JSON.stringify(series.sort()) !==
-      JSON.stringify((post?.series || []).sort());
 
   const canPublish = characters.length > 0 && series.length > 0;
 
@@ -218,31 +216,6 @@ export default function AdminPostModal({
     setTimeout(() => setModalError(null), 3000);
   };
 
-  // Save changes
-  const handleSave = async () => {
-    setSaving(true);
-    setModalError(null);
-    setModalSuccess(null);
-
-    try {
-      await api.patch(`/api/admin/posts/${post.id}`, {
-        characters,
-        series,
-      });
-
-      // Update the post object to reflect saved changes
-      post.characters = [...characters];
-      post.series = [...series];
-
-      setModalSuccess("Changes saved!");
-      setTimeout(() => setModalSuccess(null), 3000);
-    } catch (err) {
-      setModalError(err.response?.data?.detail || "Failed to save changes");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // Publish post
   const handlePublish = async () => {
     if (!canPublish) {
@@ -257,10 +230,11 @@ export default function AdminPostModal({
     setModalSuccess(null);
 
     try {
-      // Save first
+      // Save first (including tags)
       await api.patch(`/api/admin/posts/${post.id}`, {
         characters,
         series,
+        tags,
       });
 
       // Then publish
@@ -336,16 +310,13 @@ export default function AdminPostModal({
                 <span className="px-2 py-1 bg-yellow-500 text-white text-xs font-bold rounded">
                   PENDING
                 </span>
-                {hasUnsavedChanges && (
-                  <span className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                        clipRule="evenodd"
-                      />
+                {isSaving && (
+                  <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded flex items-center gap-1">
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Unsaved
+                    Saving...
                   </span>
                 )}
               </div>
@@ -443,26 +414,28 @@ export default function AdminPostModal({
               </div>
             )}
 
-            {/* Thumbnail Grid */}
+            {/* Thumbnail Grid - Scrollable */}
             {post.thumbnail_urls && post.thumbnail_urls.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Images ({post.thumbnail_urls.length})
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {post.thumbnail_urls.map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="aspect-square bg-gray-100 rounded-lg overflow-hidden"
-                    >
-                      <img
-                        src={url}
-                        alt={`${post.title} - Image ${idx + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                      />
-                    </div>
-                  ))}
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {post.thumbnail_urls.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className="aspect-square bg-gray-100 rounded-lg overflow-hidden"
+                      >
+                        <img
+                          src={url}
+                          alt={`${post.title} - Image ${idx + 1}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -663,36 +636,64 @@ export default function AdminPostModal({
                 </div>
               </div>
 
-              {/* Tags Display (Read-only) */}
-              {post.tags && post.tags.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags (Read-only)
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-sm"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              {/* Tags Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" && tagInput.trim()) {
+                        e.preventDefault();
+                        if (!tags.includes(tagInput.trim())) {
+                          onTagsChange([...tags, tagInput.trim()]);
+                        }
+                        setTagInput("");
+                      }
+                    }}
+                    placeholder="Type tag and press Enter..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  />
+                  <button
+                    onClick={() => {
+                      if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+                        onTagsChange([...tags, tagInput.trim()]);
+                        setTagInput("");
+                      }
+                    }}
+                    disabled={!tagInput.trim()}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add
+                  </button>
                 </div>
-              )}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                    >
+                      {tag}
+                      <button
+                        onClick={() =>
+                          onTagsChange(tags.filter((_, i) => i !== idx))
+                        }
+                        className="hover:text-purple-600 font-bold"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleSave}
-                disabled={saving || !hasUnsavedChanges}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-
               <button
                 onClick={handlePublish}
                 disabled={publishing || !canPublish}
@@ -704,7 +705,7 @@ export default function AdminPostModal({
 
               <button
                 onClick={handleSkip}
-                className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium ml-auto"
+                className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
                 title="Mark as non-character post (announcement, etc.)"
               >
                 Skip Post

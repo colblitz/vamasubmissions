@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import AdminPostCard from "./components/AdminPostCard";
@@ -19,8 +19,12 @@ export default function ImportPostsPage() {
   // Modal state
   const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
 
-  // Local editing state for each post (characters and series)
+  // Local editing state for each post (characters, series, and tags)
   const [postEdits, setPostEdits] = useState({});
+
+  // Auto-save state
+  const [savingPosts, setSavingPosts] = useState({});
+  const saveTimers = useRef({});
 
   // Fetch pending posts
   const fetchPendingPosts = async () => {
@@ -44,6 +48,7 @@ export default function ImportPostsPage() {
           edits[post.id] = {
             characters: post.characters || [],
             series: post.series || [],
+            tags: post.tags || [],
           };
         });
         setPostEdits(edits);
@@ -57,6 +62,7 @@ export default function ImportPostsPage() {
           edits[post.id] = {
             characters: post.characters || [],
             series: post.series || [],
+            tags: post.tags || [],
           };
         });
         setPostEdits(edits);
@@ -80,6 +86,47 @@ export default function ImportPostsPage() {
     });
   };
 
+  // Auto-save function with debouncing
+  const autoSave = async (postId) => {
+    setSavingPosts((prev) => ({ ...prev, [postId]: true }));
+    
+    try {
+      const edits = postEdits[postId];
+      await api.patch(`/api/admin/posts/${postId}`, {
+        characters: edits.characters,
+        series: edits.series,
+        tags: edits.tags,
+      });
+
+      // Update the post in the list
+      setPendingPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, characters: edits.characters, series: edits.series, tags: edits.tags }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+      setError(err.response?.data?.detail || "Failed to auto-save changes");
+    } finally {
+      setSavingPosts((prev) => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  // Trigger auto-save with debouncing
+  const triggerAutoSave = (postId) => {
+    // Clear existing timer for this post
+    if (saveTimers.current[postId]) {
+      clearTimeout(saveTimers.current[postId]);
+    }
+
+    // Set new timer
+    saveTimers.current[postId] = setTimeout(() => {
+      autoSave(postId);
+    }, 500); // 500ms debounce
+  };
+
   // Update characters for a post
   const updatePostCharacters = (postId, characters) => {
     setPostEdits((prev) => ({
@@ -89,6 +136,7 @@ export default function ImportPostsPage() {
         characters,
       },
     }));
+    triggerAutoSave(postId);
   };
 
   // Update series for a post
@@ -100,6 +148,19 @@ export default function ImportPostsPage() {
         series,
       },
     }));
+    triggerAutoSave(postId);
+  };
+
+  // Update tags for a post
+  const updatePostTags = (postId, tags) => {
+    setPostEdits((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        tags,
+      },
+    }));
+    triggerAutoSave(postId);
   };
 
   // Save changes for a single post
@@ -271,6 +332,15 @@ export default function ImportPostsPage() {
     }
   };
 
+  // Select posts that are ready to publish (have both characters AND series)
+  const selectReadyToPublish = () => {
+    const readyPosts = pendingPosts.filter((post) => {
+      const edits = postEdits[post.id];
+      return edits && edits.characters.length > 0 && edits.series.length > 0;
+    });
+    setSelectedPosts(readyPosts.map((p) => p.id));
+  };
+
   // Modal handlers
   const handleOpenModal = (index) => {
     setModalState({ isOpen: true, postIndex: index });
@@ -328,12 +398,20 @@ export default function ImportPostsPage() {
         </div>
         
         {pendingPosts.length > 0 && (
-          <button
-            onClick={toggleSelectAll}
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-          >
-            {selectedPosts.length === pendingPosts.length ? "Deselect All" : "Select All"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={selectReadyToPublish}
+              className="text-green-600 hover:text-green-800 font-medium text-sm"
+            >
+              Select Ready to Publish
+            </button>
+            <button
+              onClick={toggleSelectAll}
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              {selectedPosts.length === pendingPosts.length ? "Deselect All" : "Select All"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -360,15 +438,14 @@ export default function ImportPostsPage() {
                 post={post}
                 isSelected={selectedPosts.includes(post.id)}
                 onToggleSelect={() => togglePostSelection(post.id)}
-                onSave={() => handleSave(post.id)}
                 onPublish={() => handlePublish(post.id)}
                 onSkip={() => handleSkip(post.id)}
                 onDelete={() => handleDelete(post.id)}
                 onClick={() => handleOpenModal(index)}
                 characters={postEdits[post.id]?.characters || []}
                 series={postEdits[post.id]?.series || []}
-                onCharactersChange={(chars) => updatePostCharacters(post.id, chars)}
-                onSeriesChange={(ser) => updatePostSeries(post.id, ser)}
+                tags={postEdits[post.id]?.tags || []}
+                isSaving={savingPosts[post.id] || false}
               />
             ))}
           </div>
@@ -424,8 +501,11 @@ export default function ImportPostsPage() {
           totalPosts={pendingPosts.length}
           characters={postEdits[pendingPosts[modalState.postIndex].id]?.characters || []}
           series={postEdits[pendingPosts[modalState.postIndex].id]?.series || []}
+          tags={postEdits[pendingPosts[modalState.postIndex].id]?.tags || []}
           onCharactersChange={(chars) => updatePostCharacters(pendingPosts[modalState.postIndex].id, chars)}
           onSeriesChange={(ser) => updatePostSeries(pendingPosts[modalState.postIndex].id, ser)}
+          onTagsChange={(tags) => updatePostTags(pendingPosts[modalState.postIndex].id, tags)}
+          isSaving={savingPosts[pendingPosts[modalState.postIndex].id] || false}
         />
       )}
     </div>
