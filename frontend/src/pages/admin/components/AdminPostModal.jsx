@@ -45,6 +45,11 @@ export default function AdminPostModal({
   const [characterSeriesMap, setCharacterSeriesMap] = useState({});
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
+  
+  // Refs for click-away detection
+  const characterRef = useRef(null);
+  const seriesRef = useRef(null);
+  const tagRef = useRef(null);
 
   const canPublish = characters.length > 0 && series.length > 0;
   
@@ -163,6 +168,27 @@ export default function AdminPostModal({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+  
+  // Click-away detection for autocomplete dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (characterRef.current && !characterRef.current.contains(event.target)) {
+        setCharacterSuggestions([]);
+        setCharacterSeriesMap({});
+      }
+      if (seriesRef.current && !seriesRef.current.contains(event.target)) {
+        setSeriesSuggestions([]);
+      }
+      if (tagRef.current && !tagRef.current.contains(event.target)) {
+        setTagSuggestions([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Auto-fill from title
   const handleAutoFill = () => {
@@ -530,7 +556,7 @@ export default function AdminPostModal({
                 {/* All inputs in a row */}
                 <div className="flex flex-wrap gap-2">
                   {/* Character input with autocomplete */}
-                  <div className="relative inline-flex items-center gap-1">
+                  <div ref={characterRef} className="relative inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={characterInput}
@@ -610,7 +636,7 @@ export default function AdminPostModal({
                   </div>
 
                   {/* Series input with autocomplete */}
-                  <div className="relative inline-flex items-center gap-1">
+                  <div ref={seriesRef} className="relative inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={seriesInput}
@@ -669,7 +695,7 @@ export default function AdminPostModal({
                   </div>
 
                   {/* Tag input with autocomplete */}
-                  <div className="relative inline-flex items-center gap-1">
+                  <div ref={tagRef} className="relative inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={tagInput}
