@@ -40,9 +40,45 @@ export default function AdminPostModal({
   const [tagInput, setTagInput] = useState("");
   
   // Autocomplete suggestions
+  const [characterSuggestions, setCharacterSuggestions] = useState([]);
+  const [seriesSuggestions, setSeriesSuggestions] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
 
   const canPublish = characters.length > 0 && series.length > 0;
+  
+  // Fetch character suggestions
+  const fetchCharacterSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      setCharacterSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await api.get("/api/posts/autocomplete/characters", {
+        params: { q: query, limit: 10 },
+      });
+      setCharacterSuggestions(response.data || []);
+    } catch (err) {
+      console.error("Failed to fetch character suggestions:", err);
+    }
+  };
+  
+  // Fetch series suggestions
+  const fetchSeriesSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      setSeriesSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await api.get("/api/posts/autocomplete/series", {
+        params: { q: query, limit: 10 },
+      });
+      setSeriesSuggestions(response.data || []);
+    } catch (err) {
+      console.error("Failed to fetch series suggestions:", err);
+    }
+  };
   
   // Fetch tag suggestions
   const fetchTagSuggestions = async (query) => {
@@ -61,7 +97,21 @@ export default function AdminPostModal({
     }
   };
   
-  // Debounced tag autocomplete
+  // Debounced autocomplete
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (characterInput) fetchCharacterSuggestions(characterInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [characterInput]);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (seriesInput) fetchSeriesSuggestions(seriesInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [seriesInput]);
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       if (tagInput) fetchTagSuggestions(tagInput);
@@ -452,8 +502,8 @@ export default function AdminPostModal({
 
                 {/* All inputs in a row */}
                 <div className="flex flex-wrap gap-2">
-                  {/* Character input */}
-                  <div className="inline-flex items-center gap-1">
+                  {/* Character input with autocomplete */}
+                  <div className="relative inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={characterInput}
@@ -465,6 +515,7 @@ export default function AdminPostModal({
                             onCharactersChange([...characters, characterInput.trim()]);
                           }
                           setCharacterInput("");
+                          setCharacterSuggestions([]);
                         }
                       }}
                       placeholder="Add character..."
@@ -475,6 +526,7 @@ export default function AdminPostModal({
                         if (characterInput.trim() && !characters.includes(characterInput.trim())) {
                           onCharactersChange([...characters, characterInput.trim()]);
                           setCharacterInput("");
+                          setCharacterSuggestions([]);
                         }
                       }}
                       disabled={!characterInput.trim()}
@@ -486,10 +538,31 @@ export default function AdminPostModal({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
+                    
+                    {/* Character autocomplete dropdown */}
+                    {characterSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {characterSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              if (!characters.includes(suggestion)) {
+                                onCharactersChange([...characters, suggestion]);
+                              }
+                              setCharacterInput("");
+                              setCharacterSuggestions([]);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Series input */}
-                  <div className="inline-flex items-center gap-1">
+                  {/* Series input with autocomplete */}
+                  <div className="relative inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={seriesInput}
@@ -501,6 +574,7 @@ export default function AdminPostModal({
                             onSeriesChange([...series, seriesInput.trim()]);
                           }
                           setSeriesInput("");
+                          setSeriesSuggestions([]);
                         }
                       }}
                       placeholder="Add series..."
@@ -511,6 +585,7 @@ export default function AdminPostModal({
                         if (seriesInput.trim() && !series.includes(seriesInput.trim())) {
                           onSeriesChange([...series, seriesInput.trim()]);
                           setSeriesInput("");
+                          setSeriesSuggestions([]);
                         }
                       }}
                       disabled={!seriesInput.trim()}
@@ -522,6 +597,27 @@ export default function AdminPostModal({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
+                    
+                    {/* Series autocomplete dropdown */}
+                    {seriesSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {seriesSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              if (!series.includes(suggestion)) {
+                                onSeriesChange([...series, suggestion]);
+                              }
+                              setSeriesInput("");
+                              setSeriesSuggestions([]);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Tag input with autocomplete */}
