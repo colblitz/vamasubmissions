@@ -511,6 +511,14 @@ def download_thumbnails(posts_metadata: list, output_dir: Path, max_workers: int
             image_urls = image.get('image_urls', {})
             thumbnail_url = image_urls.get('thumbnail')
             
+            # DEBUG: Print what we're getting for first image of first post
+            if ordinal == 0 and post_id == str(posts_metadata[0].get("id", "")):
+                print(f"[DEBUG] First image of post {post_id}:")
+                print(f"[DEBUG]   image_urls keys: {list(image_urls.keys())}")
+                print(f"[DEBUG]   thumbnail URL: {thumbnail_url[:100] if thumbnail_url else 'MISSING'}")
+                if 'thumbnail_large' in image_urls:
+                    print(f"[DEBUG]   thumbnail_large URL: {image_urls['thumbnail_large'][:100]}")
+            
             if not thumbnail_url:
                 thumbnail_url = image.get('download_url')
 
