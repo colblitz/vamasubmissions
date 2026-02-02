@@ -36,8 +36,12 @@ root_logger.addHandler(file_handler)
 # Also configure uvicorn loggers explicitly
 for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error"]:
     logger = logging.getLogger(logger_name)
+    # Clear existing handlers to avoid duplicates
+    logger.handlers.clear()
+    logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
     logger.setLevel(logging.INFO)
+    logger.propagate = False  # Don't propagate to root logger
 
 from app.core.config import settings
 from app.core.database import engine, Base
