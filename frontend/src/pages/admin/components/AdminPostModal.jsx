@@ -38,8 +38,36 @@ export default function AdminPostModal({
   const [characterInput, setCharacterInput] = useState("");
   const [seriesInput, setSeriesInput] = useState("");
   const [tagInput, setTagInput] = useState("");
+  
+  // Autocomplete suggestions
+  const [tagSuggestions, setTagSuggestions] = useState([]);
 
   const canPublish = characters.length > 0 && series.length > 0;
+  
+  // Fetch tag suggestions
+  const fetchTagSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      setTagSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await api.get("/api/posts/autocomplete/tags", {
+        params: { q: query, limit: 10 },
+      });
+      setTagSuggestions(response.data || []);
+    } catch (err) {
+      console.error("Failed to fetch tag suggestions:", err);
+    }
+  };
+  
+  // Debounced tag autocomplete
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (tagInput) fetchTagSuggestions(tagInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [tagInput]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -496,8 +524,8 @@ export default function AdminPostModal({
                     </button>
                   </div>
 
-                  {/* Tag input */}
-                  <div className="inline-flex items-center gap-1">
+                  {/* Tag input with autocomplete */}
+                  <div className="relative inline-flex items-center gap-1">
                     <input
                       type="text"
                       value={tagInput}
@@ -509,6 +537,7 @@ export default function AdminPostModal({
                             onTagsChange([...tags, tagInput.trim()]);
                           }
                           setTagInput("");
+                          setTagSuggestions([]);
                         }
                       }}
                       placeholder="Add tag..."
@@ -519,6 +548,7 @@ export default function AdminPostModal({
                         if (tagInput.trim() && !tags.includes(tagInput.trim())) {
                           onTagsChange([...tags, tagInput.trim()]);
                           setTagInput("");
+                          setTagSuggestions([]);
                         }
                       }}
                       disabled={!tagInput.trim()}
@@ -529,6 +559,27 @@ export default function AdminPostModal({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
+                    
+                    {/* Tag autocomplete dropdown */}
+                    {tagSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {tagSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              if (!tags.includes(suggestion)) {
+                                onTagsChange([...tags, suggestion]);
+                              }
+                              setTagInput("");
+                              setTagSuggestions([]);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
