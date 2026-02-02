@@ -163,7 +163,7 @@ export default function AdminPostCard({
             ))}
 
             {/* Tags preview (first 3) */}
-            {post.tags?.slice(0, 3).map((tag, idx) => (
+            {tags?.slice(0, 3).map((tag, idx) => (
               <span
                 key={`tag-${idx}`}
                 className="px-2 py-0.5 bg-slate-700 text-white rounded text-xs"
@@ -171,9 +171,9 @@ export default function AdminPostCard({
                 {tag}
               </span>
             ))}
-            {post.tags?.length > 3 && (
+            {tags?.length > 3 && (
               <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
-                +{post.tags.length - 3}
+                +{tags.length - 3}
               </span>
             )}
           </div>
