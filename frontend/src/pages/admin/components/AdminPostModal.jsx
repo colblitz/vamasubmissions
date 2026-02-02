@@ -420,22 +420,20 @@ export default function AdminPostModal({
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Images ({post.thumbnail_urls.length})
                 </h3>
-                <div className="max-h-96 overflow-y-auto">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {post.thumbnail_urls.map((url, idx) => (
-                      <div
-                        key={idx}
-                        className="aspect-square bg-gray-100 rounded-lg overflow-hidden"
-                      >
-                        <img
-                          src={url}
-                          alt={`${post.title} - Image ${idx + 1}`}
-                          loading="lazy"
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto">
+                  {post.thumbnail_urls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden"
+                    >
+                      <img
+                        src={url}
+                        alt={`${post.title} - Image ${idx + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
