@@ -27,6 +27,7 @@ export default function AdminPostModal({
   tags,
   onCharactersChange,
   onSeriesChange,
+  onCharactersAndSeriesChange,
   onTagsChange,
   isSaving,
 }) {
@@ -41,23 +42,36 @@ export default function AdminPostModal({
   
   // Autocomplete suggestions
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
+  const [characterSeriesMap, setCharacterSeriesMap] = useState({});
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
 
   const canPublish = characters.length > 0 && series.length > 0;
   
-  // Fetch character suggestions
+  // Fetch character suggestions with series info
   const fetchCharacterSuggestions = async (query) => {
     if (!query || query.length < 2) {
       setCharacterSuggestions([]);
+      setCharacterSeriesMap({});
       return;
     }
 
     try {
-      const response = await api.get("/api/posts/autocomplete/characters", {
+      const response = await api.get("/api/posts/autocomplete/characters-with-series", {
         params: { q: query, limit: 10 },
       });
-      setCharacterSuggestions(response.data || []);
+      const data = response.data || [];
+      
+      // Build map of character -> series
+      const charSeriesMap = {};
+      const charNames = [];
+      data.forEach((item) => {
+        charSeriesMap[item.character] = item.series;
+        charNames.push(item.character);
+      });
+      
+      setCharacterSeriesMap(charSeriesMap);
+      setCharacterSuggestions(charNames);
     } catch (err) {
       console.error("Failed to fetch character suggestions:", err);
     }
@@ -196,13 +210,8 @@ export default function AdminPostModal({
       console.log('[AUTO-FILL] New characters:', newCharacters);
       console.log('[AUTO-FILL] New series:', newSeries);
 
-      // Update both at once to avoid race condition
-      if (newCharacters !== characters) {
-        onCharactersChange(newCharacters);
-      }
-      if (newSeries !== series) {
-        onSeriesChange(newSeries);
-      }
+      // Update both at once using combined method
+      onCharactersAndSeriesChange(newCharacters, newSeries);
 
       setModalSuccess("Auto-filled character and series from title!");
       setTimeout(() => setModalSuccess(null), 3000);
@@ -557,22 +566,43 @@ export default function AdminPostModal({
                       </svg>
                     </button>
                     
-                    {/* Character autocomplete dropdown */}
+                    {/* Character autocomplete dropdown with series info */}
                     {characterSuggestions.length > 0 && (
                       <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {characterSuggestions.map((suggestion, idx) => (
                           <button
                             key={idx}
                             onClick={() => {
-                              if (!characters.includes(suggestion)) {
-                                onCharactersChange([...characters, suggestion]);
+                              const newChars = characters.includes(suggestion) 
+                                ? characters 
+                                : [...characters, suggestion];
+                              
+                              const associatedSeries = characterSeriesMap[suggestion];
+                              const newSeries = (associatedSeries && !series.includes(associatedSeries))
+                                ? [...series, associatedSeries]
+                                : series;
+                              
+                              // Update both at once if series was added
+                              if (newSeries !== series) {
+                                onCharactersAndSeriesChange(newChars, newSeries);
+                              } else {
+                                onCharactersChange(newChars);
                               }
+                              
                               setCharacterInput("");
                               setCharacterSuggestions([]);
+                              setCharacterSeriesMap({});
                             }}
                             className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm transition-colors"
                           >
-                            {suggestion}
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">{suggestion}</span>
+                              {characterSeriesMap[suggestion] && (
+                                <span className="text-xs text-gray-500 ml-2">
+                                  {characterSeriesMap[suggestion]}
+                                </span>
+                              )}
+                            </div>
                           </button>
                         ))}
                       </div>

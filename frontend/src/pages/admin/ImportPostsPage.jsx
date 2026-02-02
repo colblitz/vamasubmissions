@@ -130,6 +130,20 @@ export default function ImportPostsPage() {
     }, 500); // 500ms debounce
   };
 
+  // Update both characters and series at once (for auto-fill)
+  const updatePostCharactersAndSeries = (postId, characters, series) => {
+    const newEdits = {
+      ...postEdits[postId],
+      characters,
+      series,
+    };
+    setPostEdits((prev) => ({
+      ...prev,
+      [postId]: newEdits,
+    }));
+    triggerAutoSave(postId, newEdits);
+  };
+
   // Update characters for a post
   const updatePostCharacters = (postId, characters) => {
     const newEdits = {
@@ -530,6 +544,7 @@ export default function ImportPostsPage() {
           tags={postEdits[pendingPosts[modalState.postIndex].id]?.tags || []}
           onCharactersChange={(chars) => updatePostCharacters(pendingPosts[modalState.postIndex].id, chars)}
           onSeriesChange={(ser) => updatePostSeries(pendingPosts[modalState.postIndex].id, ser)}
+          onCharactersAndSeriesChange={(chars, ser) => updatePostCharactersAndSeries(pendingPosts[modalState.postIndex].id, chars, ser)}
           onTagsChange={(tags) => updatePostTags(pendingPosts[modalState.postIndex].id, tags)}
           isSaving={savingPosts[pendingPosts[modalState.postIndex].id] || false}
         />
