@@ -455,9 +455,11 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
 
 
 def download_single_thumbnail(url: str, output_path: Path) -> bool:
-    """Download a single thumbnail."""
+    """Download a single thumbnail with proper headers."""
     try:
-        response = requests.get(url, timeout=60)
+        # Use headers to match redownload script behavior
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=60)
         response.raise_for_status()
 
         with open(output_path, 'wb') as f:
