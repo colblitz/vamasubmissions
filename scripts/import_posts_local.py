@@ -650,9 +650,10 @@ def create_sql_file(posts_metadata: list, post_thumbnails: dict, output_path: Pa
         title = metadata.get("title", "Untitled").replace("'", "''")
         patreon_url = metadata.get("url", "").replace("'", "''")
         
-        # Build thumbnail_urls array
+        # Build thumbnail_urls array - properly escape for PostgreSQL
         thumbnail_urls = [f"/static/thumbnails/{filename}" for filename in post_thumbnails[post_id]]
-        thumbnail_urls_str = "{" + ",".join(f'"{url}"' for url in thumbnail_urls) + "}"
+        # PostgreSQL array literal syntax: ARRAY['val1', 'val2']
+        thumbnail_urls_str = "ARRAY[" + ",".join(f"'{url}'" for url in thumbnail_urls) + "]"
         
         # First thumbnail as thumbnail_url
         thumbnail_url = thumbnail_urls[0] if thumbnail_urls else ""
@@ -667,7 +668,7 @@ VALUES (
     '{patreon_url}',
     '{timestamp}',
     '{thumbnail_url}',
-    ARRAY{thumbnail_urls_str}::text[],
+    {thumbnail_urls_str}::text[],
     'pending',
     ARRAY[]::text[],
     ARRAY[]::text[],
