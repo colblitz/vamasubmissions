@@ -88,7 +88,73 @@ def fetch_latest_post_date(server: str) -> dict:
         return None
 
 
-def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chrome_profile: str = "Profile 1") -> list:
+def find_chrome_profile_with_patreon_cookies() -> tuple:
+    """
+    Auto-detect which Chrome profile has Patreon cookies.
+    
+    Returns:
+        Tuple of (profile_name, cookie_file_path) or (None, None) if not found
+    """
+    import platform
+    import sqlite3
+    
+    system = platform.system()
+    
+    # Get Chrome user data directory
+    if system == "Darwin":  # macOS
+        chrome_dir = Path.home() / "Library/Application Support/Google/Chrome"
+    elif system == "Linux":
+        chrome_dir = Path.home() / ".config/google-chrome"
+    elif system == "Windows":
+        chrome_dir = Path.home() / "AppData/Local/Google/Chrome/User Data"
+    else:
+        return None, None
+    
+    if not chrome_dir.exists():
+        return None, None
+    
+    # Common profile names to check
+    profile_names = ["Default", "Profile 1", "Profile 2", "Profile 3", "Profile 4", "Profile 5"]
+    
+    for profile_name in profile_names:
+        cookie_file = chrome_dir / profile_name / "Cookies"
+        
+        if not cookie_file.exists():
+            continue
+        
+        # Try to check if this profile has Patreon cookies
+        try:
+            # Make a copy to avoid locking issues
+            import tempfile
+            import shutil
+            
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp_path = tmp.name
+            
+            shutil.copy2(cookie_file, tmp_path)
+            
+            conn = sqlite3.connect(tmp_path)
+            cursor = conn.cursor()
+            
+            # Check for patreon.com cookies
+            cursor.execute("SELECT COUNT(*) FROM cookies WHERE host_key LIKE '%patreon.com%'")
+            count = cursor.fetchone()[0]
+            
+            conn.close()
+            Path(tmp_path).unlink()
+            
+            if count > 0:
+                print(f"[INFO] Found Patreon cookies in Chrome profile: {profile_name}")
+                return profile_name, cookie_file
+        
+        except Exception as e:
+            # Skip profiles we can't read
+            continue
+    
+    return None, None
+
+
+def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chrome_profile: str = None) -> tuple:
     """
     Fetch post IDs from Patreon API using cookies from Chrome.
     Paginates through all posts until hitting the since_date.
@@ -96,10 +162,12 @@ def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chr
     Args:
         creator_username: Patreon creator username (not used, we use campaign_id directly)
         since_date: Fetch posts since this date
-        chrome_profile: Chrome profile name
+        chrome_profile: Chrome profile name (auto-detected if None)
     
     Returns:
-        List of dicts with post_id, title, published_at, url
+        Tuple of (post_infos, chrome_profile) where:
+        - post_infos: List of dicts with post_id, title, published_at, url
+        - chrome_profile: Detected or specified Chrome profile name
     """
     print(f"[2/6] Fetching post list from Patreon API...")
     
@@ -110,11 +178,40 @@ def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chr
         return []
     
     try:
+        # Auto-detect Chrome profile if not specified
+        if chrome_profile is None:
+            print("[INFO] Auto-detecting Chrome profile with Patreon cookies...")
+            chrome_profile, cookie_file = find_chrome_profile_with_patreon_cookies()
+            
+            if chrome_profile is None:
+                print("[ERROR] Could not find Chrome profile with Patreon cookies")
+                print("[INFO] Make sure you're logged into Patreon in Chrome")
+                return []
+        else:
+            # Use specified profile
+            import platform
+            system = platform.system()
+            
+            if system == "Darwin":  # macOS
+                cookie_file = Path.home() / "Library/Application Support/Google/Chrome" / chrome_profile / "Cookies"
+            elif system == "Linux":
+                cookie_file = Path.home() / ".config/google-chrome" / chrome_profile / "Cookies"
+            elif system == "Windows":
+                cookie_file = Path.home() / "AppData/Local/Google/Chrome/User Data" / chrome_profile / "Cookies"
+            else:
+                print(f"[ERROR] Unsupported OS: {system}")
+                return []
+            
+            if not cookie_file.exists():
+                print(f"[ERROR] Chrome cookies file not found: {cookie_file}")
+                print(f"[INFO] Make sure Chrome is closed and you're logged into Patreon")
+                return []
+        
         # Get cookies from Chrome
         cookies_dict = chrome_cookies(
             'https://www.patreon.com',
             browser='chrome',
-            cookie_file=str(Path.home() / "Library/Application Support/Google/Chrome" / chrome_profile / "Cookies")
+            cookie_file=str(cookie_file)
         )
         
         # Make since_date timezone-aware if it isn't
@@ -214,13 +311,13 @@ def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chr
                 break
         
         print(f"[INFO] Found {len(new_posts)} new posts across {page_num} pages")
-        return new_posts
+        return new_posts, chrome_profile
     
     except Exception as e:
         print(f"[ERROR] Failed to fetch post IDs: {e}")
         import traceback
         traceback.print_exc()
-        return []
+        return [], None
 
 
 def run_gallery_dl_for_single_post(post_id: str, chrome_profile: str, temp_dir: Path) -> dict:
@@ -598,7 +695,9 @@ def main():
     print()
 
     # Step 2: Fetch post IDs from Patreon API
-    post_infos = fetch_post_ids_from_patreon(args.creator, since_date, args.chrome_profile)
+    # Pass None to auto-detect Chrome profile, or use --chrome-profile to specify
+    chrome_profile_arg = None if args.chrome_profile == "Profile 1" else args.chrome_profile
+    post_infos, detected_chrome_profile = fetch_post_ids_from_patreon(args.creator, since_date, chrome_profile_arg)
 
     if not post_infos:
         print("[INFO] No new posts found")
@@ -620,7 +719,7 @@ def main():
     print()
 
     # Step 3: Run gallery-dl for each post to get full metadata
-    posts_metadata = run_gallery_dl_for_posts(post_infos, args.chrome_profile)
+    posts_metadata = run_gallery_dl_for_posts(post_infos, detected_chrome_profile)
 
     if not posts_metadata:
         print("[INFO] No metadata fetched, aborting")
