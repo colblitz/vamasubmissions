@@ -35,8 +35,6 @@ export default function AdminPostCard({
   tags,
   isSaving,
 }) {
-  const [isHovered, setIsHovered] = useState(false);
-
   // Calculate additional image count for badge
   const additionalImageCount =
     post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
@@ -45,29 +43,26 @@ export default function AdminPostCard({
 
   return (
     <div
-      className={`bg-white rounded-lg overflow-hidden flex flex-col relative transition-all ${
+      className={`bg-white rounded-lg overflow-hidden flex flex-col relative transition-all cursor-pointer ${
         isSelected ? "ring-4 ring-blue-500 shadow-lg" : "shadow hover:shadow-lg"
       }`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onClick={onToggleSelect}
     >
       {/* Checkbox Overlay - Top Left */}
       <div className="absolute top-2 left-2 z-10">
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleSelect();
-          }}
-          className="w-6 h-6 cursor-pointer rounded border-2 border-white shadow-lg"
-          onClick={(e) => e.stopPropagation()}
+          onChange={() => {}}
+          className="w-6 h-6 cursor-pointer rounded border-2 border-white shadow-lg pointer-events-none"
         />
       </div>
 
-      {/* Pending Badge - Top Right */}
+      {/* Pending Badge - Top Right - Green if ready to publish */}
       <div className="absolute top-2 right-2 z-10">
-        <span className="px-2 py-1 bg-yellow-500 text-white text-xs font-bold rounded shadow-lg">
+        <span className={`px-2 py-1 text-white text-xs font-bold rounded shadow-lg ${
+          canPublish ? "bg-green-500" : "bg-yellow-500"
+        }`}>
           PENDING
         </span>
       </div>
@@ -85,10 +80,13 @@ export default function AdminPostCard({
         </div>
       )}
 
-      {/* Thumbnail - Clickable to open modal */}
+      {/* Thumbnail - Double-click to open modal */}
       <div
-        className="relative aspect-square cursor-pointer group"
-        onClick={onClick}
+        className="relative aspect-square"
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
       >
         {post.thumbnail_urls?.[0] ? (
           <>
@@ -96,7 +94,7 @@ export default function AdminPostCard({
               src={post.thumbnail_urls[0]}
               alt={post.title}
               loading="lazy"
-              className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+              className="w-full h-full object-cover"
             />
             {additionalImageCount > 0 && (
               <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm font-semibold">
@@ -119,15 +117,6 @@ export default function AdminPostCard({
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-          </div>
-        )}
-
-        {/* Hover overlay with "Click to edit" */}
-        {isHovered && (
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center transition-opacity">
-            <span className="text-white font-semibold text-lg">
-              Click to edit
-            </span>
           </div>
         )}
       </div>
@@ -188,15 +177,7 @@ export default function AdminPostCard({
           </div>
         </div>
 
-        {/* Status indicator - shows if ready to publish */}
-        {canPublish && (
-          <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            Ready to publish
-          </div>
-        )}
+
       </div>
     </div>
   );
