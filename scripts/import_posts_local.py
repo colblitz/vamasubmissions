@@ -376,7 +376,7 @@ def run_gallery_dl_for_single_post(post_id: str, chrome_profile: str, temp_dir: 
 def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1", skip_confirmations: bool = False) -> list:
     """
     Run gallery-dl for each individual post URL to get full metadata.
-    Parallelizes if >10 posts.
+    Always parallelizes for speed.
     
     Args:
         post_infos: List of dicts with id, title, published_at, url
@@ -387,12 +387,6 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
         List of post metadata dicts with images
     """
     print(f"[3/6] Running gallery-dl for {len(post_infos)} individual posts...")
-    
-    # TESTING: Limit to last 3 posts (oldest) to avoid chronological gaps
-    if len(post_infos) > 3:
-        print(f"[DEBUG] TESTING MODE: Limiting to last 3 posts (oldest) out of {len(post_infos)}")
-        print(f"[DEBUG] This avoids chronological gaps - we'll import oldest first")
-        post_infos = post_infos[-3:]
     
     print()
     print(f"[INFO] Will fetch metadata for {len(post_infos)} posts:")
@@ -411,42 +405,27 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         
-        # Decide whether to parallelize
-        use_parallel = len(post_infos) > 10
+        # Always parallelize for speed (use 5 workers)
+        print(f"[INFO] Using parallel execution with 5 workers...")
+        posts_metadata = []
         
-        if use_parallel:
-            print(f"[INFO] Using parallel execution ({len(post_infos)} posts)...")
-            posts_metadata = []
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_post = {
+                executor.submit(run_gallery_dl_for_single_post, info['id'], chrome_profile, temp_path): info
+                for info in post_infos
+            }
             
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_post = {
-                    executor.submit(run_gallery_dl_for_single_post, info['id'], chrome_profile, temp_path): info
-                    for info in post_infos
-                }
-                
-                for future in as_completed(future_to_post):
-                    post_info = future_to_post[future]
-                    try:
-                        metadata = future.result()
-                        if metadata:
-                            posts_metadata.append(metadata)
-                            print(f"[INFO]   ✓ {post_info['id']}: {post_info['title']}")
-                        else:
-                            print(f"[WARNING]   ✗ {post_info['id']}: Failed to fetch metadata")
-                    except Exception as e:
-                        print(f"[WARNING]   ✗ {post_info['id']}: Exception: {e}")
-        
-        else:
-            print(f"[INFO] Using sequential execution ({len(post_infos)} posts)...")
-            posts_metadata = []
-            
-            for info in post_infos:
-                metadata = run_gallery_dl_for_single_post(info['id'], chrome_profile, temp_path)
-                if metadata:
-                    posts_metadata.append(metadata)
-                    print(f"[INFO]   ✓ {info['id']}: {info['title']}")
-                else:
-                    print(f"[WARNING]   ✗ {info['id']}: Failed to fetch metadata")
+            for future in as_completed(future_to_post):
+                post_info = future_to_post[future]
+                try:
+                    metadata = future.result()
+                    if metadata:
+                        posts_metadata.append(metadata)
+                        print(f"[INFO]   ✓ {post_info['id']}: {post_info['title']}")
+                    else:
+                        print(f"[WARNING]   ✗ {post_info['id']}: Failed to fetch metadata")
+                except Exception as e:
+                    print(f"[WARNING]   ✗ {post_info['id']}: Exception: {e}")
         
         print()
         print(f"[INFO] Successfully fetched metadata for {len(posts_metadata)} out of {len(post_infos)} posts")
@@ -597,6 +576,7 @@ def rsync_to_server(local_dir: Path, server: str, remote_path: str) -> bool:
         return False
     
     print(f"[INFO] Uploading {len(files_to_upload)} items with rsync...")
+    print()
     
     # Use rsync for faster, more reliable transfer
     # -a: archive mode (recursive, preserve permissions, etc.)
@@ -612,14 +592,14 @@ def rsync_to_server(local_dir: Path, server: str, remote_path: str) -> bool:
         f"{server}:{remote_path}/"
     ]
     
-    result = subprocess.run(rsync_cmd, capture_output=True, text=True)
+    # Run rsync without capturing output so it shows in real-time
+    result = subprocess.run(rsync_cmd)
     
     if result.returncode != 0:
-        print(f"[ERROR] Rsync failed: {result.stderr}")
+        print(f"[ERROR] Rsync failed with exit code {result.returncode}")
         return False
     
-    # Show summary from rsync output
-    print(result.stdout)
+    print()
     print(f"[INFO] Successfully uploaded {len(files_to_upload)} items")
     return True
 
@@ -970,11 +950,25 @@ def main():
 
     # Step 6: Confirm before running ingest
     if not args.skip_confirmations:
+        print("=" * 70)
         print("[6/6] Ready to ingest posts on server")
+        print("=" * 70)
+        print()
+        print(f"[INFO] Posts to import:")
+        for metadata in posts_metadata:
+            post_id = str(metadata.get("id", ""))
+            title = metadata.get("title", "Untitled")
+            num_images = len(post_thumbnails.get(post_id, []))
+            print(f"  - {post_id}: {title} ({num_images} images)")
+        print()
+        print(f"[INFO] Total: {len(post_thumbnails)} posts, {len(list(thumbnails_dir.glob('*')))} thumbnails")
+        print()
         print(f"[INFO] This will:")
         print(f"  - Move {len(list(thumbnails_dir.glob('*')))} thumbnails to production")
         print(f"  - Insert {len(post_thumbnails)} posts into database")
         print(f"  - Clean up staging area on success")
+        print()
+        print("=" * 70)
         print()
 
         confirm = input("Continue with ingest? (yes/no): ").strip().lower()
