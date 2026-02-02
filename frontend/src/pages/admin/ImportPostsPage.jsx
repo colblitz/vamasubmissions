@@ -461,7 +461,7 @@ export default function ImportPostsPage() {
                     </span>
                     <button
                       onClick={() => setSelectedPosts([])}
-                      className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
                     >
                       Deselect All
                     </button>
@@ -472,13 +472,25 @@ export default function ImportPostsPage() {
                       onClick={handleBulkPublish}
                       className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
                     >
-                      Publish All
+                      Publish ({selectedPosts.length})
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (selectedPosts.length === 0) return;
+                        for (const postId of selectedPosts) {
+                          await handleSkip(postId);
+                        }
+                        setSelectedPosts([]);
+                      }}
+                      className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
+                    >
+                      Skip ({selectedPosts.length})
                     </button>
                     <button
                       onClick={handleBulkDelete}
                       className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
                     >
-                      Delete All
+                      Delete ({selectedPosts.length})
                     </button>
                   </div>
                 </div>

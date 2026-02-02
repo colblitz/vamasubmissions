@@ -30,7 +30,6 @@ export default function AdminPostModal({
   onTagsChange,
   isSaving,
 }) {
-  const [publishing, setPublishing] = useState(false);
   const [modalError, setModalError] = useState(null);
   const [modalSuccess, setModalSuccess] = useState(null);
 
@@ -688,33 +687,6 @@ export default function AdminPostModal({
                   ))}
                 </div>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handlePublish}
-                disabled={publishing || !canPublish}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                title={canPublish ? "Publish post" : "Add characters and series to publish"}
-              >
-                {publishing ? "Publishing..." : "Publish"}
-              </button>
-
-              <button
-                onClick={handleSkip}
-                className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
-                title="Mark as non-character post (announcement, etc.)"
-              >
-                Skip Post
-              </button>
-
-              <button
-                onClick={handleDelete}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
-              >
-                Delete Post
-              </button>
             </div>
 
             {/* View on Patreon Link */}
