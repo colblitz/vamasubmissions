@@ -701,12 +701,27 @@ def run_server_ingest(server: str, staging_path: str) -> bool:
         True if successful
     """
     print(f"[6/6] Ingesting posts on server...")
+    print()
 
-    # Step 1: Move thumbnails to production directory
+    # Step 1: Check what files we have in staging
+    print("[INFO] Checking staging area contents...")
+    check_cmd = [
+        "ssh", server,
+        f"ls -lah {staging_path}/ && echo '---' && ls -lah {staging_path}/thumbnails/ | head -20"
+    ]
+    
+    result = subprocess.run(check_cmd, capture_output=True, text=True)
+    print(result.stdout)
+    if result.stderr:
+        print(f"[DEBUG] {result.stderr}")
+    print()
+
+    # Step 2: Move thumbnails to production directory
     print("[INFO] Moving thumbnails to production...")
+    print(f"[CMD] mv {staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/")
     move_cmd = [
         "ssh", server,
-        f"mv {staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/"
+        f"mv -v {staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/"
     ]
     
     result = subprocess.run(move_cmd, capture_output=True, text=True)
@@ -715,10 +730,25 @@ def run_server_ingest(server: str, staging_path: str) -> bool:
         print(f"[ERROR] Failed to move thumbnails: {result.stderr}")
         return False
     
-    print("[INFO] Thumbnails moved successfully")
+    if result.stdout:
+        print(result.stdout)
+    print("[SUCCESS] Thumbnails moved successfully")
+    print()
 
-    # Step 2: Apply SQL to database
+    # Step 3: Show SQL file contents (first few lines)
+    print("[INFO] SQL file preview (first 30 lines)...")
+    preview_cmd = [
+        "ssh", server,
+        f"head -30 {staging_path}/insert_posts.sql"
+    ]
+    
+    result = subprocess.run(preview_cmd, capture_output=True, text=True)
+    print(result.stdout)
+    print()
+
+    # Step 4: Apply SQL to database
     print("[INFO] Applying SQL to database...")
+    print(f"[CMD] sudo -u postgres psql -d vamasubmissions -f {staging_path}/insert_posts.sql")
     sql_cmd = [
         "ssh", server,
         f"sudo -u postgres psql -d vamasubmissions -f {staging_path}/insert_posts.sql"
@@ -731,9 +761,21 @@ def run_server_ingest(server: str, staging_path: str) -> bool:
         return False
     
     print(result.stdout)
-    print("[INFO] SQL applied successfully")
+    print("[SUCCESS] SQL applied successfully")
+    print()
 
-    # Step 3: Clean up staging area
+    # Step 5: Verify posts were inserted
+    print("[INFO] Verifying posts in database...")
+    verify_cmd = [
+        "ssh", server,
+        "sudo -u postgres psql -d vamasubmissions -c \"SELECT post_id, title, status, created_at FROM posts ORDER BY created_at DESC LIMIT 5;\""
+    ]
+    
+    result = subprocess.run(verify_cmd, capture_output=True, text=True)
+    print(result.stdout)
+    print()
+
+    # Step 6: Clean up staging area
     print("[INFO] Cleaning up staging area...")
     cleanup_cmd = [
         "ssh", server,
@@ -746,7 +788,7 @@ def run_server_ingest(server: str, staging_path: str) -> bool:
         print(f"[WARNING] Failed to clean up staging area: {result.stderr}")
         # Don't fail on cleanup error
     else:
-        print("[INFO] Staging area cleaned up")
+        print("[SUCCESS] Staging area cleaned up")
 
     return True
 
