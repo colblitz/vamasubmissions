@@ -42,122 +42,316 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 from app.utils.thumbnail_utils import generate_thumbnail_filename, get_file_extension
 
 
-def fetch_latest_post_date(api_url: str) -> dict:
+def fetch_latest_post_date(server: str) -> dict:
     """
-    Fetch the latest post date from production API.
+    Fetch the latest post date from production database via SSH.
 
     Args:
-        api_url: Base API URL (e.g., https://vamarequests.com)
+        server: Server address (e.g., deploy@hostname)
 
     Returns:
         Dict with latest_date and post_id, or None if no posts exist
     """
-    print("[1/6] Fetching latest post date from production...")
+    print("[1/6] Fetching latest post date from production database...")
 
     try:
-        response = requests.get(urljoin(api_url, "/api/posts/latest-date"), timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        if data.get("latest_date"):
-            print(f"[INFO] Latest post: {data['post_id']} at {data['latest_date']}")
+        ssh_cmd = [
+            "ssh", server,
+            "sudo -u postgres psql -d vamasubmissions -t -c \"SELECT post_id, timestamp FROM posts WHERE status='published' ORDER BY timestamp DESC LIMIT 1;\""
+        ]
+        
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=10)
+        
+        if result.returncode != 0:
+            print(f"[ERROR] Database query failed: {result.stderr}")
+            return None
+        
+        output = result.stdout.strip()
+        
+        if not output or output == "":
+            print("[INFO] No posts in database yet")
+            return {"latest_date": None, "post_id": None}
+        
+        # Parse output: "post_id | timestamp"
+        parts = [p.strip() for p in output.split('|')]
+        if len(parts) >= 2:
+            post_id = parts[0]
+            timestamp_str = parts[1]
+            print(f"[INFO] Latest post: {post_id} at {timestamp_str}")
+            return {"latest_date": timestamp_str, "post_id": post_id}
         else:
-            print("[INFO] No posts in database yet, will use fallback date")
-
-        return data
+            print("[WARNING] Unexpected database output format")
+            return None
 
     except Exception as e:
         print(f"[ERROR] Failed to fetch latest date: {e}")
         return None
 
 
-def run_gallery_dl(creator_username: str, since_date: datetime, chrome_profile: str = "Profile 1") -> list:
+def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chrome_profile: str = "Profile 1") -> list:
     """
-    Run gallery-dl locally with --cookies-from-browser.
-
+    Fetch post IDs from Patreon API using cookies from Chrome.
+    Paginates through all posts until hitting the since_date.
+    
     Args:
-        creator_username: Patreon creator username
+        creator_username: Patreon creator username (not used, we use campaign_id directly)
         since_date: Fetch posts since this date
         chrome_profile: Chrome profile name
-
+    
     Returns:
-        List of post metadata dicts (filtered by since_date in Python)
+        List of dicts with post_id, title, published_at, url
     """
-    print(f"[2/6] Running gallery-dl for {creator_username} since {since_date.date()}...")
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir)
-
-        # Build gallery-dl command
-        # NOTE: Removed date filter to get ALL posts, we'll filter in Python
-        # The gallery-dl date filter with abort() was stopping after first mismatch
-        cmd = [
-            "gallery-dl",
-            "--write-info-json",
-            "--no-download",
-            "--option", f"base-directory={temp_dir}",
-            "--cookies-from-browser", f"chrome:{chrome_profile}",
-            f"https://www.patreon.com/{creator_username}/posts"
-        ]
-
-        print(f"[INFO] Command: {' '.join(cmd)}")
-        print(f"[INFO] This may take a few minutes...")
-
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-
-            if result.returncode != 0:
-                print(f"[ERROR] gallery-dl failed: {result.stderr}")
-                return []
-
-            # Find all info.json files
-            info_files = list(temp_path.rglob("info.json"))
-            print(f"[INFO] gallery-dl found {len(info_files)} total posts")
-
-            # Parse and filter by date in Python
-            posts = []
-            filtered_out = 0
+    print(f"[2/6] Fetching post list from Patreon API...")
+    
+    try:
+        from pycookiecheat import chrome_cookies
+    except ImportError:
+        print("[ERROR] pycookiecheat not installed. Install with: pip install pycookiecheat")
+        return []
+    
+    try:
+        # Get cookies from Chrome
+        cookies_dict = chrome_cookies(
+            'https://www.patreon.com',
+            browser='chrome',
+            cookie_file=str(Path.home() / "Library/Application Support/Google/Chrome" / chrome_profile / "Cookies")
+        )
+        
+        # Make since_date timezone-aware if it isn't
+        if since_date.tzinfo is None:
+            since_date_aware = since_date.replace(tzinfo=timezone.utc)
+        else:
+            since_date_aware = since_date
+        
+        # Paginate through posts
+        new_posts = []
+        cursor = None
+        page_num = 0
+        
+        while True:
+            page_num += 1
+            print(f"[INFO] Fetching page {page_num}...")
             
-            for info_file in info_files:
+            # Build API request
+            url = "https://www.patreon.com/api/posts"
+            params = {
+                "include": "campaign",
+                "fields[post]": "published_at,title,url,patreon_url",
+                "fields[campaign]": "name",
+                "filter[campaign_id]": "13637777",  # VAMA's campaign ID
+                "filter[contains_exclusive_posts]": "true",
+                "filter[is_draft]": "false",
+                "sort": "-published_at",
+                "page[count]": "50",  # 50 posts per page
+                "json-api-version": "1.0"
+            }
+            
+            if cursor:
+                params["page[cursor]"] = cursor
+            
+            response = requests.get(url, params=params, cookies=cookies_dict, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            posts = data.get("data", [])
+            
+            if not posts:
+                print(f"[INFO] No more posts on page {page_num}")
+                break
+            
+            # Process posts on this page
+            stop_pagination = False
+            for post in posts:
+                post_id = post.get("id")
+                attributes = post.get("attributes", {})
+                title = attributes.get("title", "Untitled")
+                published_at = attributes.get("published_at")
+                url = attributes.get("url", "")
+                
+                if not post_id or not published_at:
+                    continue
+                
+                # Parse date
                 try:
-                    with open(info_file, 'r') as f:
-                        metadata = json.load(f)
-                        post_id = str(metadata.get("id", ""))
-                        
-                        if not post_id:
-                            continue
-                        
-                        # Parse post date
-                        date_str = metadata.get("published_at") or metadata.get("date")
-                        if date_str:
-                            try:
-                                if isinstance(date_str, str):
-                                    post_date = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                                else:
-                                    post_date = date_str
-                                
-                                # Filter by since_date
-                                if post_date < since_date:
-                                    filtered_out += 1
-                                    continue
-                            except:
-                                pass  # Include if we can't parse date
-                        
-                        posts.append(metadata)
-                        print(f"[INFO]   - Post {post_id}: {metadata.get('title', 'Untitled')} ({date_str})")
+                    post_date = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+                    
+                    # Only include posts newer than since_date
+                    if post_date > since_date_aware:
+                        new_posts.append({
+                            "id": post_id,
+                            "title": title,
+                            "published_at": published_at,
+                            "url": url
+                        })
+                        print(f"[INFO]   - Post {post_id}: {title} ({published_at})")
+                    else:
+                        # Hit old post, stop pagination
+                        print(f"[INFO] Hit old post {post_id} ({published_at}), stopping pagination")
+                        stop_pagination = True
+                        break
                 
                 except Exception as e:
-                    print(f"[WARNING] Failed to parse {info_file}: {e}")
+                    print(f"[WARNING] Failed to parse date for post {post_id}: {e}")
+            
+            if stop_pagination:
+                break
+            
+            # Check for next page
+            links = data.get("links", {})
+            next_url = links.get("next")
+            
+            if not next_url:
+                print(f"[INFO] No more pages")
+                break
+            
+            # Extract cursor from next URL
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(next_url)
+            query_params = parse_qs(parsed.query)
+            cursor = query_params.get("page[cursor]", [None])[0]
+            
+            if not cursor:
+                break
+        
+        print(f"[INFO] Found {len(new_posts)} new posts across {page_num} pages")
+        return new_posts
+    
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch post IDs: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
-            print(f"[INFO] Found {len(posts)} new posts (filtered out {filtered_out} older posts)")
-            return posts
 
-        except subprocess.TimeoutExpired:
-            print("[ERROR] gallery-dl timed out after 5 minutes")
-            return []
-        except FileNotFoundError:
-            print("[ERROR] gallery-dl not found. Install with: pip install gallery-dl")
-            return []
+def run_gallery_dl_for_single_post(post_id: str, chrome_profile: str, temp_dir: Path) -> dict:
+    """
+    Run gallery-dl for a single post URL.
+    
+    Args:
+        post_id: Patreon post ID
+        chrome_profile: Chrome profile name
+        temp_dir: Temporary directory for output
+    
+    Returns:
+        Post metadata dict or None on error
+    """
+    post_url = f"https://www.patreon.com/posts/{post_id}"
+    post_temp_dir = temp_dir / f"post_{post_id}"
+    post_temp_dir.mkdir(parents=True, exist_ok=True)
+    
+    cmd = [
+        "gallery-dl",
+        "--write-info-json",  # Creates one info.json per post
+        "--no-download",
+        "--option", f"base-directory={post_temp_dir}",
+        "--cookies-from-browser", f"chrome:{chrome_profile}",
+        post_url
+    ]
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        
+        if result.returncode != 0:
+            print(f"[WARNING] gallery-dl failed for post {post_id}: {result.stderr[:200]}")
+            return None
+        
+        # Find info.json
+        info_json = post_temp_dir / "patreon" / "carza" / "info.json"
+        if not info_json.exists():
+            # Try finding it anywhere
+            info_files = list(post_temp_dir.rglob("info.json"))
+            if info_files:
+                info_json = info_files[0]
+            else:
+                print(f"[WARNING] No info.json found for post {post_id}")
+                return None
+        
+        # Read and return metadata
+        with open(info_json, 'r') as f:
+            metadata = json.load(f)
+            return metadata
+    
+    except Exception as e:
+        print(f"[WARNING] Error processing post {post_id}: {e}")
+        return None
+
+
+def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1") -> list:
+    """
+    Run gallery-dl for each individual post URL to get full metadata.
+    Parallelizes if >10 posts.
+    
+    Args:
+        post_infos: List of dicts with id, title, published_at, url
+        chrome_profile: Chrome profile name
+    
+    Returns:
+        List of post metadata dicts with images
+    """
+    print(f"[3/6] Running gallery-dl for {len(post_infos)} individual posts...")
+    
+    # TESTING: Limit to first 3 posts
+    if len(post_infos) > 3:
+        print(f"[DEBUG] TESTING MODE: Limiting to first 3 posts (out of {len(post_infos)})")
+        post_infos = post_infos[:3]
+    
+    print()
+    print(f"[INFO] Will fetch metadata for {len(post_infos)} posts:")
+    for info in post_infos:
+        print(f"  - {info['id']}: {info['title']}")
+    print()
+    
+    confirm = input(f"Continue fetching metadata for {len(post_infos)} posts? (yes/no): ").strip().lower()
+    if confirm != "yes":
+        print("[INFO] Cancelled")
+        return []
+    
+    print()
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        
+        # Decide whether to parallelize
+        use_parallel = len(post_infos) > 10
+        
+        if use_parallel:
+            print(f"[INFO] Using parallel execution ({len(post_infos)} posts)...")
+            posts_metadata = []
+            
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                future_to_post = {
+                    executor.submit(run_gallery_dl_for_single_post, info['id'], chrome_profile, temp_path): info
+                    for info in post_infos
+                }
+                
+                for future in as_completed(future_to_post):
+                    post_info = future_to_post[future]
+                    try:
+                        metadata = future.result()
+                        if metadata:
+                            posts_metadata.append(metadata)
+                            print(f"[INFO]   ✓ {post_info['id']}: {post_info['title']}")
+                        else:
+                            print(f"[WARNING]   ✗ {post_info['id']}: Failed to fetch metadata")
+                    except Exception as e:
+                        print(f"[WARNING]   ✗ {post_info['id']}: Exception: {e}")
+        
+        else:
+            print(f"[INFO] Using sequential execution ({len(post_infos)} posts)...")
+            posts_metadata = []
+            
+            for info in post_infos:
+                metadata = run_gallery_dl_for_single_post(info['id'], chrome_profile, temp_path)
+                if metadata:
+                    posts_metadata.append(metadata)
+                    print(f"[INFO]   ✓ {info['id']}: {info['title']}")
+                else:
+                    print(f"[WARNING]   ✗ {info['id']}: Failed to fetch metadata")
+        
+        print()
+        print(f"[INFO] Successfully fetched metadata for {len(posts_metadata)} out of {len(post_infos)} posts")
+        
+        return posts_metadata
 
 
 def download_single_thumbnail(url: str, output_path: Path) -> bool:
@@ -306,7 +500,7 @@ def create_metadata_file(posts_metadata: list, post_thumbnails: dict, output_pat
     print("[INFO] Creating metadata file...")
 
     import_data = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "posts": []
     }
 
@@ -382,6 +576,7 @@ def main():
     parser.add_argument("--days", type=int, default=7, help="Fallback days if no posts exist")
     parser.add_argument("--chrome-profile", default="Profile 1", help="Chrome profile name")
     parser.add_argument("--staging-path", default="~/vamasubmissions/import-staging", help="Remote staging path")
+    parser.add_argument("--max-posts", type=int, default=None, help="Maximum number of posts to import (for testing)")
 
     args = parser.parse_args()
 
@@ -390,27 +585,50 @@ def main():
     print("=" * 70)
     print()
 
-    # Step 1: Get latest post date
-    latest_data = fetch_latest_post_date(args.api_url)
+    # Step 1: Get latest post date from database
+    latest_data = fetch_latest_post_date(args.server)
 
     if latest_data and latest_data.get("latest_date"):
         since_date = datetime.fromisoformat(latest_data["latest_date"].replace("Z", "+00:00"))
+        print(f"[INFO] Latest post in database: {latest_data['post_id']} at {latest_data['latest_date']}")
     else:
         since_date = datetime.now(timezone.utc) - timedelta(days=args.days)
-        print(f"[INFO] Using fallback: {args.days} days ago")
+        print(f"[INFO] No posts in database, using fallback: {args.days} days ago")
 
     print()
 
-    # Step 2: Run gallery-dl
-    posts_metadata = run_gallery_dl(args.creator, since_date, args.chrome_profile)
+    # Step 2: Fetch post IDs from Patreon API
+    post_infos = fetch_post_ids_from_patreon(args.creator, since_date, args.chrome_profile)
 
-    if not posts_metadata:
+    if not post_infos:
         print("[INFO] No new posts found")
         return
 
     print()
+    print("=" * 70)
+    print(f"[INFO] Found {len(post_infos)} new posts from Patreon API")
+    for info in post_infos:
+        print(f"  - {info['id']}: {info['title']} ({info['published_at']})")
+    print("=" * 70)
+    print()
+    
+    confirm = input(f"Continue fetching metadata for {len(post_infos)} posts? (yes/no): ").strip().lower()
+    if confirm != "yes":
+        print("[INFO] Import cancelled")
+        return
+    
+    print()
 
-    # Step 3: Download thumbnails
+    # Step 3: Run gallery-dl for each post to get full metadata
+    posts_metadata = run_gallery_dl_for_posts(post_infos, args.chrome_profile)
+
+    if not posts_metadata:
+        print("[INFO] No metadata fetched, aborting")
+        return
+
+    print()
+
+    # Step 4: Download thumbnails
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         thumbnails_dir = temp_path / "thumbnails"
@@ -429,7 +647,7 @@ def main():
 
         print()
 
-        # Step 4: SCP to server
+        # Step 5: SCP to server
         success = scp_to_server(temp_path, args.server, args.staging_path)
 
         if not success:
@@ -438,7 +656,7 @@ def main():
 
         print()
 
-        # Step 5: Confirm before running ingest
+        # Step 6: Confirm before running ingest
         print("[6/6] Ready to ingest posts on server")
         print(f"[INFO] This will:")
         print(f"  - Move {len(list(thumbnails_dir.glob('*')))} thumbnails to production")
@@ -456,7 +674,7 @@ def main():
 
         print()
 
-        # Step 6: Run ingest on server
+        # Step 7: Run ingest on server
         success = run_server_ingest(args.server, args.staging_path)
 
         if success:

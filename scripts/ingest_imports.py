@@ -126,8 +126,7 @@ def ingest_posts(staging_dir: Path, thumbnails_dir: Path, archive_dir: Path) -> 
                     status="pending",
                     characters=[],
                     series=[],
-                    tags=[],
-                    raw_patreon_json=post_data.get("raw_patreon_json", {})
+                    tags=[]
                 )
 
                 db.add(new_post)
