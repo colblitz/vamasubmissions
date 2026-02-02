@@ -184,20 +184,24 @@ export default function AdminPostModal({
       console.log('[AUTO-FILL] Current characters:', characters);
       console.log('[AUTO-FILL] Current series:', series);
 
-      // Add character if not already present
-      if (!characters.includes(titleCaseChar)) {
-        console.log('[AUTO-FILL] Adding character:', titleCaseChar);
-        onCharactersChange([...characters, titleCaseChar]);
-      } else {
-        console.log('[AUTO-FILL] Character already exists');
-      }
+      // Build new arrays with both character and series
+      const newCharacters = characters.includes(titleCaseChar) 
+        ? characters 
+        : [...characters, titleCaseChar];
+      
+      const newSeries = series.includes(titleCaseSeries)
+        ? series
+        : [...series, titleCaseSeries];
+      
+      console.log('[AUTO-FILL] New characters:', newCharacters);
+      console.log('[AUTO-FILL] New series:', newSeries);
 
-      // Add series if not already present
-      if (!series.includes(titleCaseSeries)) {
-        console.log('[AUTO-FILL] Adding series:', titleCaseSeries);
-        onSeriesChange([...series, titleCaseSeries]);
-      } else {
-        console.log('[AUTO-FILL] Series already exists');
+      // Update both at once to avoid race condition
+      if (newCharacters !== characters) {
+        onCharactersChange(newCharacters);
+      }
+      if (newSeries !== series) {
+        onSeriesChange(newSeries);
       }
 
       setModalSuccess("Auto-filled character and series from title!");
