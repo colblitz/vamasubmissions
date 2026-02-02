@@ -43,10 +43,9 @@ export default function AdminPostCard({
 
   return (
     <div
-      className={`bg-white rounded-lg overflow-hidden flex flex-col relative transition-all cursor-pointer ${
+      className={`bg-white rounded-lg overflow-hidden flex flex-col relative transition-all ${
         isSelected ? "ring-4 ring-blue-500 shadow-lg" : "shadow hover:shadow-lg"
       }`}
-      onClick={onToggleSelect}
     >
       {/* Checkbox Overlay - Top Left */}
       <div className="absolute top-2 left-2 z-10">
@@ -80,10 +79,10 @@ export default function AdminPostCard({
         </div>
       )}
 
-      {/* Thumbnail - Double-click to open modal */}
+      {/* Thumbnail - Click to open modal */}
       <div
-        className="relative aspect-square"
-        onDoubleClick={(e) => {
+        className="relative aspect-square cursor-pointer"
+        onClick={(e) => {
           e.stopPropagation();
           onClick();
         }}
@@ -121,8 +120,11 @@ export default function AdminPostCard({
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-3 flex-1 flex flex-col">
+      {/* Content - Click to select */}
+      <div 
+        className="p-3 flex-1 flex flex-col cursor-pointer"
+        onClick={onToggleSelect}
+      >
         {/* Title and Date */}
         <div className="mb-2">
           <h3 className="font-semibold text-base text-gray-900 line-clamp-2 mb-1">
