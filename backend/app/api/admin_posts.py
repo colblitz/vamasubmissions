@@ -50,11 +50,11 @@ async def get_pending_posts(
     """
     offset = (page - 1) * limit
 
-    # Get pending posts
+    # Get pending posts (oldest first for processing order)
     posts = (
         db.query(Post)
         .filter(Post.status == "pending")
-        .order_by(Post.timestamp.desc())
+        .order_by(Post.timestamp.asc())
         .offset(offset)
         .limit(limit)
         .all()
