@@ -1,4 +1,55 @@
-# Thumbnail Redownload Script
+# VAMA Scripts
+
+## Import Posts Script
+
+Script to import new VAMA posts from local machine to production server.
+
+### Setup SSH Keys (One-time)
+
+To avoid entering password repeatedly:
+
+```bash
+# 1. Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# Press Enter to accept default location (~/.ssh/id_ed25519)
+# Press Enter twice for no passphrase (or set one if you prefer)
+
+# 2. Copy public key to server
+ssh-copy-id deploy@YOUR_SERVER_IP
+# Enter password one last time
+
+# 3. Test passwordless login
+ssh deploy@YOUR_SERVER_IP
+# Should login without password!
+```
+
+### Usage
+
+```bash
+# Run import script (auto-detects Chrome profile with Patreon cookies)
+python3 scripts/import_posts_local.py --server deploy@YOUR_SERVER_IP
+
+# Or specify Chrome profile manually
+python3 scripts/import_posts_local.py --server deploy@YOUR_SERVER_IP --chrome-profile "Default"
+```
+
+### What it does
+
+1. Fetches latest post date from production database
+2. Calls Patreon API to get list of new posts (paginated)
+3. Runs gallery-dl for each post individually (parallel if >10 posts)
+4. Downloads thumbnails with UUID naming (`postid-t-000-uuid.ext`)
+5. SCPs thumbnails + metadata to server staging area
+6. SSHs to server and runs ingest script
+7. Ingest script moves files to production and inserts into database
+
+### Testing Mode
+
+The script has a built-in testing limit (last 3 posts) to avoid gaps. After successful testing, remove the limit in the code.
+
+---
+
+## Thumbnail Redownload Script
 
 Script to redownload all post thumbnails with new UUID-based naming convention.
 

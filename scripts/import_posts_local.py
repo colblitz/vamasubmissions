@@ -552,9 +552,9 @@ def download_thumbnails(posts_metadata: list, output_dir: Path, max_workers: int
     return post_thumbnails
 
 
-def scp_to_server(local_dir: Path, server: str, remote_path: str) -> bool:
+def rsync_to_server(local_dir: Path, server: str, remote_path: str) -> bool:
     """
-    SCP thumbnails to server staging area.
+    Rsync thumbnails to server staging area.
 
     Args:
         local_dir: Local directory with thumbnails
@@ -574,15 +574,38 @@ def scp_to_server(local_dir: Path, server: str, remote_path: str) -> bool:
         print(f"[ERROR] Failed to create staging directory: {result.stderr}")
         return False
 
-    # SCP all files
-    scp_cmd = ["scp", "-r", f"{local_dir}/*", f"{server}:{remote_path}/"]
-    result = subprocess.run(scp_cmd, capture_output=True, text=True)
-
-    if result.returncode != 0:
-        print(f"[ERROR] SCP failed: {result.stderr}")
+    # Get list of files to upload
+    files_to_upload = list(local_dir.glob('*'))
+    
+    if not files_to_upload:
+        print(f"[ERROR] No files to upload in {local_dir}")
         return False
-
-    print(f"[INFO] Uploaded {len(list(local_dir.glob('*')))} files")
+    
+    print(f"[INFO] Uploading {len(files_to_upload)} items with rsync...")
+    
+    # Use rsync for faster, more reliable transfer
+    # -a: archive mode (recursive, preserve permissions, etc.)
+    # -v: verbose
+    # -z: compress during transfer
+    # --progress: show progress
+    # Trailing slash on source means "copy contents" not "copy directory itself"
+    rsync_cmd = [
+        "rsync",
+        "-avz",
+        "--progress",
+        f"{local_dir}/",  # Trailing slash = copy contents
+        f"{server}:{remote_path}/"
+    ]
+    
+    result = subprocess.run(rsync_cmd, capture_output=True, text=True)
+    
+    if result.returncode != 0:
+        print(f"[ERROR] Rsync failed: {result.stderr}")
+        return False
+    
+    # Show summary from rsync output
+    print(result.stdout)
+    print(f"[INFO] Successfully uploaded {len(files_to_upload)} items")
     return True
 
 
@@ -747,8 +770,8 @@ def main():
 
         print()
 
-        # Step 5: SCP to server
-        success = scp_to_server(temp_path, args.server, args.staging_path)
+        # Step 5: Rsync to server
+        success = rsync_to_server(temp_path, args.server, args.staging_path)
 
         if not success:
             print("[ERROR] Failed to upload to server")
