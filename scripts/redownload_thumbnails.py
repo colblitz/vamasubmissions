@@ -31,88 +31,21 @@ from typing import List, Dict, Optional
 from urllib.request import urlopen, Request
 
 
-# ============================================================================
-# Utility Functions (copied from backend/app/utils/thumbnail_utils.py)
-# ============================================================================
-
-def generate_thumbnail_filename(post_id: str, ordinal: int, extension: str) -> str:
-    """Generate thumbnail filename with UUID."""
-    short_uuid = uuid.uuid4().hex[:8]
-    ordinal_str = f"{ordinal:03d}"
-    extension = extension.lstrip(".")
-    return f"{post_id}-t-{ordinal_str}-{short_uuid}.{extension}"
-
-
-def get_file_extension(filename: str) -> str:
-    """Extract file extension from filename (without dot)."""
-    ext = Path(filename).suffix.lstrip(".")
-    return ext.lower()
+# Import shared utilities
+from import_utils import (
+    generate_thumbnail_filename,
+    get_file_extension,
+    find_chrome_profile_with_patreon_cookies,
+    test_browser_cookies,
+    detect_browser_with_patreon_cookies,
+    download_single_image,
+    run_gallery_dl_for_post
+)
 
 
 def build_thumbnail_url(filename: str, base_url: str = "https://vamarequests.com") -> str:
     """Build full thumbnail URL from filename."""
     return f"{base_url}/static/thumbnails/{filename}"
-
-
-# ============================================================================
-# Browser Cookie Detection
-# ============================================================================
-
-def detect_browser_with_patreon_cookies() -> Optional[str]:
-    """
-    Auto-detect which browser profile has Patreon cookies.
-    
-    Returns:
-        Browser string for gallery-dl (e.g., "chrome:Profile 1") or None
-    """
-    print("[INFO] Auto-detecting browser with Patreon cookies...")
-    
-    # Try Chrome profiles
-    chrome_profiles = ["Profile 1", "Profile 2", "Default", "Profile 3"]
-    for profile in chrome_profiles:
-        browser_str = f"chrome:{profile}"
-        if test_browser_cookies(browser_str):
-            print(f"[SUCCESS] Found Patreon cookies in Chrome {profile}")
-            return browser_str
-    
-    # Try Firefox
-    if test_browser_cookies("firefox"):
-        print("[SUCCESS] Found Patreon cookies in Firefox")
-        return "firefox"
-    
-    # Try Safari
-    if test_browser_cookies("safari"):
-        print("[SUCCESS] Found Patreon cookies in Safari")
-        return "safari"
-    
-    print("[ERROR] Could not find Patreon cookies in any browser")
-    return None
-
-
-def test_browser_cookies(browser_str: str) -> bool:
-    """
-    Test if browser profile has valid Patreon cookies.
-    
-    Args:
-        browser_str: Browser string for gallery-dl (e.g., "chrome:Profile 1")
-    
-    Returns:
-        True if cookies found, False otherwise
-    """
-    try:
-        # Run gallery-dl with --cookies-from-browser to test
-        result = subprocess.run(
-            ["gallery-dl", "--cookies-from-browser", browser_str, "--list-keywords", 
-             "https://www.patreon.com/posts/129090487"],
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        
-        # If no error and cookies were extracted, it worked
-        return "Extracted" in result.stderr and "cookies" in result.stderr
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-        return False
 
 
 # ============================================================================
@@ -262,39 +195,6 @@ def read_post_ids_from_file(input_file: str) -> List[str]:
 # ============================================================================
 # Parallel Download Functions
 # ============================================================================
-
-def download_single_image(url: str, output_path: str, timeout: int = 60) -> bool:
-    """
-    Download a single image from URL to output path.
-    Skips if file already exists (idempotent/resumable).
-    
-    Args:
-        url: Image URL
-        output_path: Path to save file
-        timeout: Download timeout in seconds
-    
-    Returns:
-        True if successful or already exists, False otherwise
-    """
-    # Check if file already exists (idempotent/resumable)
-    if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-        print(f"[SKIP] Already exists: {os.path.basename(output_path)}")
-        return True
-    
-    try:
-        # Create request with user agent to avoid blocks
-        req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        
-        with urlopen(req, timeout=timeout) as response:
-            with open(output_path, 'wb') as f:
-                f.write(response.read())
-        
-        return True
-    
-    except Exception as e:
-        print(f"[ERROR] Failed to download {os.path.basename(output_path)}: {e}")
-        return False
-
 
 def download_images_parallel(
     images_info: List[Dict],

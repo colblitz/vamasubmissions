@@ -34,7 +34,7 @@ router = APIRouter()
 # ============================================================================
 
 
-@router.post("/posts/fetch-new")
+@router.post("/posts/fetch-new", deprecated=True)
 async def fetch_new_posts(
     cookies_file: UploadFile = File(...),
     creator_username: str = Form("vama"),
@@ -43,6 +43,21 @@ async def fetch_new_posts(
     db: Session = Depends(get_db),
 ):
     """
+    **DEPRECATED**: This endpoint is no longer used. Use the local import script instead.
+    
+    Legacy endpoint for fetching new posts from Patreon using gallery-dl with cookie file upload.
+    
+    **Migration Path**: 
+    Use `backend/import_posts.py` script locally instead:
+    ```bash
+    cd backend
+    python import_posts.py --creator vama --days 7
+    ```
+    
+    This endpoint will be removed in a future version.
+    
+    ---
+    
     Fetch new posts from Patreon using gallery-dl with full cookie file.
     Posts are imported with status='pending' for review.
 

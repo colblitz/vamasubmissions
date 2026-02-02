@@ -37,9 +37,14 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
-from app.utils.thumbnail_utils import generate_thumbnail_filename, get_file_extension
+# Import shared utilities
+from import_utils import (
+    generate_thumbnail_filename,
+    get_file_extension,
+    find_chrome_profile_with_patreon_cookies,
+    download_single_image,
+    run_gallery_dl_for_post
+)
 
 
 def fetch_latest_post_date(server: str) -> dict:
@@ -86,72 +91,6 @@ def fetch_latest_post_date(server: str) -> dict:
     except Exception as e:
         print(f"[ERROR] Failed to fetch latest date: {e}")
         return None
-
-
-def find_chrome_profile_with_patreon_cookies() -> tuple:
-    """
-    Auto-detect which Chrome profile has Patreon cookies.
-    
-    Returns:
-        Tuple of (profile_name, cookie_file_path) or (None, None) if not found
-    """
-    import platform
-    import sqlite3
-    
-    system = platform.system()
-    
-    # Get Chrome user data directory
-    if system == "Darwin":  # macOS
-        chrome_dir = Path.home() / "Library/Application Support/Google/Chrome"
-    elif system == "Linux":
-        chrome_dir = Path.home() / ".config/google-chrome"
-    elif system == "Windows":
-        chrome_dir = Path.home() / "AppData/Local/Google/Chrome/User Data"
-    else:
-        return None, None
-    
-    if not chrome_dir.exists():
-        return None, None
-    
-    # Common profile names to check
-    profile_names = ["Default", "Profile 1", "Profile 2", "Profile 3", "Profile 4", "Profile 5"]
-    
-    for profile_name in profile_names:
-        cookie_file = chrome_dir / profile_name / "Cookies"
-        
-        if not cookie_file.exists():
-            continue
-        
-        # Try to check if this profile has Patreon cookies
-        try:
-            # Make a copy to avoid locking issues
-            import tempfile
-            import shutil
-            
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                tmp_path = tmp.name
-            
-            shutil.copy2(cookie_file, tmp_path)
-            
-            conn = sqlite3.connect(tmp_path)
-            cursor = conn.cursor()
-            
-            # Check for patreon.com cookies
-            cursor.execute("SELECT COUNT(*) FROM cookies WHERE host_key LIKE '%patreon.com%'")
-            count = cursor.fetchone()[0]
-            
-            conn.close()
-            Path(tmp_path).unlink()
-            
-            if count > 0:
-                print(f"[INFO] Found Patreon cookies in Chrome profile: {profile_name}")
-                return profile_name, cookie_file
-        
-        except Exception as e:
-            # Skip profiles we can't read
-            continue
-    
-    return None, None
 
 
 def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chrome_profile: str = None) -> tuple:
@@ -320,59 +259,6 @@ def fetch_post_ids_from_patreon(creator_username: str, since_date: datetime, chr
         return [], None
 
 
-def run_gallery_dl_for_single_post(post_id: str, chrome_profile: str, temp_dir: Path) -> dict:
-    """
-    Run gallery-dl for a single post URL.
-    
-    Args:
-        post_id: Patreon post ID
-        chrome_profile: Chrome profile name
-        temp_dir: Temporary directory for output
-    
-    Returns:
-        Post metadata dict or None on error
-    """
-    post_url = f"https://www.patreon.com/posts/{post_id}"
-    post_temp_dir = temp_dir / f"post_{post_id}"
-    post_temp_dir.mkdir(parents=True, exist_ok=True)
-    
-    cmd = [
-        "gallery-dl",
-        "--write-info-json",  # Creates one info.json per post
-        "--no-download",
-        "--option", f"base-directory={post_temp_dir}",
-        "--cookies-from-browser", f"chrome:{chrome_profile}",
-        post_url
-    ]
-    
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        
-        if result.returncode != 0:
-            print(f"[WARNING] gallery-dl failed for post {post_id}: {result.stderr[:200]}")
-            return None
-        
-        # Find info.json
-        info_json = post_temp_dir / "patreon" / "carza" / "info.json"
-        if not info_json.exists():
-            # Try finding it anywhere
-            info_files = list(post_temp_dir.rglob("info.json"))
-            if info_files:
-                info_json = info_files[0]
-            else:
-                print(f"[WARNING] No info.json found for post {post_id}")
-                return None
-        
-        # Read and return metadata
-        with open(info_json, 'r') as f:
-            metadata = json.load(f)
-            return metadata
-    
-    except Exception as e:
-        print(f"[WARNING] Error processing post {post_id}: {e}")
-        return None
-
-
 def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1", skip_confirmations: bool = False) -> list:
     """
     Run gallery-dl for each individual post URL to get full metadata.
@@ -411,7 +297,7 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
         
         with ThreadPoolExecutor(max_workers=5) as executor:
             future_to_post = {
-                executor.submit(run_gallery_dl_for_single_post, info['id'], chrome_profile, temp_path): info
+                executor.submit(run_gallery_dl_for_post, info['id'], chrome_profile, temp_path): info
                 for info in post_infos
             }
             
@@ -431,24 +317,6 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
         print(f"[INFO] Successfully fetched metadata for {len(posts_metadata)} out of {len(post_infos)} posts")
         
         return posts_metadata
-
-
-def download_single_thumbnail(url: str, output_path: Path) -> bool:
-    """Download a single thumbnail with proper headers."""
-    try:
-        # Use headers to match redownload script behavior
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(url, headers=headers, timeout=60)
-        response.raise_for_status()
-
-        with open(output_path, 'wb') as f:
-            f.write(response.content)
-
-        return True
-
-    except Exception as e:
-        print(f"[WARNING] Failed to download {output_path.name}: {e}")
-        return False
 
 
 def download_thumbnails(posts_metadata: list, output_dir: Path, max_workers: int = 10) -> dict:
@@ -522,7 +390,7 @@ def download_thumbnails(posts_metadata: list, output_dir: Path, max_workers: int
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_task = {
-            executor.submit(download_single_thumbnail, task['url'], task['output_path']): task
+            executor.submit(download_single_image, task['url'], str(task['output_path'])): task
             for task in download_tasks
         }
 

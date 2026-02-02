@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
-import FetchNewPostsForm from "./components/FetchNewPostsForm";
 import BulkActionsBar from "./components/BulkActionsBar";
 import PendingPostCard from "./components/PendingPostCard";
 
@@ -11,12 +10,8 @@ export default function ImportPostsPage() {
   const [totalPendingCount, setTotalPendingCount] = useState(0);
   const [latestPublishedDate, setLatestPublishedDate] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
-  // Cookie file for fetching
-  const [cookieFile, setCookieFile] = useState(null);
 
   // Bulk selection
   const [selectedPosts, setSelectedPosts] = useState([]);
@@ -65,46 +60,6 @@ export default function ImportPostsPage() {
     setPendingPosts((prev) => prev.filter((p) => p.id !== postId));
     setTotalPendingCount((prev) => Math.max(0, prev - 1));
     setSelectedPosts((prev) => prev.filter((id) => id !== postId));
-  };
-
-  // Fetch new posts from Patreon
-  const handleFetchNew = async () => {
-    // Validate cookie file is provided
-    if (!cookieFile) {
-      setError(
-        "Please select a cookie file to fetch new posts",
-      );
-      return;
-    }
-
-    setFetching(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append("cookies_file", cookieFile);
-      formData.append("creator_username", "vama");
-      formData.append("since_days", "7");
-
-      const response = await api.post("/api/admin/posts/fetch-new", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      setSuccess(
-        `Imported ${response.data.imported} new posts, ${response.data.skipped} already existed`,
-      );
-      fetchPendingPosts(); // Refresh list
-      fetchTotalCount();
-      setCookieFile(null); // Clear file after successful import
-    } catch (err) {
-      setError(err.response?.data?.detail || "Failed to fetch new posts");
-    } finally {
-      setFetching(false);
-    }
   };
 
   // Bulk publish
@@ -232,15 +187,20 @@ export default function ImportPostsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Import Posts</h1>
-
-        <FetchNewPostsForm
-          cookieFile={cookieFile}
-          setCookieFile={setCookieFile}
-          fetching={fetching}
-          latestPublishedDate={latestPublishedDate}
-          onFetchNew={handleFetchNew}
-        />
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Pending Posts</h1>
+        <p className="text-gray-600">
+          Review and manage posts imported via the local import script. Add metadata, publish, or skip posts as needed.
+        </p>
+        {latestPublishedDate && (
+          <p className="text-sm text-gray-500 mt-2">
+            Latest published post:{" "}
+            {new Date(latestPublishedDate).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        )}
       </div>
 
       {/* Success/Error Messages */}
@@ -282,7 +242,10 @@ export default function ImportPostsPage() {
         </div>
       ) : pendingPosts.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-white rounded-lg shadow">
-          No pending posts. Click "Fetch New Posts" to import from Patreon.
+          <p className="text-lg font-medium mb-2">No pending posts</p>
+          <p className="text-sm">
+            Use the local import script to fetch new posts from Patreon.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
