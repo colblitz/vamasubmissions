@@ -814,10 +814,55 @@ def main():
     print()
 
     # Step 4: Download thumbnails
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir)
-        thumbnails_dir = temp_path / "thumbnails"
-
+    # Use a persistent work directory instead of temp directory for resumability
+    work_dir = Path.home() / ".vamasubmissions_import"
+    work_dir.mkdir(exist_ok=True)
+    
+    # Create a unique directory for this import session
+    import hashlib
+    post_ids_hash = hashlib.md5(",".join([p['id'] for p in post_infos]).encode()).hexdigest()[:8]
+    session_dir = work_dir / f"import_{post_ids_hash}"
+    
+    thumbnails_dir = session_dir / "thumbnails"
+    sql_file = session_dir / "insert_posts.sql"
+    
+    # Check if we can resume from a previous run
+    can_resume = False
+    if session_dir.exists():
+        existing_thumbnails = list(thumbnails_dir.glob('*')) if thumbnails_dir.exists() else []
+        if existing_thumbnails and sql_file.exists():
+            print()
+            print("[INFO] Found existing import session!")
+            print(f"[INFO] Session directory: {session_dir}")
+            print(f"[INFO] Thumbnails: {len(existing_thumbnails)} files")
+            print(f"[INFO] SQL file: {sql_file.name}")
+            print()
+            resume = input("Resume from this session? (yes/no): ").strip().lower()
+            if resume == "yes":
+                can_resume = True
+                print("[INFO] Resuming from existing session...")
+                
+                # Load post_thumbnails from existing files
+                post_thumbnails = {}
+                for thumb_file in existing_thumbnails:
+                    # Extract post_id from filename: postid-t-000-uuid.ext
+                    parts = thumb_file.stem.split('-')
+                    if len(parts) >= 4:
+                        post_id = parts[0]
+                        if post_id not in post_thumbnails:
+                            post_thumbnails[post_id] = []
+                        post_thumbnails[post_id].append(thumb_file.name)
+            else:
+                print("[INFO] Starting fresh import...")
+                import shutil
+                shutil.rmtree(session_dir)
+                session_dir.mkdir()
+    else:
+        session_dir.mkdir()
+    
+    if not can_resume:
+        thumbnails_dir.mkdir(exist_ok=True)
+        
         post_thumbnails = download_thumbnails(posts_metadata, thumbnails_dir)
 
         if not post_thumbnails:
@@ -827,55 +872,68 @@ def main():
         print()
 
         # Create SQL file
-        sql_file = temp_path / "insert_posts.sql"
         create_sql_file(posts_metadata, post_thumbnails, sql_file)
 
         print()
-
-        # Step 5: Rsync to server
-        success = rsync_to_server(temp_path, args.server, args.staging_path)
-
-        if not success:
-            print("[ERROR] Failed to upload to server")
-            return
-
+    else:
+        print()
+        print("[INFO] Skipping download and SQL generation (using existing files)")
         print()
 
-        # Step 6: Confirm before running ingest
-        print("[6/6] Ready to ingest posts on server")
-        print(f"[INFO] This will:")
-        print(f"  - Move {len(list(thumbnails_dir.glob('*')))} thumbnails to production")
-        print(f"  - Insert {len(post_thumbnails)} posts into database")
-        print(f"  - Clean up staging area on success")
+    # Step 5: Rsync to server
+    success = rsync_to_server(session_dir, args.server, args.staging_path)
+
+    if not success:
+        print("[ERROR] Failed to upload to server")
+        print(f"[INFO] Session saved at: {session_dir}")
+        print(f"[INFO] You can retry later or manually upload")
+        return
+
+    print()
+
+    # Step 6: Confirm before running ingest
+    print("[6/6] Ready to ingest posts on server")
+    print(f"[INFO] This will:")
+    print(f"  - Move {len(list(thumbnails_dir.glob('*')))} thumbnails to production")
+    print(f"  - Insert {len(post_thumbnails)} posts into database")
+    print(f"  - Clean up staging area on success")
+    print()
+
+    confirm = input("Continue with ingest? (yes/no): ").strip().lower()
+
+    if confirm != "yes":
+        print("[INFO] Ingest cancelled. Files remain in staging area:")
+        print(f"[INFO]   Server: {args.server}:{args.staging_path}")
+        print(f"[INFO]   Local: {session_dir}")
+        print(f"[INFO] You can manually run:")
+        print(f"[INFO]   ssh {args.server}")
+        print(f"[INFO]   mv {args.staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/")
+        print(f"[INFO]   sudo -u postgres psql -d vamasubmissions -f {args.staging_path}/insert_posts.sql")
+        return
+
+    print()
+
+    # Step 7: Run ingest on server
+    success = run_server_ingest(args.server, args.staging_path)
+
+    if success:
         print()
-
-        confirm = input("Continue with ingest? (yes/no): ").strip().lower()
-
-        if confirm != "yes":
-            print("[INFO] Ingest cancelled. Files remain in staging area:")
-            print(f"[INFO]   {args.server}:{args.staging_path}")
-            print(f"[INFO] You can manually run:")
-            print(f"[INFO]   ssh {args.server}")
-            print(f"[INFO]   mv {args.staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/")
-            print(f"[INFO]   sudo -u postgres psql -d vamasubmissions -f {args.staging_path}/insert_posts.sql")
-            return
-
+        print("=" * 70)
+        print("[SUCCESS] Import complete!")
+        print("=" * 70)
+        
+        # Clean up local session directory
+        print(f"[INFO] Cleaning up local session directory...")
+        import shutil
+        shutil.rmtree(session_dir)
+        print(f"[INFO] Removed: {session_dir}")
+    else:
         print()
-
-        # Step 7: Run ingest on server
-        success = run_server_ingest(args.server, args.staging_path)
-
-        if success:
-            print()
-            print("=" * 70)
-            print("[SUCCESS] Import complete!")
-            print("=" * 70)
-        else:
-            print()
-            print("=" * 70)
-            print("[ERROR] Import failed. Files remain in staging area for review.")
-            print(f"[INFO] Staging path: {args.server}:{args.staging_path}")
-            print("=" * 70)
+        print("=" * 70)
+        print("[ERROR] Import failed. Files remain in staging area for review.")
+        print(f"[INFO] Server staging: {args.server}:{args.staging_path}")
+        print(f"[INFO] Local session: {session_dir}")
+        print("=" * 70)
 
 
 if __name__ == "__main__":
