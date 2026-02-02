@@ -505,14 +505,12 @@ def download_thumbnails(posts_metadata: list, output_dir: Path, max_workers: int
             if not extension:
                 continue
 
-            # Get thumbnail URL (prefer thumbnail_large for best quality)
+            # Get thumbnail URL (360x360 square, same as redownload script)
             image_urls = image.get('image_urls', {})
-            # Priority: thumbnail_large (1080x1080) > thumbnail (360x360) > download_url (full size)
-            thumbnail_url = (
-                image_urls.get('thumbnail_large') or 
-                image_urls.get('thumbnail') or 
-                image.get('download_url')
-            )
+            thumbnail_url = image_urls.get('thumbnail')
+            
+            if not thumbnail_url:
+                thumbnail_url = image.get('download_url')
 
             if not thumbnail_url:
                 continue
