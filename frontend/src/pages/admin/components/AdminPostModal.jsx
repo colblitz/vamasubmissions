@@ -153,14 +153,17 @@ export default function AdminPostModal({
   // Auto-fill from title
   const handleAutoFill = () => {
     const title = post.title;
+    console.log('[AUTO-FILL] Title:', title);
 
     // Pattern: "Character Name (Series)" or "Character Name (Series) 500 pics"
     const pattern1 = /^([^(]+)\s*\(([^)]+)\)/i;
     const match1 = title.match(pattern1);
+    console.log('[AUTO-FILL] Match:', match1);
 
     if (match1) {
       const extractedChar = match1[1].trim();
       const extractedSeries = match1[2].trim();
+      console.log('[AUTO-FILL] Extracted - Character:', extractedChar, 'Series:', extractedSeries);
 
       // Title case the names
       const titleCaseChar = extractedChar
@@ -176,15 +179,25 @@ export default function AdminPostModal({
           (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
         )
         .join(" ");
+      
+      console.log('[AUTO-FILL] Title-cased - Character:', titleCaseChar, 'Series:', titleCaseSeries);
+      console.log('[AUTO-FILL] Current characters:', characters);
+      console.log('[AUTO-FILL] Current series:', series);
 
       // Add character if not already present
       if (!characters.includes(titleCaseChar)) {
+        console.log('[AUTO-FILL] Adding character:', titleCaseChar);
         onCharactersChange([...characters, titleCaseChar]);
+      } else {
+        console.log('[AUTO-FILL] Character already exists');
       }
 
       // Add series if not already present
       if (!series.includes(titleCaseSeries)) {
+        console.log('[AUTO-FILL] Adding series:', titleCaseSeries);
         onSeriesChange([...series, titleCaseSeries]);
+      } else {
+        console.log('[AUTO-FILL] Series already exists');
       }
 
       setModalSuccess("Auto-filled character and series from title!");
@@ -192,6 +205,7 @@ export default function AdminPostModal({
       return;
     }
 
+    console.log('[AUTO-FILL] No match found');
     setModalError(
       "Could not auto-fill: title format not recognized. Expected format: 'Character Name (Series)'",
     );
