@@ -373,7 +373,7 @@ def run_gallery_dl_for_single_post(post_id: str, chrome_profile: str, temp_dir: 
         return None
 
 
-def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1") -> list:
+def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1", skip_confirmations: bool = False) -> list:
     """
     Run gallery-dl for each individual post URL to get full metadata.
     Parallelizes if >10 posts.
@@ -381,6 +381,7 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
     Args:
         post_infos: List of dicts with id, title, published_at, url
         chrome_profile: Chrome profile name
+        skip_confirmations: Skip confirmation prompts
     
     Returns:
         List of post metadata dicts with images
@@ -399,10 +400,11 @@ def run_gallery_dl_for_posts(post_infos: list, chrome_profile: str = "Profile 1"
         print(f"  - {info['id']}: {info['title']}")
     print()
     
-    confirm = input(f"Continue fetching metadata for {len(post_infos)} posts? (yes/no): ").strip().lower()
-    if confirm != "yes":
-        print("[INFO] Cancelled")
-        return []
+    if not skip_confirmations:
+        confirm = input(f"Continue fetching metadata for {len(post_infos)} posts? (yes/no): ").strip().lower()
+        if confirm != "yes":
+            print("[INFO] Cancelled")
+            return []
     
     print()
     
@@ -806,6 +808,7 @@ def main():
     parser.add_argument("--chrome-profile", default="Profile 1", help="Chrome profile name")
     parser.add_argument("--staging-path", default="~/vamasubmissions/import-staging", help="Remote staging path")
     parser.add_argument("--max-posts", type=int, default=None, help="Maximum number of posts to import (for testing)")
+    parser.add_argument("--skip-confirmations", action="store_true", help="Skip all confirmation prompts (for automated runs)")
 
     args = parser.parse_args()
 
@@ -843,15 +846,16 @@ def main():
     print("=" * 70)
     print()
     
-    confirm = input(f"Continue fetching metadata for {len(post_infos)} posts? (yes/no): ").strip().lower()
-    if confirm != "yes":
-        print("[INFO] Import cancelled")
-        return
+    if not args.skip_confirmations:
+        confirm = input(f"Continue fetching metadata for {len(post_infos)} posts? (yes/no): ").strip().lower()
+        if confirm != "yes":
+            print("[INFO] Import cancelled")
+            return
     
     print()
 
     # Step 3: Run gallery-dl for each post to get full metadata
-    posts_metadata = run_gallery_dl_for_posts(post_infos, detected_chrome_profile)
+    posts_metadata = run_gallery_dl_for_posts(post_infos, detected_chrome_profile, args.skip_confirmations)
 
     if not posts_metadata:
         print("[INFO] No metadata fetched, aborting")
@@ -921,6 +925,23 @@ def main():
         create_sql_file(posts_metadata, post_thumbnails, sql_file)
 
         print()
+        
+        # Confirmation: Let user verify thumbnails before uploading
+        if not args.skip_confirmations:
+            print("=" * 70)
+            print("[INFO] Thumbnails downloaded to local directory:")
+            print(f"[INFO]   {thumbnails_dir}")
+            print(f"[INFO] You can manually verify the thumbnails before uploading.")
+            print(f"[INFO] Total thumbnails: {len(list(thumbnails_dir.glob('*')))}")
+            print("=" * 70)
+            print()
+            confirm = input("Continue with upload to server? (yes/no): ").strip().lower()
+            if confirm != "yes":
+                print("[INFO] Upload cancelled. Files saved locally:")
+                print(f"[INFO]   {session_dir}")
+                print(f"[INFO] You can resume later by running the script again.")
+                return
+            print()
     else:
         print()
         print("[INFO] Skipping download and SQL generation (using existing files)")
@@ -938,26 +959,30 @@ def main():
     print()
 
     # Step 6: Confirm before running ingest
-    print("[6/6] Ready to ingest posts on server")
-    print(f"[INFO] This will:")
-    print(f"  - Move {len(list(thumbnails_dir.glob('*')))} thumbnails to production")
-    print(f"  - Insert {len(post_thumbnails)} posts into database")
-    print(f"  - Clean up staging area on success")
-    print()
+    if not args.skip_confirmations:
+        print("[6/6] Ready to ingest posts on server")
+        print(f"[INFO] This will:")
+        print(f"  - Move {len(list(thumbnails_dir.glob('*')))} thumbnails to production")
+        print(f"  - Insert {len(post_thumbnails)} posts into database")
+        print(f"  - Clean up staging area on success")
+        print()
 
-    confirm = input("Continue with ingest? (yes/no): ").strip().lower()
+        confirm = input("Continue with ingest? (yes/no): ").strip().lower()
 
-    if confirm != "yes":
-        print("[INFO] Ingest cancelled. Files remain in staging area:")
-        print(f"[INFO]   Server: {args.server}:{args.staging_path}")
-        print(f"[INFO]   Local: {session_dir}")
-        print(f"[INFO] You can manually run:")
-        print(f"[INFO]   ssh {args.server}")
-        print(f"[INFO]   mv {args.staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/")
-        print(f"[INFO]   sudo -u postgres psql -d vamasubmissions -f {args.staging_path}/insert_posts.sql")
-        return
+        if confirm != "yes":
+            print("[INFO] Ingest cancelled. Files remain in staging area:")
+            print(f"[INFO]   Server: {args.server}:{args.staging_path}")
+            print(f"[INFO]   Local: {session_dir}")
+            print(f"[INFO] You can manually run:")
+            print(f"[INFO]   ssh {args.server}")
+            print(f"[INFO]   mv {args.staging_path}/thumbnails/* ~/vamasubmissions/backend/static/thumbnails/")
+            print(f"[INFO]   sudo -u postgres psql -d vamasubmissions -f {args.staging_path}/insert_posts.sql")
+            return
 
-    print()
+        print()
+    else:
+        print("[6/6] Running ingest on server (skipping confirmation)...")
+        print()
 
     # Step 7: Run ingest on server
     success = run_server_ingest(args.server, args.staging_path)
