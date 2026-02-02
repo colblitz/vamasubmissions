@@ -409,7 +409,13 @@ export default function ImportPostsPage() {
               onClick={toggleSelectAll}
               className="text-blue-600 hover:text-blue-800 font-medium text-sm"
             >
-              {selectedPosts.length === pendingPosts.length ? "Deselect All" : "Select All"}
+              Select All
+            </button>
+            <button
+              onClick={() => setSelectedPosts([])}
+              className="text-gray-600 hover:text-gray-800 font-medium text-sm"
+            >
+              Deselect All
             </button>
           </div>
         )}
