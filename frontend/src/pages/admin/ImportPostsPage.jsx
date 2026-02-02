@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
-import BulkActionsBar from "./components/BulkActionsBar";
-import PendingPostCard from "./components/PendingPostCard";
+import AdminPostCard from "./components/AdminPostCard";
+import AdminPostModal from "./components/AdminPostModal";
 
 export default function ImportPostsPage() {
   const { user } = useAuth();
@@ -15,6 +15,12 @@ export default function ImportPostsPage() {
 
   // Bulk selection
   const [selectedPosts, setSelectedPosts] = useState([]);
+
+  // Modal state
+  const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
+
+  // Local editing state for each post (characters and series)
+  const [postEdits, setPostEdits] = useState({});
 
   // Fetch pending posts
   const fetchPendingPosts = async () => {
@@ -31,10 +37,29 @@ export default function ImportPostsPage() {
         setPendingPosts(response.data.posts);
         setTotalPendingCount(response.data.total || response.data.posts.length);
         setLatestPublishedDate(response.data.latest_published_date);
+        
+        // Initialize editing state for each post
+        const edits = {};
+        response.data.posts.forEach(post => {
+          edits[post.id] = {
+            characters: post.characters || [],
+            series: post.series || [],
+          };
+        });
+        setPostEdits(edits);
       } else {
         // Fallback for old response format
         setPendingPosts(response.data);
         setTotalPendingCount(response.data.length);
+        
+        const edits = {};
+        response.data.forEach(post => {
+          edits[post.id] = {
+            characters: post.characters || [],
+            series: post.series || [],
+          };
+        });
+        setPostEdits(edits);
       }
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load pending posts");
@@ -43,23 +68,132 @@ export default function ImportPostsPage() {
     }
   };
 
-  // Fetch total pending count
-  const fetchTotalCount = async () => {
-    try {
-      const response = await api.get("/api/admin/posts/pending", {
-        params: { limit: 1000 },
-      });
-      setTotalPendingCount(response.data.length);
-    } catch (err) {
-      console.error("Failed to fetch total count:", err);
-    }
-  };
-
   // Remove a post from the local list (after publish/delete)
   const removePostFromList = (postId) => {
     setPendingPosts((prev) => prev.filter((p) => p.id !== postId));
     setTotalPendingCount((prev) => Math.max(0, prev - 1));
     setSelectedPosts((prev) => prev.filter((id) => id !== postId));
+    setPostEdits((prev) => {
+      const newEdits = { ...prev };
+      delete newEdits[postId];
+      return newEdits;
+    });
+  };
+
+  // Update characters for a post
+  const updatePostCharacters = (postId, characters) => {
+    setPostEdits((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        characters,
+      },
+    }));
+  };
+
+  // Update series for a post
+  const updatePostSeries = (postId, series) => {
+    setPostEdits((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        series,
+      },
+    }));
+  };
+
+  // Save changes for a single post
+  const handleSave = async (postId) => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const edits = postEdits[postId];
+      await api.patch(`/api/admin/posts/${postId}`, {
+        characters: edits.characters,
+        series: edits.series,
+      });
+
+      // Update the post in the list
+      setPendingPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, characters: edits.characters, series: edits.series }
+            : p
+        )
+      );
+
+      setSuccess("Changes saved!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to save changes");
+    }
+  };
+
+  // Publish a single post
+  const handlePublish = async (postId) => {
+    const edits = postEdits[postId];
+    
+    if (!edits.characters.length || !edits.series.length) {
+      setError("Please add at least one character and series before publishing");
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Save first
+      await api.patch(`/api/admin/posts/${postId}`, {
+        characters: edits.characters,
+        series: edits.series,
+      });
+
+      // Then publish
+      await api.post(`/api/admin/posts/${postId}/publish`);
+
+      setSuccess("Post published successfully!");
+      setTimeout(() => {
+        removePostFromList(postId);
+        setSuccess(null);
+      }, 1000);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to publish post");
+    }
+  };
+
+  // Skip a single post
+  const handleSkip = async (postId) => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await api.post(`/api/admin/posts/${postId}/skip`);
+      setSuccess("Post marked as skipped");
+      setTimeout(() => {
+        removePostFromList(postId);
+        setSuccess(null);
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to skip post");
+    }
+  };
+
+  // Delete a single post
+  const handleDelete = async (postId) => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await api.delete(`/api/admin/posts/${postId}`);
+      setSuccess("Post deleted");
+      setTimeout(() => {
+        removePostFromList(postId);
+        setSuccess(null);
+      }, 1000);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to delete post");
+    }
   };
 
   // Bulk publish
@@ -83,53 +217,8 @@ export default function ImportPostsPage() {
       );
       setSelectedPosts([]);
       fetchPendingPosts();
-      fetchTotalCount();
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to bulk publish");
-    }
-  };
-
-  // Bulk save
-  const handleBulkSave = async () => {
-    if (selectedPosts.length === 0) {
-      setError("No posts selected");
-      return;
-    }
-
-    setError(null);
-    setSuccess(null);
-
-    try {
-      // Get all selected post cards and save them
-      let savedCount = 0;
-      let failedCount = 0;
-
-      for (const postId of selectedPosts) {
-        try {
-          // Find the post in pendingPosts
-          const post = pendingPosts.find((p) => p.id === postId);
-          if (
-            post &&
-            (post.characters?.length > 0 || post.series?.length > 0)
-          ) {
-            await api.patch(`/api/admin/posts/${postId}`, {
-              characters: post.characters || [],
-              series: post.series || [],
-            });
-            savedCount++;
-          }
-        } catch (err) {
-          console.error(`Failed to save post ${postId}:`, err);
-          failedCount++;
-        }
-      }
-
-      setSuccess(
-        `Saved ${savedCount} posts${failedCount > 0 ? `, ${failedCount} failed` : ""}`,
-      );
-      fetchPendingPosts(); // Refresh to clear unsaved indicators
-    } catch (err) {
-      setError(err.response?.data?.detail || "Failed to bulk save");
     }
   };
 
@@ -137,6 +226,10 @@ export default function ImportPostsPage() {
   const handleBulkDelete = async () => {
     if (selectedPosts.length === 0) {
       setError("No posts selected");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedPosts.length} posts?`)) {
       return;
     }
 
@@ -153,7 +246,6 @@ export default function ImportPostsPage() {
       );
       setSelectedPosts([]);
       fetchPendingPosts();
-      fetchTotalCount();
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to bulk delete");
     }
@@ -179,9 +271,21 @@ export default function ImportPostsPage() {
     }
   };
 
+  // Modal handlers
+  const handleOpenModal = (index) => {
+    setModalState({ isOpen: true, postIndex: index });
+  };
+
+  const handleCloseModal = () => {
+    setModalState({ isOpen: false, postIndex: null });
+  };
+
+  const handleModalNavigate = (newIndex) => {
+    setModalState({ isOpen: true, postIndex: newIndex });
+  };
+
   useEffect(() => {
     fetchPendingPosts();
-    fetchTotalCount();
   }, []);
 
   return (
@@ -189,7 +293,7 @@ export default function ImportPostsPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Pending Posts</h1>
         <p className="text-gray-600">
-          Review and manage posts imported via the local import script. Add metadata, publish, or skip posts as needed.
+          Review and manage posts imported via the local import script. Click any card to edit in detail view.
         </p>
         {latestPublishedDate && (
           <p className="text-sm text-gray-500 mt-2">
@@ -216,22 +320,21 @@ export default function ImportPostsPage() {
         </div>
       )}
 
-      {/* Bulk Actions */}
-      {pendingPosts.length > 0 && (
-        <BulkActionsBar
-          selectedCount={selectedPosts.length}
-          totalCount={pendingPosts.length}
-          onSelectAll={toggleSelectAll}
-          onBulkSave={handleBulkSave}
-          onBulkPublish={handleBulkPublish}
-          onBulkDelete={handleBulkDelete}
-        />
-      )}
-
       {/* Pending Posts Count */}
-      <div className="mb-4 text-gray-600">
-        {pendingPosts.length} of {totalPendingCount} pending post
-        {totalPendingCount !== 1 ? "s" : ""} awaiting review
+      <div className="mb-4 flex justify-between items-center">
+        <div className="text-gray-600">
+          {pendingPosts.length} of {totalPendingCount} pending post
+          {totalPendingCount !== 1 ? "s" : ""} awaiting review
+        </div>
+        
+        {pendingPosts.length > 0 && (
+          <button
+            onClick={toggleSelectAll}
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+          >
+            {selectedPosts.length === pendingPosts.length ? "Deselect All" : "Select All"}
+          </button>
+        )}
       </div>
 
       {/* Loading State */}
@@ -248,17 +351,82 @@ export default function ImportPostsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {pendingPosts.map((post) => (
-            <PendingPostCard
-              key={post.id}
-              post={post}
-              isSelected={selectedPosts.includes(post.id)}
-              onToggleSelect={() => togglePostSelection(post.id)}
-              onRemove={removePostFromList}
-            />
-          ))}
-        </div>
+        <>
+          {/* Grid Layout - Same as SearchPage */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {pendingPosts.map((post, index) => (
+              <AdminPostCard
+                key={post.id}
+                post={post}
+                isSelected={selectedPosts.includes(post.id)}
+                onToggleSelect={() => togglePostSelection(post.id)}
+                onSave={() => handleSave(post.id)}
+                onPublish={() => handlePublish(post.id)}
+                onSkip={() => handleSkip(post.id)}
+                onDelete={() => handleDelete(post.id)}
+                onClick={() => handleOpenModal(index)}
+                characters={postEdits[post.id]?.characters || []}
+                series={postEdits[post.id]?.series || []}
+                onCharactersChange={(chars) => updatePostCharacters(post.id, chars)}
+                onSeriesChange={(ser) => updatePostSeries(post.id, ser)}
+              />
+            ))}
+          </div>
+
+          {/* Bulk Actions Bar - Sticky at bottom when items selected */}
+          {selectedPosts.length > 0 && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-blue-500 shadow-lg z-40">
+              <div className="container mx-auto px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="text-lg font-semibold text-gray-900">
+                      {selectedPosts.length} post{selectedPosts.length !== 1 ? "s" : ""} selected
+                    </span>
+                    <button
+                      onClick={() => setSelectedPosts([])}
+                      className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleBulkPublish}
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                    >
+                      Publish All
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                    >
+                      Delete All
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Admin Post Modal */}
+      {modalState.isOpen && modalState.postIndex !== null && (
+        <AdminPostModal
+          post={pendingPosts[modalState.postIndex]}
+          isOpen={modalState.isOpen}
+          onClose={handleCloseModal}
+          onPrevious={modalState.postIndex > 0 ? () => handleModalNavigate(modalState.postIndex - 1) : null}
+          onNext={modalState.postIndex < pendingPosts.length - 1 ? () => handleModalNavigate(modalState.postIndex + 1) : null}
+          onRemove={removePostFromList}
+          currentIndex={modalState.postIndex}
+          totalPosts={pendingPosts.length}
+          characters={postEdits[pendingPosts[modalState.postIndex].id]?.characters || []}
+          series={postEdits[pendingPosts[modalState.postIndex].id]?.series || []}
+          onCharactersChange={(chars) => updatePostCharacters(pendingPosts[modalState.postIndex].id, chars)}
+          onSeriesChange={(ser) => updatePostSeries(pendingPosts[modalState.postIndex].id, ser)}
+        />
       )}
     </div>
   );
