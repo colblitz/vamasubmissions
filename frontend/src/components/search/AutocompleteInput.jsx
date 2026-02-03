@@ -64,7 +64,7 @@ export default function AutocompleteInput({
       if (internalValue !== value) {
         onChange(internalValue);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [internalValue, onChange, value]);

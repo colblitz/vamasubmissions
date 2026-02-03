@@ -173,14 +173,14 @@ export default function PendingPostCard({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (characterInput) fetchCharacterSuggestions(characterInput);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [characterInput]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (seriesInput) fetchSeriesSuggestions(seriesInput);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [seriesInput]);
 

@@ -65,7 +65,7 @@ export default function EditSection({
       if (newCharacter) {
         fetchSuggestions("characters", newCharacter);
       }
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [newCharacter]);
 
@@ -74,7 +74,7 @@ export default function EditSection({
       if (newSeries) {
         fetchSuggestions("series", newSeries);
       }
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [newSeries]);
 
@@ -83,7 +83,7 @@ export default function EditSection({
       if (newTag) {
         fetchSuggestions("tags", newTag);
       }
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [newTag]);
 

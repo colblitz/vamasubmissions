@@ -120,21 +120,21 @@ export default function AdminPostModal({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (characterInput) fetchCharacterSuggestions(characterInput);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [characterInput]);
   
   useEffect(() => {
     const timer = setTimeout(() => {
       if (seriesInput) fetchSeriesSuggestions(seriesInput);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [seriesInput]);
   
   useEffect(() => {
     const timer = setTimeout(() => {
       if (tagInput) fetchTagSuggestions(tagInput);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [tagInput]);
 
