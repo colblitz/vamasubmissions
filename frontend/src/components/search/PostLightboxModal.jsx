@@ -16,6 +16,7 @@ import { sortThumbnails } from "../../utils/thumbnailSort";
  * @param {number} totalResults - Total number of results
  * @param {function} onNavigate - Callback to navigate to different post (receives index)
  * @param {function} onEditSuccess - Callback when edit is submitted
+ * @param {function} onPageChange - Callback to change page (receives page number)
  */
 export default function PostLightboxModal({
   isOpen,
@@ -29,26 +30,69 @@ export default function PostLightboxModal({
   totalResults = 0,
   onNavigate,
   onEditSuccess,
+  onPageChange,
 }) {
   const [editSectionOpen, setEditSectionOpen] = useState(true);
+  const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [thumbnailGridRef, setThumbnailGridRef] = useState(null);
+
+  // Handle navigation with cross-page support
+  const handleNavigatePrevious = async () => {
+    if (currentIndex > 0) {
+      // Navigate within current page
+      onNavigate(currentIndex - 1);
+    } else if (currentPage > 1 && onPageChange) {
+      // At first item of page, go to previous page
+      setIsLoadingPage(true);
+      await onPageChange(currentPage - 1);
+      // After page loads, navigate to last item
+      // This will be handled by the parent component
+      setIsLoadingPage(false);
+    }
+  };
+
+  const handleNavigateNext = async () => {
+    if (currentIndex < allPosts.length - 1) {
+      // Navigate within current page
+      onNavigate(currentIndex + 1);
+    } else if (onPageChange) {
+      // At last item of page, check if there's a next page
+      const totalPages = Math.ceil(totalResults / pageSize);
+      if (currentPage < totalPages) {
+        setIsLoadingPage(true);
+        await onPageChange(currentPage + 1);
+        // After page loads, navigate to first item
+        // This will be handled by the parent component
+        setIsLoadingPage(false);
+      }
+    }
+  };
 
   // Handle keyboard shortcuts
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isLoadingPage) return;
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
-      } else if (e.key === "ArrowLeft" && currentIndex > 0) {
-        onNavigate(currentIndex - 1);
-      } else if (e.key === "ArrowRight" && currentIndex < allPosts.length - 1) {
-        onNavigate(currentIndex + 1);
+      } else if (e.key === "ArrowLeft") {
+        handleNavigatePrevious();
+      } else if (e.key === "ArrowRight") {
+        handleNavigateNext();
+      } else if (e.key === "PageUp" && thumbnailGridRef) {
+        e.preventDefault();
+        // Scroll thumbnail grid up by one viewport height
+        thumbnailGridRef.scrollBy({ top: -thumbnailGridRef.clientHeight, behavior: 'smooth' });
+      } else if (e.key === "PageDown" && thumbnailGridRef) {
+        e.preventDefault();
+        // Scroll thumbnail grid down by one viewport height
+        thumbnailGridRef.scrollBy({ top: thumbnailGridRef.clientHeight, behavior: 'smooth' });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, currentIndex, allPosts.length, onNavigate]);
+  }, [isOpen, isLoadingPage, currentIndex, allPosts.length, currentPage, totalResults, pageSize, thumbnailGridRef]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -65,8 +109,10 @@ export default function PostLightboxModal({
 
   if (!isOpen || !post) return null;
 
-  const hasPrevious = currentIndex > 0;
-  const hasNext = currentIndex < allPosts.length - 1;
+  // Check if we can navigate to previous/next (including across pages)
+  const totalPages = Math.ceil(totalResults / pageSize);
+  const hasPrevious = currentIndex > 0 || currentPage > 1;
+  const hasNext = currentIndex < allPosts.length - 1 || currentPage < totalPages;
 
   // Calculate global index for display
   const globalIndex = (currentPage - 1) * pageSize + currentIndex + 1;
@@ -154,9 +200,12 @@ export default function PostLightboxModal({
           {post.thumbnail_urls && post.thumbnail_urls.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Images ({post.thumbnail_urls.length})
+                Images ({post.thumbnail_urls.length}) - Use PageUp/PageDown to scroll
               </h3>
-              <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto">
+              <div 
+                ref={setThumbnailGridRef}
+                className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto"
+              >
                 {sortedThumbnails.map((url, idx) => (
                   <div
                     key={idx}
@@ -191,24 +240,28 @@ export default function PostLightboxModal({
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
             <button
-              onClick={() => onNavigate(currentIndex - 1)}
-              disabled={!hasPrevious}
+              onClick={handleNavigatePrevious}
+              disabled={!hasPrevious || isLoadingPage}
               className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Previous post (Left arrow)"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
+              {isLoadingPage && currentIndex === 0 ? (
+                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              )}
               <span className="hidden sm:inline">Previous</span>
             </button>
 
@@ -217,25 +270,29 @@ export default function PostLightboxModal({
             </span>
 
             <button
-              onClick={() => onNavigate(currentIndex + 1)}
-              disabled={!hasNext}
+              onClick={handleNavigateNext}
+              disabled={!hasNext || isLoadingPage}
               className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Next post (Right arrow)"
             >
               <span className="hidden sm:inline">Next</span>
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              {isLoadingPage && currentIndex === allPosts.length - 1 ? (
+                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              )}
             </button>
           </div>
         </div>

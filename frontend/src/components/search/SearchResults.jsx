@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PostCardV2 from "./PostCardV2";
 import PostLightboxModal from "./PostLightboxModal";
 
@@ -27,7 +27,13 @@ export default function SearchResults({
   onSortChange,
 }) {
   const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
+  const [localResults, setLocalResults] = useState(results);
   const totalPages = Math.ceil(total / pagination.limit);
+
+  // Update local results when results prop changes
+  useEffect(() => {
+    setLocalResults(results);
+  }, [results]);
 
   const handleThumbnailClick = (index) => {
     setModalState({ isOpen: true, postIndex: index });
@@ -39,6 +45,56 @@ export default function SearchResults({
 
   const handleModalClose = () => {
     setModalState({ isOpen: false, postIndex: null });
+  };
+
+  // Handle page change from modal with navigation to specific index
+  const handleModalPageChange = async (newPage) => {
+    // Store that we're changing pages from modal
+    const wasAtEnd = modalState.postIndex === localResults.length - 1;
+    const wasAtStart = modalState.postIndex === 0;
+    
+    // Change the page
+    await onPageChange(newPage);
+    
+    // After page loads, navigate to appropriate index
+    // This will happen after the useEffect updates localResults
+    setTimeout(() => {
+      if (wasAtEnd) {
+        // Was at end of previous page, go to start of new page
+        setModalState({ isOpen: true, postIndex: 0 });
+      } else if (wasAtStart) {
+        // Was at start of previous page, go to end of new page
+        // We need to wait for results to load
+        setModalState((prev) => ({ 
+          isOpen: true, 
+          postIndex: localResults.length - 1 
+        }));
+      }
+    }, 100);
+  };
+
+  // Handle edit success by updating local state
+  const handleLocalEditSuccess = (message, editData) => {
+    if (editData && modalState.postIndex !== null) {
+      setLocalResults((prevResults) => {
+        const newResults = [...prevResults];
+        const post = newResults[modalState.postIndex];
+        
+        // Add the pending edit to the post's pending_edits array
+        if (!post.pending_edits) {
+          post.pending_edits = [];
+        }
+        post.pending_edits.push(editData);
+        
+        return newResults;
+      });
+    }
+    
+    // Still call the parent callback for any other side effects (like showing a toast)
+    // but don't trigger a full reload
+    if (onEditSuccess) {
+      onEditSuccess(message, false); // Pass false to indicate no reload needed
+    }
   };
 
   if (loading) {
@@ -223,12 +279,13 @@ export default function SearchResults({
         <PostLightboxModal
           isOpen={modalState.isOpen}
           onClose={handleModalClose}
-          post={results[modalState.postIndex]}
-          pendingEdits={results[modalState.postIndex]?.pending_edits || []}
-          allPosts={results}
+          post={localResults[modalState.postIndex]}
+          pendingEdits={localResults[modalState.postIndex]?.pending_edits || []}
+          allPosts={localResults}
           currentIndex={modalState.postIndex}
           onNavigate={handleModalNavigate}
-          onEditSuccess={onEditSuccess}
+          onEditSuccess={handleLocalEditSuccess}
+          onPageChange={handleModalPageChange}
           currentPage={pagination.page}
           pageSize={pagination.limit}
           totalResults={total}

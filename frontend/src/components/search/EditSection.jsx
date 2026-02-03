@@ -116,8 +116,14 @@ export default function EditSection({
       setSuccessMessage(message);
       setTimeout(() => setSuccessMessage(""), 3000);
 
+      // Update local state by adding the pending edit to the pendingEdits array
+      // This allows immediate UI update without page reload
       if (onSuccess) {
-        onSuccess(message);
+        onSuccess(message, {
+          field_name: fieldName,
+          action: action,
+          value: normalizedValue,
+        });
       }
     } catch (err) {
       setErrorMessage(
