@@ -31,6 +31,8 @@ async def suggest_edit(
     """
     Suggest an edit to a post.
     Rate limited to 10 requests per minute.
+    
+    If the user is an admin, the edit is automatically approved.
 
     Args:
         request: FastAPI request object
@@ -39,9 +41,16 @@ async def suggest_edit(
         db: Database session
 
     Returns:
-        Created edit suggestion
+        Created edit suggestion (auto-approved if admin)
     """
-    return edit_service.suggest_edit(db, current_user.id, edit_data)
+    # Create the edit suggestion
+    edit = edit_service.suggest_edit(db, current_user.id, edit_data)
+    
+    # If user is admin, auto-approve the edit immediately
+    if current_user.role == "admin":
+        edit = edit_service.approve_edit(db, edit.id, current_user.id)
+    
+    return edit
 
 
 @router.get("/pending", response_model=PostEditList)

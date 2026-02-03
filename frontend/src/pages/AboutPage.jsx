@@ -1,17 +1,24 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { siteContent } from "../content/siteContent";
+import { useAuth } from "../contexts/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export default function AboutPage() {
+  const { isAdmin } = useAuth();
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchLeaderboard();
-  }, []);
+    // Only fetch leaderboard if user is admin
+    if (isAdmin()) {
+      fetchLeaderboard();
+    } else {
+      setLoading(false);
+    }
+  }, [isAdmin]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -33,7 +40,7 @@ export default function AboutPage() {
         {siteContent.about.heading}
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={`grid grid-cols-1 ${isAdmin() ? 'lg:grid-cols-2' : ''} gap-8`}>
         {/* Left Column: About Content */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow p-6">
@@ -85,21 +92,22 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Right Column: Leaderboards */}
-        <div className="space-y-6">
-          {loading ? (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        {/* Right Column: Leaderboards (Admin Only) */}
+        {isAdmin() && (
+          <div className="space-y-6">
+            {loading ? (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
               </div>
-            </div>
-          ) : error ? (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-center py-12">
-                <p className="text-red-600">{error}</p>
+            ) : error ? (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-center py-12">
+                  <p className="text-red-600">{error}</p>
+                </div>
               </div>
-            </div>
-          ) : leaderboard ? (
+            ) : leaderboard ? (
             <>
               {/* Top Suggesters */}
               <div className="bg-white rounded-lg shadow p-6">
@@ -233,8 +241,9 @@ export default function AboutPage() {
                 </div>
               </div>
             </>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );

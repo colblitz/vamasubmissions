@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import api from "../../../services/api";
 
@@ -63,7 +63,7 @@ export default function AdminPostModal({
 
     try {
       const response = await api.get("/api/posts/autocomplete/characters-with-series", {
-        params: { q: query, limit: 10 },
+        params: { q: query, limit: 100 },
       });
       const data = response.data || [];
       
@@ -91,7 +91,7 @@ export default function AdminPostModal({
 
     try {
       const response = await api.get("/api/posts/autocomplete/series", {
-        params: { q: query, limit: 10 },
+        params: { q: query, limit: 100 },
       });
       setSeriesSuggestions(response.data || []);
     } catch (err) {
@@ -108,7 +108,7 @@ export default function AdminPostModal({
 
     try {
       const response = await api.get("/api/posts/autocomplete/tags", {
-        params: { q: query, limit: 10 },
+        params: { q: query, limit: 100 },
       });
       setTagSuggestions(response.data || []);
     } catch (err) {
