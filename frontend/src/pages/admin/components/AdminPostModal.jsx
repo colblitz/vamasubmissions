@@ -50,6 +50,9 @@ export default function AdminPostModal({
   const characterRef = useRef(null);
   const seriesRef = useRef(null);
   const tagRef = useRef(null);
+  
+  // Ref for thumbnail grid scrolling
+  const [thumbnailGridRef, setThumbnailGridRef] = useState(null);
 
   const canPublish = characters.length > 0 && series.length > 0;
   
@@ -149,12 +152,20 @@ export default function AdminPostModal({
         onPrevious();
       } else if (e.key === "ArrowRight" && onNext) {
         onNext();
+      } else if (e.key === "PageUp" && thumbnailGridRef) {
+        e.preventDefault();
+        // Scroll thumbnail grid up by one viewport height
+        thumbnailGridRef.scrollBy({ top: -thumbnailGridRef.clientHeight, behavior: 'smooth' });
+      } else if (e.key === "PageDown" && thumbnailGridRef) {
+        e.preventDefault();
+        // Scroll thumbnail grid down by one viewport height
+        thumbnailGridRef.scrollBy({ top: thumbnailGridRef.clientHeight, behavior: 'smooth' });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, onPrevious, onNext]);
+  }, [isOpen, onClose, onPrevious, onNext, thumbnailGridRef]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -455,7 +466,10 @@ export default function AdminPostModal({
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Images ({post.thumbnail_urls.length})
                 </h3>
-                <div className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[750px] overflow-y-auto">
+                <div 
+                  ref={setThumbnailGridRef}
+                  className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[750px] overflow-y-auto"
+                >
                   {post.thumbnail_urls.map((url, idx) => (
                     <div
                       key={idx}

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PostCardV2 from "./PostCardV2";
 import PostLightboxModal from "./PostLightboxModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * SearchResults component - Displays search results with pagination
@@ -29,10 +30,29 @@ export default function SearchResults({
   const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
   const [localResults, setLocalResults] = useState(results);
   const totalPages = Math.ceil(total / pagination.limit);
+  const { isAdmin } = useAuth();
+  
+  // Track pending navigation after page change
+  const pendingNavigationRef = useRef(null);
 
   // Update local results when results prop changes
   useEffect(() => {
     setLocalResults(results);
+    
+    // If there's a pending navigation, execute it now that results have loaded
+    if (pendingNavigationRef.current !== null && results.length > 0) {
+      let targetIndex = pendingNavigationRef.current;
+      
+      // Handle sentinel value: -1 means "go to last item"
+      if (targetIndex === -1) {
+        targetIndex = results.length - 1;
+      }
+      
+      pendingNavigationRef.current = null; // Clear pending navigation
+      
+      // Navigate to the target index
+      setModalState({ isOpen: true, postIndex: targetIndex });
+    }
   }, [results]);
 
   const handleThumbnailClick = (index) => {
@@ -49,44 +69,81 @@ export default function SearchResults({
 
   // Handle page change from modal with navigation to specific index
   const handleModalPageChange = async (newPage) => {
-    // Store that we're changing pages from modal
+    // Determine where to navigate after page loads
     const wasAtEnd = modalState.postIndex === localResults.length - 1;
     const wasAtStart = modalState.postIndex === 0;
     
-    // Change the page
-    await onPageChange(newPage);
+    // Set pending navigation: 0 for start of new page, -1 for end of new page
+    if (wasAtEnd) {
+      // Was at end of previous page, go to start of new page
+      pendingNavigationRef.current = 0;
+    } else if (wasAtStart) {
+      // Was at start of previous page, go to end of new page
+      // We'll calculate the actual index when results load (use -1 as sentinel)
+      pendingNavigationRef.current = -1;
+    }
     
-    // After page loads, navigate to appropriate index
-    // This will happen after the useEffect updates localResults
-    setTimeout(() => {
-      if (wasAtEnd) {
-        // Was at end of previous page, go to start of new page
-        setModalState({ isOpen: true, postIndex: 0 });
-      } else if (wasAtStart) {
-        // Was at start of previous page, go to end of new page
-        // We need to wait for results to load
-        setModalState((prev) => ({ 
-          isOpen: true, 
-          postIndex: localResults.length - 1 
-        }));
-      }
-    }, 100);
+    // Change the page - this will trigger results to update
+    await onPageChange(newPage);
   };
 
   // Handle edit success by updating local state
   const handleLocalEditSuccess = (message, editData) => {
-    if (editData && modalState.postIndex !== null) {
+    if (editData) {
       setLocalResults((prevResults) => {
-        const newResults = [...prevResults];
-        const post = newResults[modalState.postIndex];
+        // Find the post by post_id from editData or use modalState.postIndex
+        let postIndex = modalState.postIndex;
         
-        // Add the pending edit to the post's pending_edits array
-        if (!post.pending_edits) {
-          post.pending_edits = [];
+        // If we don't have a modal index, find the post by post_id
+        if (postIndex === null && editData.post_id) {
+          postIndex = prevResults.findIndex(p => p.post_id === editData.post_id);
         }
-        post.pending_edits.push(editData);
         
-        return newResults;
+        if (postIndex !== null && postIndex >= 0) {
+          const post = prevResults[postIndex];
+          
+          // If user is admin, apply the edit directly to the post fields
+          // Otherwise, add to pending_edits
+          let updatedPost;
+          if (isAdmin()) {
+            // Admin: Apply edit immediately to actual post fields
+            const fieldName = editData.field_name;
+            const action = editData.action;
+            const value = editData.value;
+            
+            if (action === 'ADD') {
+              // Add value to the field array if not already present
+              updatedPost = {
+                ...post,
+                [fieldName]: post[fieldName]?.includes(value) 
+                  ? post[fieldName] 
+                  : [...(post[fieldName] || []), value]
+              };
+            } else if (action === 'DELETE') {
+              // Remove value from the field array
+              updatedPost = {
+                ...post,
+                [fieldName]: (post[fieldName] || []).filter(v => v !== value)
+              };
+            }
+          } else {
+            // Non-admin: Add to pending_edits
+            updatedPost = {
+              ...post,
+              pending_edits: [...(post.pending_edits || []), editData]
+            };
+          }
+          
+          // Create a completely new array with the updated post object
+          return prevResults.map((p, idx) => {
+            if (idx === postIndex) {
+              return updatedPost;
+            }
+            return p;
+          });
+        }
+        
+        return prevResults;
       });
     }
     
@@ -172,7 +229,7 @@ export default function SearchResults({
             key={post.post_id}
             post={post}
             pendingEdits={post.pending_edits || []}
-            onEditSuccess={onEditSuccess}
+            onEditSuccess={handleLocalEditSuccess}
             onThumbnailClick={() => handleThumbnailClick(index)}
           />
         ))}

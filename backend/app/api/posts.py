@@ -23,6 +23,8 @@ async def search_posts(
     ),
     series: Optional[str] = Query(None, description="Filter by series names (comma-separated)"),
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
+    no_characters: Optional[bool] = Query(None, description="Filter for posts without any characters"),
+    no_series: Optional[bool] = Query(None, description="Filter for posts without any series"),
     no_tags: Optional[bool] = Query(None, description="Filter for posts without any tags"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Results per page"),
@@ -39,6 +41,8 @@ async def search_posts(
         characters: Filter by character names (comma-separated)
         series: Filter by series names (comma-separated)
         tags: Filter by tags (comma-separated)
+        no_characters: Filter for posts without any characters
+        no_series: Filter for posts without any series
         no_tags: Filter for posts without any tags
         page: Page number (1-indexed)
         limit: Results per page
@@ -63,6 +67,8 @@ async def search_posts(
         characters=character_list,
         series_list=series_list,
         tags=tag_list,
+        no_characters=no_characters,
+        no_series=no_series,
         no_tags=no_tags,
         page=page,
         limit=limit,
@@ -81,6 +87,10 @@ async def search_posts(
         filters.append(f"series={series_list}")
     if tag_list:
         filters.append(f"tags={tag_list}")
+    if no_characters:
+        filters.append("no_characters=True")
+    if no_series:
+        filters.append("no_series=True")
     if no_tags:
         filters.append("no_tags=True")
     
@@ -216,6 +226,7 @@ async def browse_posts(
     field_type: str,
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(100, ge=1, le=500, description="Results per page"),
+    sort_by: str = Query("count", regex="^(count|alpha)$", description="Sort by count or alphabetically"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -226,43 +237,31 @@ async def browse_posts(
         field_type: Type of field to browse ("characters", "series", or "tags")
         page: Page number (1-indexed)
         limit: Results per page
+        sort_by: Sort by "count" (default) or "alpha" (alphabetically)
         current_user: Current authenticated user
         db: Database session
 
     Returns:
         List of items with their post counts and pagination info
     """
-    return post_service.get_browse_data(db, field_type, page, limit)
+    return post_service.get_browse_data(db, field_type, page, limit, sort_by)
 
 
-@router.get("/latest-date")
-async def get_latest_post_date(db: Session = Depends(get_db)):
+@router.get("/browse/{field_type}/no-items-count")
+async def get_no_items_count(
+    field_type: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
-    Get the latest published post date.
-    Public endpoint (no auth required) for use by local import script.
+    Get count of posts with no items in the specified field.
 
     Args:
+        field_type: Type of field ("characters", "series", or "tags")
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
-        Dict with latest_date and post_id, or empty dict if no posts exist
+        Dict with count of posts with empty array for the field
     """
-    from app.models.post import Post as PostModel
-
-    latest_post = (
-        db.query(PostModel)
-        .filter(PostModel.status == "published")
-        .order_by(PostModel.timestamp.desc())
-        .first()
-    )
-
-    if latest_post:
-        return {
-            "latest_date": latest_post.timestamp.isoformat(),
-            "post_id": latest_post.post_id
-        }
-    else:
-        return {
-            "latest_date": None,
-            "post_id": None
-        }
+    return post_service.get_no_items_count(db, field_type)

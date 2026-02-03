@@ -45,10 +45,12 @@ export default function PostCardV2({
   const additionalImageCount =
     post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
 
-  // Handle edit success
-  const handleEditSuccess = (message) => {
+  // Handle edit success - pass through message, editData, and post
+  const handleEditSuccess = (message, editData) => {
     if (onEditSuccess) {
-      onEditSuccess(message);
+      // Include post_id in editData so parent can identify which post was edited
+      const enrichedEditData = editData ? { ...editData, post_id: post.post_id } : null;
+      onEditSuccess(message, enrichedEditData);
     }
   };
 

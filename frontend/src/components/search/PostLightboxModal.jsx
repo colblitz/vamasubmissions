@@ -229,9 +229,9 @@ export default function PostLightboxModal({
               post={post}
               pendingEdits={pendingEdits}
               onClose={() => setEditSectionOpen(false)}
-              onSuccess={(message) => {
+              onSuccess={(message, editData) => {
                 if (onEditSuccess) {
-                  onEditSuccess(message);
+                  onEditSuccess(message, editData);
                 }
               }}
             />

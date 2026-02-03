@@ -124,6 +124,24 @@ export default function SearchFilters({
                 </button>
               </span>
             ))}
+            {searchParams.noCharacters && (
+              <span className="inline-flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+                No Characters
+                <button
+                  onClick={() =>
+                    onSearchParamsChange({
+                      ...searchParams,
+                      noCharacters: false,
+                      page: 1,
+                    })
+                  }
+                  className="hover:text-gray-600 p-1 -mr-1 min-w-[24px] min-h-[24px] flex items-center justify-center"
+                  aria-label="Remove no characters filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
           </div>
         </div>
 
@@ -155,6 +173,24 @@ export default function SearchFilters({
                 </button>
               </span>
             ))}
+            {searchParams.noSeries && (
+              <span className="inline-flex items-center gap-1 px-3 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+                No Series
+                <button
+                  onClick={() =>
+                    onSearchParamsChange({
+                      ...searchParams,
+                      noSeries: false,
+                      page: 1,
+                    })
+                  }
+                  className="hover:text-gray-600 p-1 -mr-1 min-w-[24px] min-h-[24px] flex items-center justify-center"
+                  aria-label="Remove no series filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
           </div>
         </div>
 

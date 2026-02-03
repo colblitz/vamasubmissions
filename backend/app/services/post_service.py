@@ -86,6 +86,8 @@ def search_posts(
     characters: Optional[List[str]] = None,
     series_list: Optional[List[str]] = None,
     tags: Optional[List[str]] = None,
+    no_characters: Optional[bool] = None,
+    no_series: Optional[bool] = None,
     no_tags: Optional[bool] = None,
     page: int = 1,
     limit: int = 20,
@@ -103,6 +105,8 @@ def search_posts(
         characters: Filter by character names (must match ALL)
         series_list: Filter by series names (must match ALL)
         tags: Filter by tags (must match ALL)
+        no_characters: Filter for posts without any characters (characters = '{}' OR characters IS NULL)
+        no_series: Filter for posts without any series (series = '{}' OR series IS NULL)
         no_tags: Filter for posts without any tags (tags = '{}' OR tags IS NULL)
         page: Page number (1-indexed)
         limit: Results per page
@@ -159,6 +163,24 @@ def search_posts(
             q = q.filter(
                 text("EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) LIKE :tag)")
             ).params(tag=search_tag)
+
+    if no_characters:
+        # Filter for posts without any characters (empty array or NULL)
+        q = q.filter(
+            or_(
+                Post.characters == [],
+                Post.characters == None
+            )
+        )
+
+    if no_series:
+        # Filter for posts without any series (empty array or NULL)
+        q = q.filter(
+            or_(
+                Post.series == [],
+                Post.series == None
+            )
+        )
 
     if no_tags:
         # Filter for posts without any tags (empty array or NULL)
@@ -402,6 +424,7 @@ def get_browse_data(
     field_type: str,
     page: int = 1,
     limit: int = 100,
+    sort_by: str = "count",
 ) -> dict:
     """
     Get aggregated data for browsing (characters, series, or tags).
@@ -412,6 +435,7 @@ def get_browse_data(
         field_type: "characters" | "series" | "tags"
         page: Page number (1-indexed)
         limit: Results per page
+        sort_by: "count" (default) or "alpha" (alphabetically)
 
     Returns:
         Dict with items list and pagination info
@@ -431,6 +455,12 @@ def get_browse_data(
 
     field = field_map[field_type]
 
+    # Determine ORDER BY clause based on sort_by parameter
+    if sort_by == "alpha":
+        order_clause = "ORDER BY name ASC"
+    else:  # count
+        order_clause = "ORDER BY count DESC, name ASC"
+
     # SQL query to unnest array, count occurrences, and paginate
     # Use raw SQL for better performance with array operations
     offset = (page - 1) * limit
@@ -445,7 +475,7 @@ def get_browse_data(
         SELECT name, COUNT(*) as count
         FROM unnested
         GROUP BY name
-        ORDER BY count DESC, name ASC
+        {order_clause}
         LIMIT :limit OFFSET :offset
         """),
         {"limit": limit, "offset": offset},
@@ -473,3 +503,48 @@ def get_browse_data(
         "limit": limit,
         "total_pages": total_pages,
     }
+
+
+def get_no_items_count(db: Session, field_type: str) -> dict:
+    """
+    Get count of posts with no items in the specified field.
+
+    Args:
+        db: Database session
+        field_type: "characters" | "series" | "tags"
+
+    Returns:
+        Dict with count of posts with empty array for the field
+    """
+    # Map field type to column name
+    field_map = {
+        "characters": "characters",
+        "series": "series",
+        "tags": "tags",
+    }
+
+    if field_type not in field_map:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid field_type. Must be one of: {', '.join(field_map.keys())}",
+        )
+
+    field = field_map[field_type]
+
+    # Count posts where the field is an empty array or NULL
+    count_result = db.execute(
+        text(f"""
+        SELECT COUNT(*)
+        FROM posts
+        WHERE status = 'published'
+          AND (
+            {field} = '{{}}' OR 
+            {field} IS NULL OR 
+            array_length({field}, 1) IS NULL
+          )
+        """)
+    ).fetchone()
+
+    count = count_result[0] if count_result else 0
+
+    return {"count": count}

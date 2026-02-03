@@ -15,6 +15,8 @@ export default function SearchPage() {
     characters: [],
     series: [],
     tags: [],
+    noCharacters: false,
+    noSeries: false,
     noTags: false,
     page: 1,
     limit: 20,
@@ -125,6 +127,12 @@ export default function SearchPage() {
       if (searchParams.tags.length > 0) {
         params.tags = searchParams.tags.join(",");
       }
+      if (searchParams.noCharacters) {
+        params.no_characters = true;
+      }
+      if (searchParams.noSeries) {
+        params.no_series = true;
+      }
       if (searchParams.noTags) {
         params.no_tags = true;
       }
@@ -149,6 +157,8 @@ export default function SearchPage() {
       searchParams.characters.length > 0 ||
       searchParams.series.length > 0 ||
       searchParams.tags.length > 0 ||
+      searchParams.noCharacters ||
+      searchParams.noSeries ||
       searchParams.noTags
     ) {
       handleSearch();
@@ -157,6 +167,8 @@ export default function SearchPage() {
     searchParams.characters,
     searchParams.series,
     searchParams.tags,
+    searchParams.noCharacters,
+    searchParams.noSeries,
     searchParams.noTags,
     searchParams.sortBy,
     searchParams.sortOrder,
@@ -180,9 +192,13 @@ export default function SearchPage() {
     setSearchParams((prev) => ({ ...prev, sortBy, sortOrder, page: 1 }));
   };
 
-  // Refresh search results after successful edit submission
-  const handleEditSuccess = () => {
-    handleSearch();
+  // Handle edit success - only reload if explicitly requested
+  const handleEditSuccess = (message, shouldReload = true) => {
+    // If shouldReload is false, the child component is handling the update locally
+    // so we don't need to trigger a full page reload
+    if (shouldReload) {
+      handleSearch();
+    }
   };
 
   // Handle browse item selection
@@ -192,13 +208,17 @@ export default function SearchPage() {
 
     // Apply the filter based on field type
     if (fieldType === "characters") {
-      setSearchParams((prev) => ({ ...prev, characters: [itemName], noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, characters: [itemName], noCharacters: false, noSeries: false, noTags: false, page: 1 }));
     } else if (fieldType === "series") {
-      setSearchParams((prev) => ({ ...prev, series: [itemName], noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, series: [itemName], noCharacters: false, noSeries: false, noTags: false, page: 1 }));
     } else if (fieldType === "tags") {
-      setSearchParams((prev) => ({ ...prev, tags: [itemName], noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, tags: [itemName], noCharacters: false, noSeries: false, noTags: false, page: 1 }));
+    } else if (fieldType === "no_characters") {
+      setSearchParams((prev) => ({ ...prev, noCharacters: true, characters: [], noSeries: false, noTags: false, page: 1 }));
+    } else if (fieldType === "no_series") {
+      setSearchParams((prev) => ({ ...prev, noSeries: true, series: [], noCharacters: false, noTags: false, page: 1 }));
     } else if (fieldType === "no_tags") {
-      setSearchParams((prev) => ({ ...prev, noTags: true, tags: [], page: 1 }));
+      setSearchParams((prev) => ({ ...prev, noTags: true, tags: [], noCharacters: false, noSeries: false, page: 1 }));
     }
   };
 
@@ -227,6 +247,32 @@ export default function SearchPage() {
           }`}
         >
           Browse
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("search");
+            // Clear all filters and show all posts
+            setSearchParams({
+              query: "",
+              characters: [],
+              series: [],
+              tags: [],
+              noTags: false,
+              page: 1,
+              limit: 20,
+              sortBy: "date",
+              sortOrder: "desc",
+            });
+            // Trigger search after state update
+            setTimeout(() => handleSearch(), 0);
+          }}
+          className={`px-6 py-3 font-medium transition-colors min-h-[44px] ${
+            activeTab === "all"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Browse All Posts
         </button>
       </div>
 
