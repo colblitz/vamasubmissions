@@ -12,6 +12,7 @@ export default function BrowseTab({ onSelectItem }) {
   const [error, setError] = useState("");
   const [sortBy, setSortBy] = useState("count"); // "count" or "alpha"
   const [noItemsCount, setNoItemsCount] = useState(0); // Count for no tags/characters/series
+  const [startsWith, setStartsWith] = useState(null); // Letter filter for alpha sort
   const [pagination, setPagination] = useState({
     page: 1,
     total: 0,
@@ -19,10 +20,10 @@ export default function BrowseTab({ onSelectItem }) {
     limit: 32, // 8 rows x 4 columns on large screens
   });
 
-  // Fetch browse data when sub-tab or sort changes
+  // Fetch browse data when sub-tab, sort, or startsWith changes
   useEffect(() => {
     fetchBrowseData();
-  }, [activeSubTab, pagination.page, sortBy]);
+  }, [activeSubTab, pagination.page, sortBy, startsWith]);
 
   // Fetch count of posts with no items for current tab
   useEffect(() => {
@@ -34,13 +35,18 @@ export default function BrowseTab({ onSelectItem }) {
     setError("");
 
     try {
-      const response = await api.get(`/api/posts/browse/${activeSubTab}`, {
-        params: {
-          page: pagination.page,
-          limit: pagination.limit,
-          sort_by: sortBy,
-        },
-      });
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        sort_by: sortBy,
+      };
+      
+      // Add starts_with parameter if in alpha mode and a letter is selected
+      if (sortBy === "alpha" && startsWith) {
+        params.starts_with = startsWith;
+      }
+      
+      const response = await api.get(`/api/posts/browse/${activeSubTab}`, { params });
 
       setItems(response.data.items || []);
       setPagination({
@@ -216,55 +222,51 @@ export default function BrowseTab({ onSelectItem }) {
             </div>
           )}
 
-          {/* Pagination - Page Numbers or Alphabet Navigation */}
+          {/* Alphabet Navigation (only in alpha mode) */}
+          {sortBy === "alpha" && (
+            <div className="flex justify-center items-center gap-1 mt-4 flex-wrap">
+              {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => {
+                const isCurrentLetter = 
+                  items.length > 0 && 
+                  items[0].name && 
+                  items[0].name.charAt(0).toUpperCase() === letter;
+
+                return (
+                  <button
+                    key={letter}
+                    onClick={() => {
+                      setStartsWith(letter);
+                      setPagination((prev) => ({ ...prev, page: 1 }));
+                    }}
+                    className={`px-2 py-1 rounded text-sm ${
+                      isCurrentLetter
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                    }`}
+                    aria-label={`Jump to ${letter}`}
+                  >
+                    {letter}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Page Navigation (always show if multiple pages) */}
           {pagination.totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-4 flex-wrap">
-              {sortBy === "alpha" ? (
-                // Alphabet Navigation
-                <>
-                  {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter, idx) => {
-                    // Estimate which page this letter starts on
-                    const letterIndex = idx;
-                    const estimatedPage = Math.max(
-                      1,
-                      Math.ceil(((letterIndex + 1) * pagination.total) / (26 * pagination.limit))
-                    );
-                    const isCurrentLetter = 
-                      items.length > 0 && 
-                      items[0].name && 
-                      items[0].name.charAt(0).toUpperCase() === letter;
+              {/* Previous Button */}
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
+                aria-label="Previous page"
+              >
+                ←
+              </button>
 
-                    return (
-                      <button
-                        key={letter}
-                        onClick={() => handlePageChange(estimatedPage)}
-                        className={`px-3 py-2 rounded min-h-[44px] text-sm ${
-                          isCurrentLetter
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                        }`}
-                        aria-label={`Jump to ${letter}`}
-                      >
-                        {letter}
-                      </button>
-                    );
-                  })}
-                </>
-              ) : (
-                // Page Number Navigation (like SearchResults)
-                <>
-                  {/* Previous Button */}
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
-                    aria-label="Previous page"
-                  >
-                    ←
-                  </button>
-
-                  {/* Page Numbers */}
-                  {(() => {
+              {/* Page Numbers */}
+              {(() => {
                     const pages = [];
                     const maxVisible = 7;
                     const current = pagination.page;
@@ -335,17 +337,15 @@ export default function BrowseTab({ onSelectItem }) {
                     });
                   })()}
 
-                  {/* Next Button */}
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page >= pagination.totalPages}
-                    className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
-                    aria-label="Next page"
-                  >
-                    →
-                  </button>
-                </>
-              )}
+              {/* Next Button */}
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="px-4 py-3 bg-gray-200 text-gray-900 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 min-h-[44px]"
+                aria-label="Next page"
+              >
+                →
+              </button>
             </div>
           )}
 

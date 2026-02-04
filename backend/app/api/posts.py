@@ -227,6 +227,7 @@ async def browse_posts(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(100, ge=1, le=500, description="Results per page"),
     sort_by: str = Query("count", regex="^(count|alpha)$", description="Sort by count or alphabetically"),
+    starts_with: Optional[str] = Query(None, max_length=1, description="Filter items starting with this letter (alpha sort only)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -238,13 +239,14 @@ async def browse_posts(
         page: Page number (1-indexed)
         limit: Results per page
         sort_by: Sort by "count" (default) or "alpha" (alphabetically)
+        starts_with: Filter items starting with this letter (only works with alpha sort)
         current_user: Current authenticated user
-        db: Database session
+        db: Session = Depends(get_db)
 
     Returns:
         List of items with their post counts and pagination info
     """
-    return post_service.get_browse_data(db, field_type, page, limit, sort_by)
+    return post_service.get_browse_data(db, field_type, page, limit, sort_by, starts_with)
 
 
 @router.get("/browse/{field_type}/no-items-count")

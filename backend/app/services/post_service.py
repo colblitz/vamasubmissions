@@ -425,6 +425,7 @@ def get_browse_data(
     page: int = 1,
     limit: int = 100,
     sort_by: str = "count",
+    starts_with: Optional[str] = None,
 ) -> dict:
     """
     Get aggregated data for browsing (characters, series, or tags).
@@ -436,6 +437,7 @@ def get_browse_data(
         page: Page number (1-indexed)
         limit: Results per page
         sort_by: "count" (default) or "alpha" (alphabetically)
+        starts_with: Filter items starting with this letter (only for alpha sort)
 
     Returns:
         Dict with items list and pagination info
@@ -461,10 +463,40 @@ def get_browse_data(
     else:  # count
         order_clause = "ORDER BY count DESC, name ASC"
 
+    # If starts_with is provided (for alpha sort), find the offset to the first matching item
+    offset = (page - 1) * limit
+    
+    if starts_with and sort_by == "alpha":
+        # Find the position of the first item starting with this letter
+        letter_upper = starts_with.upper()
+        letter_lower = starts_with.lower()
+        
+        # Count how many items come before this letter
+        offset_result = db.execute(
+            text(f"""
+            WITH unnested AS (
+                SELECT unnest({field}) as name
+                FROM posts
+                WHERE status = 'published'
+            ),
+            grouped AS (
+                SELECT name, COUNT(*) as count
+                FROM unnested
+                GROUP BY name
+            )
+            SELECT COUNT(*)
+            FROM grouped
+            WHERE UPPER(SUBSTRING(name, 1, 1)) < :letter_upper
+            """),
+            {"letter_upper": letter_upper},
+        ).fetchone()
+        
+        offset = offset_result[0] if offset_result else 0
+        # Calculate which page this offset corresponds to
+        page = (offset // limit) + 1
+
     # SQL query to unnest array, count occurrences, and paginate
     # Use raw SQL for better performance with array operations
-    offset = (page - 1) * limit
-
     results = db.execute(
         text(f"""
         WITH unnested AS (
