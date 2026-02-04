@@ -6,8 +6,8 @@ import { siteContent } from "../content/siteContent";
 
 export default function CommunityRequestsPage() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
+  const [queuePositions, setQueuePositions] = useState({}); // Map of request_id -> position
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -17,8 +17,7 @@ export default function CommunityRequestsPage() {
     characters: "",
     series: "",
     description: "",
-    requested_timestamp: "", // Date when user wants this fulfilled
-    is_private: false, // Whether request is private (only visible to user and admins)
+    requested_timestamp: "", // Date when user submitted this to VAMA
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
@@ -49,17 +48,58 @@ export default function CommunityRequestsPage() {
     }
   };
 
-  // Fetch my requests
+  // Fetch my requests and calculate queue positions
   const fetchMyRequests = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.get("/api/requests/my");
-      // Backend returns plain array, not {requests: [...]}
-      setMyRequests(response.data || []);
+      // Fetch my requests
+      const myResponse = await api.get("/api/requests/my");
+      const myReqs = myResponse.data || [];
+      setMyRequests(myReqs);
+
+      // Fetch all pending requests to calculate queue positions
+      const allResponse = await api.get("/api/requests/");
+      const allRequests = allResponse.data.requests || [];
+
+      // Sort all requests by requested_timestamp (oldest first)
+      const sortedRequests = allRequests.sort(
+        (a, b) => new Date(a.requested_timestamp) - new Date(b.requested_timestamp)
+      );
+
+      // Calculate position for each of my requests
+      const positions = {};
+      myReqs.forEach((myReq) => {
+        if (myReq.status === "pending" || !myReq.fulfilled) {
+          // Count how many requests are before this one
+          const position = sortedRequests.findIndex((r) => r.id === myReq.id);
+          if (position >= 0) {
+            positions[myReq.id] = position; // 0-indexed, so position 0 means "first in queue"
+          }
+        }
+      });
+
+      setQueuePositions(positions);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to load your requests");
+      console.error("Failed to load requests:", err);
+      
+      // Extract error message properly
+      let errorMessage = "Failed to load your requests";
+      if (err.response?.data?.detail) {
+        if (typeof err.response.data.detail === 'string') {
+          errorMessage = err.response.data.detail;
+        } else if (Array.isArray(err.response.data.detail)) {
+          // FastAPI validation errors are arrays
+          errorMessage = err.response.data.detail.map(e => e.msg).join(', ');
+        } else {
+          errorMessage = JSON.stringify(err.response.data.detail);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -184,7 +224,7 @@ export default function CommunityRequestsPage() {
           .filter(Boolean),
         description: formData.description,
         requested_timestamp: requested_timestamp,
-        is_private: formData.is_private,
+        is_private: false, // Always false now
       });
 
       setFormData({
@@ -192,14 +232,12 @@ export default function CommunityRequestsPage() {
         series: "",
         description: "",
         requested_timestamp: "",
-        is_private: false,
       });
       setSubmitSuccess(true);
       setShowForm(false);
 
-      // Refresh both lists
+      // Refresh my requests
       fetchMyRequests();
-      fetchQueue();
 
       // Clear success message after 3 seconds
       setTimeout(() => setSubmitSuccess(false), 3000);
@@ -225,7 +263,6 @@ export default function CommunityRequestsPage() {
     try {
       await api.patch(`/api/requests/${requestId}/fulfill`);
       fetchMyRequests();
-      fetchQueue(); // Refresh queue to remove the fulfilled request
       setDeleteSuccess(true);
       setTimeout(() => setDeleteSuccess(false), 3000);
     } catch (err) {
@@ -242,7 +279,6 @@ export default function CommunityRequestsPage() {
   };
 
   useEffect(() => {
-    fetchQueue();
     fetchMyRequests();
   }, []);
 
@@ -419,29 +455,6 @@ export default function CommunityRequestsPage() {
                 />
               </div>
 
-              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <input
-                  type="checkbox"
-                  id="is_private"
-                  checked={formData.is_private}
-                  onChange={(e) =>
-                    setFormData({ ...formData, is_private: e.target.checked })
-                  }
-                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <div className="flex-1">
-                  <label
-                    htmlFor="is_private"
-                    className="block text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    {siteContent.communityRequests.newRequestForm.fields.isPrivate.label}
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {siteContent.communityRequests.newRequestForm.fields.isPrivate.helpText}
-                  </p>
-                </div>
-              </div>
-
               <button
                 type="submit"
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -454,19 +467,29 @@ export default function CommunityRequestsPage() {
       </div>
 
       {/* My Requests Section */}
-      {myRequests && myRequests.length > 0 && (
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading your requests...</p>
+        </div>
+      ) : myRequests && myRequests.length > 0 ? (
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{siteContent.communityRequests.myRequests.heading}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {siteContent.communityRequests.myRequests.heading} ({myRequests.length})
+          </h2>
           <div className="space-y-3">
             {myRequests.map((request) => {
+              const queuePosition = queuePositions[request.id];
+              const requestsAhead = queuePosition !== undefined ? queuePosition : null;
+              
               return (
                 <div
                   key={request.id}
-                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                  className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <h3 className="font-semibold text-gray-900">
                           {request.characters.join(", ")}
                         </h3>
@@ -479,14 +502,19 @@ export default function CommunityRequestsPage() {
                                 : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {request.status === "pending" ? siteContent.communityRequests.myRequests.statusLabels.pending : request.status === "fulfilled" ? siteContent.communityRequests.myRequests.statusLabels.fulfilled : request.status}
+                          {request.status === "pending" 
+                            ? siteContent.communityRequests.myRequests.statusLabels.pending 
+                            : request.status === "fulfilled" 
+                              ? siteContent.communityRequests.myRequests.statusLabels.fulfilled 
+                              : request.status}
                         </span>
-                        {request.status === "pending" &&
-                          request.queue_position && (
-                            <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                              #{request.queue_position} {siteContent.communityRequests.myRequests.queuePosition}
-                            </span>
-                          )}
+                        {request.status === "pending" && requestsAhead !== null && (
+                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                            {requestsAhead === 0 
+                              ? "Next in queue!" 
+                              : `${requestsAhead} request${requestsAhead === 1 ? '' : 's'} ahead`}
+                          </span>
+                        )}
                       </div>
 
                       <p className="text-gray-600 text-sm mb-1">
@@ -530,7 +558,7 @@ export default function CommunityRequestsPage() {
 
                   {/* Inline Confirmation Section */}
                   {deleteConfirm === request.id && (
-                    <div className="border-t border-blue-300 bg-blue-100 pt-3 mt-3 transition-all duration-300 ease-in-out">
+                    <div className="border-t border-gray-300 bg-gray-50 pt-3 mt-3 transition-all duration-300 ease-in-out">
                       <p className="text-gray-900 font-medium mb-3">
                         {siteContent.communityRequests.myRequests.confirmationPrompt}
                       </p>
@@ -555,81 +583,29 @@ export default function CommunityRequestsPage() {
             })}
           </div>
         </div>
+      ) : !loading && (
+        <div className="text-center py-16 bg-white rounded-lg shadow">
+          <svg
+            className="w-16 h-16 text-gray-300 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            No Tracked Requests
+          </h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            You haven't tracked any requests yet. Use the form above to record your character requests to VAMA.
+          </p>
+        </div>
       )}
-
-      {/* Known Queue Section */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">{siteContent.communityRequests.knownQueue.heading}</h2>
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">{siteContent.communityRequests.knownQueue.loading}</p>
-          </div>
-        ) : !requests || requests.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-lg shadow">
-            <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {siteContent.communityRequests.emptyState.heading}
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {siteContent.communityRequests.emptyState.description}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Link
-                to="/"
-                className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-              >
-                {siteContent.communityRequests.emptyState.browseButton}
-              </Link>
-              <Link
-                to="/search"
-                className="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-              >
-                {siteContent.communityRequests.emptyState.searchButton}
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {requests.map((request) => (
-              <div key={request.id} className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  {request.characters.join(", ")}
-                </h3>
-
-                <p className="text-gray-600 text-sm mb-1">
-                  Series: {request.series.join(", ")}
-                </p>
-
-                {request.description && (
-                  <p className="text-gray-700 text-sm mb-1">
-                    {request.description}
-                  </p>
-                )}
-
-                <p className="text-xs text-gray-500">
-                  {siteContent.communityRequests.knownQueue.requestedOn}{" "}
-                  {request.requested_timestamp
-                    ? new Date(request.requested_timestamp).toLocaleDateString()
-                    : siteContent.communityRequests.knownQueue.notSpecified}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

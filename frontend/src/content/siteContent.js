@@ -206,7 +206,7 @@ export const siteContent = {
     // Important Notice disclaimer banner
     disclaimer: {
       heading: "Important Notice",
-      text: "This is an unofficial community tracker for character requests. Not all users record their requests here, so the queue may not reflect the complete picture. This tool is meant to help the community coordinate and track what has been requested, but it is not managed or endorsed by VAMA.",
+      text: "This is an unofficial personal tracking tool for your character requests. It helps you keep track of what you've requested and see approximately how many other tracked requests are ahead of yours in the queue. Not all community members use this tracker, so the queue position is only an estimate based on known requests. This tool is not affiliated with or endorsed by VAMA.",
     },
 
     // Success messages
