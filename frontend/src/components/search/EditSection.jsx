@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { normalizeText } from "../../utils/validation";
 
@@ -32,10 +32,35 @@ export default function EditSection({
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Refs for click-away detection
+  const characterInputRef = useRef(null);
+  const seriesInputRef = useRef(null);
+  const tagInputRef = useRef(null);
+
   // Get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {
     return pendingEdits.filter((edit) => edit.field_name === fieldName);
   };
+
+  // Click-away detection to close autocomplete dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (characterInputRef.current && !characterInputRef.current.contains(event.target)) {
+        setCharacterSuggestions([]);
+      }
+      if (seriesInputRef.current && !seriesInputRef.current.contains(event.target)) {
+        setSeriesSuggestions([]);
+      }
+      if (tagInputRef.current && !tagInputRef.current.contains(event.target)) {
+        setTagSuggestions([]);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch autocomplete suggestions
   const fetchSuggestions = async (fieldType, query) => {
@@ -276,7 +301,7 @@ export default function EditSection({
             {/* All inputs in a row */}
             <div className="flex flex-wrap gap-2">
               {/* Character input */}
-              <div className="relative inline-flex items-center gap-1">
+              <div ref={characterInputRef} className="relative inline-flex items-center gap-1">
                 <input
                   type="text"
                   value={newCharacter}
@@ -320,7 +345,7 @@ export default function EditSection({
               </div>
 
               {/* Series input */}
-              <div className="relative inline-flex items-center gap-1">
+              <div ref={seriesInputRef} className="relative inline-flex items-center gap-1">
                 <input
                   type="text"
                   value={newSeries}
@@ -364,7 +389,7 @@ export default function EditSection({
               </div>
 
               {/* Tag input */}
-              <div className="relative inline-flex items-center gap-1">
+              <div ref={tagInputRef} className="relative inline-flex items-center gap-1">
                 <input
                   type="text"
                   value={newTag}
