@@ -10,6 +10,7 @@ export default function AboutPage() {
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false);
 
   useEffect(() => {
     // Only fetch leaderboard if user is admin
@@ -82,11 +83,17 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Keyboard Shortcuts
-            </h2>
-            <div className="max-w-3xl text-gray-700 space-y-4">
+          <div className="bg-white rounded-lg shadow">
+            <button
+              onClick={() => setKeyboardShortcutsOpen(!keyboardShortcutsOpen)}
+              className="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {keyboardShortcutsOpen ? "▼" : "▶"} Keyboard Shortcuts
+              </h2>
+            </button>
+            {keyboardShortcutsOpen && (
+              <div className="px-6 pb-6 max-w-3xl text-gray-700 space-y-4">
               {/* Search & Browse */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Search & Browse</h3>
@@ -155,6 +162,7 @@ export default function AboutPage() {
                 </div>
               </div>
             </div>
+            )}
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-6">
