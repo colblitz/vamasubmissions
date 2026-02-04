@@ -483,7 +483,7 @@ export default function EditSection({
             ))}
 
             {/* Add New Character */}
-            <div className="relative inline-flex items-center gap-1">
+            <div ref={characterInputRef} className="relative inline-flex items-center gap-1">
               <input
                 type="text"
                 value={newCharacter}
@@ -602,7 +602,7 @@ export default function EditSection({
             ))}
 
             {/* Add New Series */}
-            <div className="relative inline-flex items-center gap-1">
+            <div ref={seriesInputRef} className="relative inline-flex items-center gap-1">
               <input
                 type="text"
                 value={newSeries}
@@ -719,7 +719,7 @@ export default function EditSection({
             ))}
 
             {/* Add New Tag */}
-            <div className="relative inline-flex items-center gap-1">
+            <div ref={tagInputRef} className="relative inline-flex items-center gap-1">
               <input
                 type="text"
                 value={newTag}
