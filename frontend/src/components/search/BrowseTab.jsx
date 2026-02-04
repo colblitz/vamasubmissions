@@ -83,7 +83,16 @@ export default function BrowseTab({ onSelectItem }) {
   };
 
   const handlePageChange = (newPage) => {
+    // Clear startsWith when manually navigating pages
+    setStartsWith(null);
     setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handleLetterClick = (letter) => {
+    // Set the letter and reset to page 1
+    // The backend will calculate the correct page based on the letter
+    setStartsWith(letter);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   return (
@@ -234,10 +243,7 @@ export default function BrowseTab({ onSelectItem }) {
                 return (
                   <button
                     key={letter}
-                    onClick={() => {
-                      setStartsWith(letter);
-                      setPagination((prev) => ({ ...prev, page: 1 }));
-                    }}
+                    onClick={() => handleLetterClick(letter)}
                     className={`px-2 py-1 rounded text-sm ${
                       isCurrentLetter
                         ? "bg-blue-600 text-white"
