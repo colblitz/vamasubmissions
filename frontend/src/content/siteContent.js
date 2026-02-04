@@ -163,6 +163,7 @@ export const siteContent = {
     roadmap: {
       heading: "Coming Soon",
       items: [
+        "Value aliases (e.g., FGO → Fate/Grand Order, FF7 → Final Fantasy VII)",
         "Mobile UX improvements",
         "Request stats tracking",
       ],

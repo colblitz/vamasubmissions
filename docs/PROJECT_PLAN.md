@@ -336,11 +336,22 @@ gallery-dl/patreon/carza/
 - [ ] Clean up old thumbnail files (optional)
 - [ ] Document new process
 
-### Priority 6: Search Improvements & Case Insensitivity
+### Priority 6: Value Aliases (🟡 Medium - 4-6 hours)
+- [ ] Add ability to create aliases for character/series/tag values
+- [ ] Examples: "FGO" → "Fate/Grand Order", "FF7" → "Final Fantasy VII"
+- [ ] Backend: New table for aliases (value_type, canonical_value, alias_value)
+- [ ] Search: Searching for alias should match canonical value
+- [ ] Autocomplete: Show both canonical and aliases
+- [ ] Admin UI: Manage aliases (add, edit, delete)
+- [ ] Apply aliases during import/edit suggestions
+- **Benefits**: Easier searching, consistent naming, handles common abbreviations
+- **Complexity**: Medium - new table, search logic updates, UI for management
+
+### Priority 7: Search Improvements & Case Insensitivity
 - [ ] Ability to search for non-existent values (e.g., find posts with no characters, no series, no tags)
 - [ ] Make sure everything is case insensitive (search, filters, autocomplete, matching)
 
-### Priority 7: Image Viewer & Lightbox (🔴 Hard - 5-7 hours)
+### Priority 8: Image Viewer & Lightbox (🔴 Hard - 5-7 hours)
 **CDN Integration**:
 - Research CDN options (Cloudflare, CloudFront, Bunny CDN)
 - Serve static assets (thumbnails, images) from CDN
@@ -640,6 +651,42 @@ sudo systemctl reload nginx
 - Always specify placeholder colors: `placeholder-gray-400` or similar
 - Test input fields in all states (empty, focused, filled, autofilled)
 - Ensure sufficient contrast ratios (WCAG AA minimum: 4.5:1 for normal text)
+
+---
+
+## Production Infrastructure Notes
+
+### Nginx Static File Serving (2026-02-01)
+
+**Configuration**:
+```nginx
+# Main frontend server block
+location /static/ {
+    alias /home/deploy/vamasubmissions/backend/static/;
+    expires 30d;
+    add_header Cache-Control "public, immutable";
+    try_files $uri =404;
+}
+```
+
+**Key Points**:
+- Static files (thumbnails) served directly by nginx from `/home/deploy/vamasubmissions/backend/static/`
+- 30-day browser caching enabled for performance
+- Much faster than proxying through FastAPI backend
+- Backend also mounts `/static` via FastAPI StaticFiles, but nginx serves directly
+
+**Debugging Tips**:
+- When testing nginx configs with multiple server blocks (production, staging, etc.), always test with the actual domain name (e.g., `https://vamarequests.com`) rather than `http://localhost`
+- `localhost` requests may hit the default or staging server block instead of production
+- Use `sudo nginx -T | grep -A 10 "location /static"` to see all active location blocks across all server configs
+- Check which server block is handling requests: `curl -I https://DOMAIN/path` vs `curl -I http://localhost/path`
+
+**Troubleshooting 404s**:
+1. Check if backend serves file: `curl -I http://127.0.0.1:8000/static/thumbnails/FILE.png`
+2. Check if nginx serves file: `curl -I https://vamarequests.com/static/thumbnails/FILE.png`
+3. Check nginx error logs: `sudo tail -50 /var/log/nginx/error.log | grep static`
+4. Verify file exists: `ls -la ~/vamasubmissions/backend/static/thumbnails/FILE.png`
+5. Check permissions: `sudo -u www-data cat /path/to/file > /dev/null`
 
 ---
 
