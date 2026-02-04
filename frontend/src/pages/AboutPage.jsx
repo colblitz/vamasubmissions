@@ -82,6 +82,81 @@ export default function AboutPage() {
             </div>
           </div>
 
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Keyboard Shortcuts
+            </h2>
+            <div className="max-w-3xl text-gray-700 space-y-4">
+              {/* Search & Browse */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Search & Browse</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center py-1">
+                    <span>Search by title</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">Enter</kbd>
+                  </div>
+                </div>
+              </div>
+
+              {/* Post Modals */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Post Viewer Modals</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center py-1">
+                    <span>Close modal</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">ESC</kbd>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span>Previous post/edit</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">← Left Arrow</kbd>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span>Next post/edit</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">→ Right Arrow</kbd>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span>Scroll thumbnails up</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">Page Up</kbd>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span>Scroll thumbnails down</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">Page Down</kbd>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Suggestions */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Edit Suggestions</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center py-1">
+                    <span>Submit edit (in input field)</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">Enter</kbd>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Edits Modal */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Review Edits Modal</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center py-1">
+                    <span>Navigate between pending edits</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">← → Arrow Keys</kbd>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span>Scroll thumbnail grid</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">Page Up / Page Down</kbd>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span>Close modal</span>
+                    <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono">ESC</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-green-50 border border-green-200 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-green-900 mb-3">
               {siteContent.about.contact.heading}

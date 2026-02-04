@@ -163,10 +163,8 @@ export const siteContent = {
     roadmap: {
       heading: "Coming Soon",
       items: [
-        "View all post thumbnails",
-        "Ability to search for non-existent values",
-        "Make everything case insensitive",
         "Mobile UX improvements",
+        "Request stats tracking",
       ],
     },
 

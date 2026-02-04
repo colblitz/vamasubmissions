@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../services/api";
 import SuggestGlobalEditForm from "../components/edits/SuggestGlobalEditForm";
 import PendingGlobalEdits from "../components/edits/PendingGlobalEdits";
+import PostThumbnailModal from "../components/edits/PostThumbnailModal";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function ReviewEditsPage() {
@@ -24,6 +25,14 @@ export default function ReviewEditsPage() {
 
   // Inline success messages per edit
   const [editSuccessMessages, setEditSuccessMessages] = useState({}); // {editId: "message"}
+  
+  // Modal state for viewing post thumbnails
+  const [modalState, setModalState] = useState({ 
+    isOpen: false, 
+    post: null, 
+    edit: null,
+    editIndex: null,
+  });
 
   // Fetch pending edits
   const fetchPending = async () => {
@@ -160,6 +169,72 @@ export default function ReviewEditsPage() {
     return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
   };
 
+  // Handle thumbnail click - fetch full post data and open modal
+  const handleThumbnailClick = async (edit, editIndex) => {
+    try {
+      const response = await api.get(`/api/posts/${edit.post_id}`);
+      setModalState({
+        isOpen: true,
+        post: {
+          title: edit.post_title,
+          thumbnail_urls: response.data.thumbnail_urls || [],
+        },
+        edit: edit,
+        editIndex: editIndex,
+      });
+    } catch (err) {
+      console.error("Failed to fetch post data:", err);
+      setErrorMessage("Failed to load post images");
+      setTimeout(() => setErrorMessage(""), 3000);
+    }
+  };
+
+  // Navigate to previous edit in modal
+  const handleModalPrevious = async () => {
+    if (modalState.editIndex === null || modalState.editIndex <= 0) return;
+    
+    const prevIndex = modalState.editIndex - 1;
+    const prevEdit = pendingEdits[prevIndex];
+    await handleThumbnailClick(prevEdit, prevIndex);
+  };
+
+  // Navigate to next edit in modal
+  const handleModalNext = async () => {
+    if (modalState.editIndex === null || modalState.editIndex >= pendingEdits.length - 1) return;
+    
+    const nextIndex = modalState.editIndex + 1;
+    const nextEdit = pendingEdits[nextIndex];
+    await handleThumbnailClick(nextEdit, nextIndex);
+  };
+
+  // Handle approve from modal
+  const handleModalApprove = async (editId) => {
+    try {
+      await api.post(`/api/edits/${editId}/approve`);
+      // Remove from pending list
+      setPendingEdits((prev) => prev.filter((e) => e.id !== editId));
+    } catch (err) {
+      setErrorMessage(err.response?.data?.detail || "Failed to approve edit");
+      setTimeout(() => setErrorMessage(""), 5000);
+      throw err; // Re-throw so modal knows it failed
+    }
+  };
+
+  // Handle reject from modal
+  const handleModalReject = async (editId, reason) => {
+    try {
+      await api.post(`/api/edits/${editId}/reject`, {
+        reason: reason || undefined,
+      });
+      // Remove from pending list
+      setPendingEdits((prev) => prev.filter((e) => e.id !== editId));
+    } catch (err) {
+      setErrorMessage(err.response?.data?.detail || "Failed to reject edit");
+      setTimeout(() => setErrorMessage(""), 5000);
+      throw err; // Re-throw so modal knows it failed
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Review Edits</h1>
@@ -259,17 +334,19 @@ export default function ReviewEditsPage() {
                   </div>
                 </div>
               ) : (
-                pendingEdits.map((edit) => (
+                pendingEdits.map((edit, editIndex) => (
                   <div
                     key={edit.id}
                     className="bg-white rounded-lg shadow p-4 flex gap-4 items-start"
                   >
-                    {/* Thumbnail */}
+                    {/* Thumbnail - Clickable */}
                     {edit.post_thumbnail ? (
                       <img
                         src={edit.post_thumbnail}
                         alt={edit.post_title}
-                        className="w-20 h-20 flex-shrink-0 object-cover rounded"
+                        onClick={() => handleThumbnailClick(edit, editIndex)}
+                        className="w-20 h-20 flex-shrink-0 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Click to view all images"
                       />
                     ) : (
                       <div className="w-20 h-20 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
@@ -305,6 +382,9 @@ export default function ReviewEditsPage() {
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
                         {new Date(edit.created_at).toLocaleDateString()}
+                        {edit.suggester_username && (
+                          <> • Suggested by: {edit.suggester_username}</>
+                        )}
                       </p>
                     </div>
 
@@ -472,7 +552,9 @@ export default function ReviewEditsPage() {
                       <img
                         src={item.post_thumbnail}
                         alt={item.post_title}
-                        className="w-24 h-24 flex-shrink-0 object-cover"
+                        onClick={() => handleThumbnailClick(item.post_id, item.post_title)}
+                        className="w-24 h-24 flex-shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Click to view all images"
                       />
                     ) : (
                       <div className="w-24 h-24 flex-shrink-0 bg-gray-200 flex items-center justify-center">
@@ -516,7 +598,10 @@ export default function ReviewEditsPage() {
                           <p className="text-xs text-gray-500">
                             {item.affected_count} post
                             {item.affected_count !== 1 ? "s" : ""} affected •{" "}
-                            Approved by {item.approver_username} •{" "}
+                            {item.suggester_username && (
+                              <>Suggested by: {item.suggester_username} • </>
+                            )}
+                            Approved by: {item.approver_username} •{" "}
                             {new Date(item.applied_at).toLocaleDateString()}
                           </p>
                         </>
@@ -535,7 +620,10 @@ export default function ReviewEditsPage() {
                             </span>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            Approved by {item.approver_username} •{" "}
+                            {item.suggester_username && (
+                              <>Suggested by: {item.suggester_username} • </>
+                            )}
+                            Approved by: {item.approver_username} •{" "}
                             {new Date(item.applied_at).toLocaleDateString()}
                           </p>
                         </>
@@ -582,6 +670,22 @@ export default function ReviewEditsPage() {
           )}
         </div>
       )}
+
+      {/* Post Thumbnail Modal */}
+      <PostThumbnailModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState({ isOpen: false, post: null, edit: null, editIndex: null })}
+        post={modalState.post}
+        edit={modalState.edit}
+        currentIndex={modalState.editIndex}
+        totalEdits={pendingEdits.length}
+        onPrevious={modalState.editIndex !== null && modalState.editIndex > 0 ? handleModalPrevious : null}
+        onNext={modalState.editIndex !== null && modalState.editIndex < pendingEdits.length - 1 ? handleModalNext : null}
+        onApprove={handleModalApprove}
+        onReject={handleModalReject}
+        canApprove={modalState.edit ? (isAdmin() || modalState.edit.suggester_id !== user?.id) : false}
+        showActions={activeTab === "pending"}
+      />
     </div>
   );
 }
