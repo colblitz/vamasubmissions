@@ -15,6 +15,7 @@ import AboutPage from "./pages/AboutPage";
 
 // Admin pages
 import ImportPostsPage from "./pages/admin/ImportPostsPage";
+import AliasesPage from "./pages/admin/AliasesPage";
 
 // Test pages
 import LayoutTestPage from "./pages/LayoutTestPage";
@@ -93,6 +94,14 @@ function App() {
               element={
                 <ProtectedRoute requireAdmin>
                   <ImportPostsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/aliases"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AliasesPage />
                 </ProtectedRoute>
               }
             />

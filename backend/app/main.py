@@ -62,10 +62,12 @@ from app.models import (
     EditHistory,
 )
 from app.models.global_edit import GlobalEditSuggestion
+from app.models.value_alias import ValueAlias
+from app.models.search_analytics import SearchAnalytics
 from app.api import auth, submissions, queue, admin, users
 
 # Phase 1: Community Features
-from app.api import posts, community_requests, edits, global_edits
+from app.api import posts, community_requests, edits, global_edits, aliases
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -116,6 +118,7 @@ app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
 app.include_router(community_requests.router, prefix="/api/requests", tags=["Community Requests"])
 app.include_router(edits.router, prefix="/api/edits", tags=["Post Edits"])
 app.include_router(global_edits.router, tags=["Global Edits"])
+app.include_router(aliases.router, prefix="/api/aliases", tags=["Value Aliases"])
 
 
 @app.get("/")

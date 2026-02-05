@@ -9,6 +9,7 @@ from datetime import datetime
 from app.models.post import Post
 from app.schemas.post import PostCreate, PostUpdate, PostSearchResult
 from app.utils.thumbnail_sort import sort_thumbnails
+from app.services import alias_service
 
 
 def get_post_by_id(db: Session, post_id: int) -> Optional[Post]:
@@ -115,6 +116,14 @@ def search_posts(
     Returns:
         Search results with pagination
     """
+    # Resolve aliases for search terms
+    if characters:
+        characters = [alias_service.AliasCache.resolve_alias(db, 'characters', c) for c in characters]
+    if series_list:
+        series_list = [alias_service.AliasCache.resolve_alias(db, 'series', s) for s in series_list]
+    if tags:
+        tags = [alias_service.AliasCache.resolve_alias(db, 'tags', t) for t in tags]
+    
     # Start with base query - ONLY PUBLISHED POSTS
     q = db.query(Post).filter(Post.status == "published")
 
@@ -194,6 +203,22 @@ def search_posts(
     # Get total count
     total = q.count()
 
+    # Track searches for analytics (only single-value searches)
+    if current_user_id:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[TRACK] Checking tracking: characters={characters}, series={series_list}, tags={tags}, query={query}, total={total}")
+        
+        if len(characters) == 1 and not series_list and not tags and not query:
+            logger.info(f"[TRACK] Tracking character search: {characters[0]}")
+            alias_service.track_search(db, 'characters', characters[0], total, current_user_id)
+        elif len(series_list) == 1 and not characters and not tags and not query:
+            logger.info(f"[TRACK] Tracking series search: {series_list[0]}")
+            alias_service.track_search(db, 'series', series_list[0], total, current_user_id)
+        elif len(tags) == 1 and not characters and not series_list and not query:
+            logger.info(f"[TRACK] Tracking tags search: {tags[0]}")
+            alias_service.track_search(db, 'tags', tags[0], total, current_user_id)
+
     # Apply sorting
     if sort_by == "date":
         if sort_order == "asc":
@@ -254,6 +279,12 @@ def get_autocomplete_characters(
     Returns:
         List of character names
     """
+    # Resolve alias first
+    resolved_query = alias_service.AliasCache.resolve_alias(db, 'characters', query)
+    # If resolved to something different, search for that instead
+    if resolved_query.lower() != query.lower():
+        query = resolved_query
+    
     # Use unnest in a subquery to expand arrays and get distinct values
     search_term = f"%{query.lower()}%"
 
@@ -292,6 +323,12 @@ def get_autocomplete_series(
     Returns:
         List of series names
     """
+    # Resolve alias first
+    resolved_query = alias_service.AliasCache.resolve_alias(db, 'series', query)
+    # If resolved to something different, search for that instead
+    if resolved_query.lower() != query.lower():
+        query = resolved_query
+    
     search_term = f"%{query.lower()}%"
 
     results = db.execute(
@@ -329,6 +366,12 @@ def get_autocomplete_tags(
     Returns:
         List of tags
     """
+    # Resolve alias first
+    resolved_query = alias_service.AliasCache.resolve_alias(db, 'tags', query)
+    # If resolved to something different, search for that instead
+    if resolved_query.lower() != query.lower():
+        query = resolved_query
+    
     search_term = f"%{query.lower()}%"
 
     results = db.execute(
