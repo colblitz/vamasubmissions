@@ -15,6 +15,7 @@ import { useAuth } from "../../contexts/AuthContext";
  * @param {function} onEditSuccess - Callback when edit is successfully submitted
  * @param {object} sortParams - Sort parameters {sortBy, sortOrder}
  * @param {function} onSortChange - Callback when sort changes
+ * @param {object} resolvedAliases - Object mapping original values to canonical values
  */
 export default function SearchResults({
   results,
@@ -26,6 +27,7 @@ export default function SearchResults({
   onEditSuccess,
   sortParams,
   onSortChange,
+  resolvedAliases = {},
 }) {
   const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
   const [localResults, setLocalResults] = useState(results);
@@ -197,12 +199,42 @@ export default function SearchResults({
     );
   }
 
+  // Build resolved aliases display text
+  const getResolvedAliasesText = () => {
+    const resolvedValues = [];
+    
+    if (resolvedAliases.characters && Object.keys(resolvedAliases.characters).length > 0) {
+      Object.entries(resolvedAliases.characters).forEach(([original, canonical]) => {
+        resolvedValues.push(`"${canonical}"`);
+      });
+    }
+    if (resolvedAliases.series && Object.keys(resolvedAliases.series).length > 0) {
+      Object.entries(resolvedAliases.series).forEach(([original, canonical]) => {
+        resolvedValues.push(`"${canonical}"`);
+      });
+    }
+    if (resolvedAliases.tags && Object.keys(resolvedAliases.tags).length > 0) {
+      Object.entries(resolvedAliases.tags).forEach(([original, canonical]) => {
+        resolvedValues.push(`"${canonical}"`);
+      });
+    }
+    
+    return resolvedValues.length > 0 ? resolvedValues.join(", ") : null;
+  };
+
+  const aliasText = getResolvedAliasesText();
+
   return (
     <>
       {/* Results Header with Count and Sort */}
       <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div className="text-gray-600">
           Found {total} post{total !== 1 ? "s" : ""}
+          {aliasText && (
+            <span className="text-sm text-gray-500 ml-2">
+              (searching for {aliasText})
+            </span>
+          )}
         </div>
 
         {/* Sort Dropdown */}

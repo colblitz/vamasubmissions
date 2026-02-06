@@ -120,6 +120,10 @@ class PostSearchResultOptimized(BaseModel):
     page: int
     limit: int
     total_pages: int
+    resolved_aliases: Dict[str, Dict[str, str]] = Field(
+        default_factory=dict,
+        description="Map of field_type to {original: canonical} for resolved aliases"
+    )
 
 
 class PostDetail(Post):

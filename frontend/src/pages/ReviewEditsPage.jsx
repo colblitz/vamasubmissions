@@ -239,6 +239,31 @@ export default function ReviewEditsPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Review Edits</h1>
 
+      {/* Tag Guidelines Note */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <svg
+            className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div>
+            <h3 className="font-semibold text-blue-900 mb-1">Note for Tags</h3>
+            <p className="text-sm text-blue-800">
+              Helpful tags identify distinguishing features in a post, such as outfits, special characteristics of the character, settings, or scenarios. Something like "missionary", while true, is not as useful since almost all of VAMA's posts will contain it.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-2 sm:gap-4 mb-6 border-b overflow-x-auto">
         <button

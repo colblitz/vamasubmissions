@@ -105,6 +105,27 @@ async def search_posts(
     return result
 
 
+@router.get("/latest-post-date")
+async def get_latest_post_date(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get the timestamp of the most recent published post.
+
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Dict with latest_post_date (ISO format) or None if no posts exist
+    """
+    latest_date = post_service.get_latest_post_date(db)
+    return {
+        "latest_post_date": latest_date.isoformat() if latest_date else None
+    }
+
+
 @router.get("/{post_id}", response_model=Post)
 async def get_post(
     post_id: int,

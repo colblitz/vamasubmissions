@@ -116,13 +116,42 @@ def search_posts(
     Returns:
         Search results with pagination
     """
+    # Track resolved aliases
+    resolved_aliases = {}
+    
     # Resolve aliases for search terms
     if characters:
-        characters = [alias_service.AliasCache.resolve_alias(db, 'characters', c) for c in characters]
+        resolved_chars = []
+        for c in characters:
+            resolved = alias_service.AliasCache.resolve_alias(db, 'characters', c)
+            if resolved.lower() != c.lower():
+                if 'characters' not in resolved_aliases:
+                    resolved_aliases['characters'] = {}
+                resolved_aliases['characters'][c] = resolved
+            resolved_chars.append(resolved)
+        characters = resolved_chars
+    
     if series_list:
-        series_list = [alias_service.AliasCache.resolve_alias(db, 'series', s) for s in series_list]
+        resolved_series = []
+        for s in series_list:
+            resolved = alias_service.AliasCache.resolve_alias(db, 'series', s)
+            if resolved.lower() != s.lower():
+                if 'series' not in resolved_aliases:
+                    resolved_aliases['series'] = {}
+                resolved_aliases['series'][s] = resolved
+            resolved_series.append(resolved)
+        series_list = resolved_series
+    
     if tags:
-        tags = [alias_service.AliasCache.resolve_alias(db, 'tags', t) for t in tags]
+        resolved_tags = []
+        for t in tags:
+            resolved = alias_service.AliasCache.resolve_alias(db, 'tags', t)
+            if resolved.lower() != t.lower():
+                if 'tags' not in resolved_aliases:
+                    resolved_aliases['tags'] = {}
+                resolved_aliases['tags'][t] = resolved
+            resolved_tags.append(resolved)
+        tags = resolved_tags
     
     # Start with base query - ONLY PUBLISHED POSTS
     q = db.query(Post).filter(Post.status == "published")
@@ -259,6 +288,7 @@ def search_posts(
         page=page,
         limit=limit,
         total_pages=total_pages,
+        resolved_aliases=resolved_aliases,
     )
 
 
@@ -623,3 +653,20 @@ def get_no_items_count(db: Session, field_type: str) -> dict:
     count = count_result[0] if count_result else 0
 
     return {"count": count}
+
+
+def get_latest_post_date(db: Session) -> Optional[datetime]:
+    """
+    Get the timestamp of the most recent published post.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Datetime of the latest post, or None if no posts exist
+    """
+    result = db.query(func.max(Post.timestamp)).filter(
+        Post.status == "published"
+    ).scalar()
+    
+    return result

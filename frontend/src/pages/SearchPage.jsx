@@ -29,6 +29,8 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [resolvedAliases, setResolvedAliases] = useState({});
+  const [latestPostDate, setLatestPostDate] = useState(null);
 
   // Autocomplete states for filters
   const [characterInput, setCharacterInput] = useState("");
@@ -75,6 +77,19 @@ export default function SearchPage() {
     () => debounce((query) => fetchAutocomplete("tags", query), 300),
     [],
   );
+
+  // Fetch latest post date on mount
+  useEffect(() => {
+    const fetchLatestPostDate = async () => {
+      try {
+        const response = await api.get("/api/posts/latest-post-date");
+        setLatestPostDate(response.data.latest_post_date);
+      } catch (err) {
+        console.error("Error fetching latest post date:", err);
+      }
+    };
+    fetchLatestPostDate();
+  }, []);
 
   // Debounced autocomplete using lodash debounce
   useEffect(() => {
@@ -142,6 +157,7 @@ export default function SearchPage() {
       const posts = response.data.posts || [];
       setResults(posts);
       setTotal(response.data.total || 0);
+      setResolvedAliases(response.data.resolved_aliases || {});
     } catch (err) {
       setError(err.response?.data?.detail || "Search failed");
     } finally {
@@ -224,7 +240,14 @@ export default function SearchPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">VAMA Posts</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">VAMA Posts</h1>
+        {latestPostDate && (
+          <div className="text-sm text-gray-500">
+            Latest post: {new Date(latestPostDate).toLocaleDateString()}
+          </div>
+        )}
+      </div>
 
       {/* Tab Buttons */}
       <div className="flex gap-2 border-b border-gray-200 mb-6">
@@ -322,6 +345,7 @@ export default function SearchPage() {
           sortOrder: searchParams.sortOrder,
         }}
         onSortChange={handleSortChange}
+        resolvedAliases={resolvedAliases}
       />
     </div>
   );
