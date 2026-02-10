@@ -258,7 +258,7 @@ export default function ReviewEditsPage() {
           <div>
             <h3 className="font-semibold text-blue-900 mb-1">Note for Tags</h3>
             <p className="text-sm text-blue-800">
-              Helpful tags identify distinguishing features in a post, such as outfits, special characteristics of the character, settings, or scenarios. Something like "missionary", while true, is not as useful since almost all of VAMA's posts will contain it.
+              Helpful tags identify distinguishing features in a post, such as outfits, special characteristics of the character, settings, or scenarios. Something like "missionary", while true, is not as useful since almost all of VAMA's posts will contain it. Also, for another example, "nude" is specifically for posts where the character starts off naked and stays naked, as basically all posts will have them be naked at some point.
             </p>
           </div>
         </div>
