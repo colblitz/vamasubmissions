@@ -164,6 +164,24 @@ export default function ReviewEditsPage() {
     }
   }, [activeTab]);
 
+  // Update modal state when pendingEdits changes (e.g., after approve/reject)
+  // This ensures the modal shows the edit that shifted into the current index
+  useEffect(() => {
+    if (modalState.isOpen && modalState.editIndex !== null && activeTab === "pending") {
+      const newEdit = pendingEdits[modalState.editIndex];
+      if (newEdit) {
+        // Update to show the edit now at this index (next edit shifted down)
+        setModalState((prev) => ({
+          ...prev,
+          edit: newEdit,
+        }));
+      } else {
+        // No more edits at this index, close modal
+        setModalState({ isOpen: false, post: null, edit: null, editIndex: null });
+      }
+    }
+  }, [pendingEdits, modalState.isOpen, modalState.editIndex, activeTab]);
+
   // Helper to format field name
   const formatFieldName = (fieldName) => {
     return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
@@ -213,6 +231,8 @@ export default function ReviewEditsPage() {
       await api.post(`/api/edits/${editId}/approve`);
       // Remove from pending list
       setPendingEdits((prev) => prev.filter((e) => e.id !== editId));
+      // Stay at same index since array shifted down (don't increment)
+      // The next edit is now at the same index
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || "Failed to approve edit");
       setTimeout(() => setErrorMessage(""), 5000);
@@ -228,6 +248,8 @@ export default function ReviewEditsPage() {
       });
       // Remove from pending list
       setPendingEdits((prev) => prev.filter((e) => e.id !== editId));
+      // Stay at same index since array shifted down (don't increment)
+      // The next edit is now at the same index
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || "Failed to reject edit");
       setTimeout(() => setErrorMessage(""), 5000);

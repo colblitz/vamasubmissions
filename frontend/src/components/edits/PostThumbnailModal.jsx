@@ -90,19 +90,14 @@ export default function PostThumbnailModal({
         await onReject(edit.id, rejectReason);
       }
 
-      // Auto-advance to next edit after successful action
+      // After successful action, stay at same index since parent removes item from array
+      // The next edit shifts into the current index position
       setTimeout(() => {
         setConfirmingAction(null);
         setRejectReason("");
         setActionInProgress(false);
-        
-        // If there's a next edit, navigate to it
-        if (onNext) {
-          onNext();
-        } else {
-          // No more edits, close modal
-          onClose();
-        }
+        // Note: Parent component handles removing the item from the list,
+        // so the modal automatically shows the next edit at the same index
       }, 500);
     } catch (err) {
       console.error("Action failed:", err);

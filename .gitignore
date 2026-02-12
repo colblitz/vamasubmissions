@@ -32,6 +32,7 @@ pnpm-debug.log*
 frontend/dist/
 frontend/dist-ssr/
 frontend/.vite/
+frontend/package-lock.json
 
 # ----------------
 # Environment & Config

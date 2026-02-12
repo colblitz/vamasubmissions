@@ -283,40 +283,31 @@ export default function SearchResults({
           {/* Page Numbers */}
           {(() => {
             const pages = [];
-            const maxVisible = 7;
             const current = pagination.page;
 
-            if (totalPages <= maxVisible) {
-              // Show all pages
-              for (let i = 1; i <= totalPages; i++) {
-                pages.push(i);
+            // Calculate 11-page window centered on current page (5 on each side)
+            const windowStart = Math.max(1, current - 5);
+            const windowEnd = Math.min(totalPages, current + 5);
+
+            // Add first page + ellipsis if window doesn't start at 1
+            if (windowStart > 1) {
+              pages.push(1);
+              if (windowStart > 2) {
+                pages.push('...');
               }
-            } else {
-              // Show with ellipsis
-              if (current <= 4) {
-                // Near start: 1 2 3 4 5 ... 20
-                for (let i = 1; i <= 5; i++) {
-                  pages.push(i);
-                }
+            }
+
+            // Add the window pages
+            for (let i = windowStart; i <= windowEnd; i++) {
+              pages.push(i);
+            }
+
+            // Add ellipsis + last page if window doesn't end at totalPages
+            if (windowEnd < totalPages) {
+              if (windowEnd < totalPages - 1) {
                 pages.push('...');
-                pages.push(totalPages);
-              } else if (current >= totalPages - 3) {
-                // Near end: 1 ... 16 17 18 19 20
-                pages.push(1);
-                pages.push('...');
-                for (let i = totalPages - 4; i <= totalPages; i++) {
-                  pages.push(i);
-                }
-              } else {
-                // In middle: 1 ... 5 6 7 ... 20
-                pages.push(1);
-                pages.push('...');
-                for (let i = current - 1; i <= current + 1; i++) {
-                  pages.push(i);
-                }
-                pages.push('...');
-                pages.push(totalPages);
               }
+              pages.push(totalPages);
             }
 
             return pages.map((page, index) => {
