@@ -270,12 +270,19 @@ export default function SearchPage() {
       if (fieldType === "months") {
         // Month format: "YYYY-MM"
         const [year, month] = itemName.split("-");
+        // Format dates using local timezone to avoid ISO conversion issues
+        const formatLocalDate = (date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        };
         const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+        const endDate = new Date(parseInt(year), parseInt(month), 0);
         setSearchParams((prev) => ({ 
           ...prev, 
-          dateFrom: startDate.toISOString().split("T")[0],
-          dateTo: endDate.toISOString().split("T")[0],
+          dateFrom: formatLocalDate(startDate),
+          dateTo: formatLocalDate(endDate),
           characters: [],
           series: [],
           tags: [],
