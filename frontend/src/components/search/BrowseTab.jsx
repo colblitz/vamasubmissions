@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 
 /**
- * BrowseTab component - Browse all characters, series, and tags with counts
+ * BrowseTab component - Browse all characters, series, tags, months, and days with counts
  * Click any item to filter posts by that value
  */
 export default function BrowseTab({ onSelectItem }) {
@@ -22,12 +22,20 @@ export default function BrowseTab({ onSelectItem }) {
 
   // Fetch browse data when sub-tab, sort, or startsWith changes
   useEffect(() => {
-    fetchBrowseData();
+    if (activeSubTab === "months" || activeSubTab === "days") {
+      fetchBrowseByDate();
+    } else {
+      fetchBrowseData();
+    }
   }, [activeSubTab, pagination.page, sortBy, startsWith]);
 
-  // Fetch count of posts with no items for current tab
+  // Fetch count of posts with no items for current tab (only for character/series/tags)
   useEffect(() => {
-    fetchNoItemsCount();
+    if (activeSubTab === "characters" || activeSubTab === "series" || activeSubTab === "tags") {
+      fetchNoItemsCount();
+    } else {
+      setNoItemsCount(0);
+    }
   }, [activeSubTab]);
 
   const fetchBrowseData = async () => {
@@ -75,6 +83,35 @@ export default function BrowseTab({ onSelectItem }) {
     }
   };
 
+  const fetchBrowseByDate = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      
+      const endpoint = activeSubTab === "months" ? "/api/posts/browse/months" : "/api/posts/browse/days";
+      const response = await api.get(endpoint, { params });
+
+      setItems(response.data.items || []);
+      setPagination({
+        page: response.data.page,
+        total: response.data.total,
+        totalPages: response.data.total_pages,
+        limit: response.data.limit,
+      });
+    } catch (err) {
+      console.error("Failed to fetch date browse data:", err);
+      setError("Failed to load browse data. Please try again.");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleItemClick = (itemName) => {
     // Call parent callback to switch to search tab with this filter
     if (onSelectItem) {
@@ -104,6 +141,7 @@ export default function BrowseTab({ onSelectItem }) {
             onClick={() => {
               setActiveSubTab("characters");
               setPagination((prev) => ({ ...prev, page: 1 }));
+              if (sortBy === "date") setSortBy("count");
             }}
             className={`px-4 py-2 font-medium transition-colors ${
               activeSubTab === "characters"
@@ -117,6 +155,7 @@ export default function BrowseTab({ onSelectItem }) {
             onClick={() => {
               setActiveSubTab("series");
               setPagination((prev) => ({ ...prev, page: 1 }));
+              if (sortBy === "date") setSortBy("count");
             }}
             className={`px-4 py-2 font-medium transition-colors ${
               activeSubTab === "series"
@@ -130,6 +169,7 @@ export default function BrowseTab({ onSelectItem }) {
             onClick={() => {
               setActiveSubTab("tags");
               setPagination((prev) => ({ ...prev, page: 1 }));
+              if (sortBy === "date") setSortBy("count");
             }}
             className={`px-4 py-2 font-medium transition-colors ${
               activeSubTab === "tags"
@@ -139,23 +179,53 @@ export default function BrowseTab({ onSelectItem }) {
           >
             Tags
           </button>
+          <button
+            onClick={() => {
+              setActiveSubTab("months");
+              setPagination((prev) => ({ ...prev, page: 1 }));
+              setSortBy("date");
+            }}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeSubTab === "months"
+                ? "text-orange-600 border-b-2 border-orange-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            By Month
+          </button>
+          <button
+            onClick={() => {
+              setActiveSubTab("days");
+              setPagination((prev) => ({ ...prev, page: 1 }));
+              setSortBy("date");
+            }}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeSubTab === "days"
+                ? "text-pink-600 border-b-2 border-pink-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            By Day
+          </button>
         </div>
 
-        {/* Sort Dropdown - Top Right */}
-        <div className="flex items-center gap-2 pb-2">
-          <label className="text-xs text-gray-600 whitespace-nowrap">Sort by:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
-            }}
-            className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="count">Most Popular</option>
-            <option value="alpha">Alphabetical</option>
-          </select>
-        </div>
+        {/* Sort Dropdown - Top Right (hidden for date-based browsing) */}
+        {activeSubTab !== "months" && activeSubTab !== "days" && (
+          <div className="flex items-center gap-2 pb-2">
+            <label className="text-xs text-gray-600 whitespace-nowrap">Sort by:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="count">Most Popular</option>
+              <option value="alpha">Alphabetical</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}
@@ -168,7 +238,7 @@ export default function BrowseTab({ onSelectItem }) {
       {/* Loading State */}
       {loading && (
         <div className="text-center py-8 text-gray-600">
-          Loading {activeSubTab}...
+          Loading {activeSubTab === "months" ? "months" : activeSubTab === "days" ? "days" : activeSubTab}...
         </div>
       )}
 
@@ -185,7 +255,11 @@ export default function BrowseTab({ onSelectItem }) {
                     ? "border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100"
                     : activeSubTab === "series"
                       ? "border-green-200 hover:border-green-400 bg-green-50 hover:bg-green-100"
-                      : "border-purple-200 hover:border-purple-400 bg-purple-50 hover:bg-purple-100"
+                      : activeSubTab === "tags"
+                        ? "border-purple-200 hover:border-purple-400 bg-purple-50 hover:bg-purple-100"
+                        : activeSubTab === "months"
+                          ? "border-orange-200 hover:border-orange-400 bg-orange-50 hover:bg-orange-100"
+                          : "border-pink-200 hover:border-pink-400 bg-pink-50 hover:bg-pink-100"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -231,8 +305,8 @@ export default function BrowseTab({ onSelectItem }) {
             </div>
           )}
 
-          {/* Alphabet Navigation (only in alpha mode) */}
-          {sortBy === "alpha" && (
+          {/* Alphabet Navigation (only in alpha mode for non-date tabs) */}
+          {sortBy === "alpha" && activeSubTab !== "months" && activeSubTab !== "days" && (
             <div className="flex justify-center items-center gap-1 mt-4 flex-wrap">
               {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => {
                 const isCurrentLetter = 

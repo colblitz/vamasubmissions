@@ -26,6 +26,8 @@ async def search_posts(
     no_characters: Optional[bool] = Query(None, description="Filter for posts without any characters"),
     no_series: Optional[bool] = Query(None, description="Filter for posts without any series"),
     no_tags: Optional[bool] = Query(None, description="Filter for posts without any tags"),
+    date_from: Optional[str] = Query(None, description="Filter posts from this date (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Filter posts up to this date (YYYY-MM-DD)"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Results per page"),
     sort_by: str = Query("date", description="Sort field (date)"),
@@ -70,6 +72,8 @@ async def search_posts(
         no_characters=no_characters,
         no_series=no_series,
         no_tags=no_tags,
+        date_from=date_from,
+        date_to=date_to,
         page=page,
         limit=limit,
         sort_by=sort_by,
@@ -105,25 +109,22 @@ async def search_posts(
     return result
 
 
-@router.get("/latest-post-date")
-async def get_latest_post_date(
+@router.get("/post-stats")
+async def get_post_stats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Get the timestamp of the most recent published post.
+    Get statistics about published posts including date range and count.
 
     Args:
         current_user: Current authenticated user
         db: Database session
 
     Returns:
-        Dict with latest_post_date (ISO format) or None if no posts exist
+        Dict with earliest_date, latest_date, and total_count
     """
-    latest_date = post_service.get_latest_post_date(db)
-    return {
-        "latest_post_date": latest_date.isoformat() if latest_date else None
-    }
+    return post_service.get_post_date_range(db)
 
 
 @router.get("/{post_id}", response_model=Post)
@@ -240,6 +241,50 @@ async def autocomplete_tags(
         List of tags
     """
     return post_service.get_autocomplete_tags(db, q, limit)
+
+
+@router.get("/browse/months")
+async def browse_by_month(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(50, ge=1, le=100, description="Items per page"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get posts grouped by month for browsing.
+
+    Args:
+        page: Page number (1-indexed)
+        limit: Results per page
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of months with their post counts and pagination info
+    """
+    return post_service.get_browse_by_date(db, "month", page, limit)
+
+
+@router.get("/browse/days")
+async def browse_by_day(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(50, ge=1, le=100, description="Items per page"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get posts grouped by day for browsing.
+
+    Args:
+        page: Page number (1-indexed)
+        limit: Results per page
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of days with their post counts and pagination info
+    """
+    return post_service.get_browse_by_date(db, "day", page, limit)
 
 
 @router.get("/browse/{field_type}")

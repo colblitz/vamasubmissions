@@ -28,6 +28,7 @@ export default function SearchResults({
   sortParams,
   onSortChange,
   resolvedAliases = {},
+  dateFilter = null,
 }) {
   const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
   const [localResults, setLocalResults] = useState(results);
@@ -230,6 +231,11 @@ export default function SearchResults({
       <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div className="text-gray-600">
           Found {total} post{total !== 1 ? "s" : ""}
+          {dateFilter && (
+            <span className="text-sm text-gray-700 ml-2">
+              for <span className="font-medium">{dateFilter}</span>
+            </span>
+          )}
           {aliasText && (
             <span className="text-sm text-gray-500 ml-2">
               (searching for {aliasText})

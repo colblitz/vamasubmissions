@@ -18,6 +18,8 @@ export default function SearchPage() {
     noCharacters: false,
     noSeries: false,
     noTags: false,
+    dateFrom: null,
+    dateTo: null,
     page: 1,
     limit: 20,
     sortBy: "date",
@@ -78,17 +80,19 @@ export default function SearchPage() {
     [],
   );
 
-  // Fetch latest post date on mount
+  // Fetch post stats on mount
+  const [postStats, setPostStats] = useState(null);
   useEffect(() => {
-    const fetchLatestPostDate = async () => {
+    const fetchPostStats = async () => {
       try {
-        const response = await api.get("/api/posts/latest-post-date");
-        setLatestPostDate(response.data.latest_post_date);
+        const response = await api.get("/api/posts/post-stats");
+        setPostStats(response.data);
+        setLatestPostDate(response.data.latest_date);
       } catch (err) {
-        console.error("Error fetching latest post date:", err);
+        console.error("Error fetching post stats:", err);
       }
     };
-    fetchLatestPostDate();
+    fetchPostStats();
   }, []);
 
   // Debounced autocomplete using lodash debounce
@@ -151,6 +155,12 @@ export default function SearchPage() {
       if (searchParams.noTags) {
         params.no_tags = true;
       }
+      if (searchParams.dateFrom) {
+        params.date_from = searchParams.dateFrom;
+      }
+      if (searchParams.dateTo) {
+        params.date_to = searchParams.dateTo;
+      }
 
       const response = await api.get("/api/posts/search", { params });
 
@@ -175,7 +185,9 @@ export default function SearchPage() {
       searchParams.tags.length > 0 ||
       searchParams.noCharacters ||
       searchParams.noSeries ||
-      searchParams.noTags
+      searchParams.noTags ||
+      searchParams.dateFrom ||
+      searchParams.dateTo
     ) {
       handleSearch();
     }
@@ -186,6 +198,8 @@ export default function SearchPage() {
     searchParams.noCharacters,
     searchParams.noSeries,
     searchParams.noTags,
+    searchParams.dateFrom,
+    searchParams.dateTo,
     searchParams.sortBy,
     searchParams.sortOrder,
     searchParams.page,
@@ -193,7 +207,19 @@ export default function SearchPage() {
 
   // Handle clear search
   const handleClear = () => {
-    setSearchParams((prev) => ({ ...prev, query: "", page: 1 }));
+    setSearchParams((prev) => ({ 
+      ...prev, 
+      query: "", 
+      characters: [],
+      series: [],
+      tags: [],
+      noCharacters: false,
+      noSeries: false,
+      noTags: false,
+      dateFrom: null,
+      dateTo: null,
+      page: 1 
+    }));
     setResults([]);
     setTotal(0);
   };
@@ -219,22 +245,60 @@ export default function SearchPage() {
 
   // Handle browse item selection
   const handleBrowseItemSelect = (fieldType, itemName) => {
-    // Switch to search tab
-    setActiveTab("search");
+    // Only switch to search tab for character/series/tag browsing
+    // For date-based browsing, stay on the current tab and just show results
+    if (fieldType !== "months" && fieldType !== "days") {
+      setActiveTab("search");
+    }
 
     // Apply the filter based on field type
     if (fieldType === "characters") {
-      setSearchParams((prev) => ({ ...prev, characters: [itemName], noCharacters: false, noSeries: false, noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, characters: [itemName], noCharacters: false, noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
     } else if (fieldType === "series") {
-      setSearchParams((prev) => ({ ...prev, series: [itemName], noCharacters: false, noSeries: false, noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, series: [itemName], noCharacters: false, noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
     } else if (fieldType === "tags") {
-      setSearchParams((prev) => ({ ...prev, tags: [itemName], noCharacters: false, noSeries: false, noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, tags: [itemName], noCharacters: false, noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
     } else if (fieldType === "no_characters") {
-      setSearchParams((prev) => ({ ...prev, noCharacters: true, characters: [], noSeries: false, noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, noCharacters: true, characters: [], noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
     } else if (fieldType === "no_series") {
-      setSearchParams((prev) => ({ ...prev, noSeries: true, series: [], noCharacters: false, noTags: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, noSeries: true, series: [], noCharacters: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
     } else if (fieldType === "no_tags") {
-      setSearchParams((prev) => ({ ...prev, noTags: true, tags: [], noCharacters: false, noSeries: false, page: 1 }));
+      setSearchParams((prev) => ({ ...prev, noTags: true, tags: [], noCharacters: false, noSeries: false, dateFrom: null, dateTo: null, page: 1 }));
+    } else if (fieldType === "months" || fieldType === "days") {
+      // Date-based browsing - itemName is a date string (YYYY-MM for months, YYYY-MM-DD for days)
+      // Parse the date to create a date range filter
+      if (fieldType === "months") {
+        // Month format: "YYYY-MM"
+        const [year, month] = itemName.split("-");
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+        setSearchParams((prev) => ({ 
+          ...prev, 
+          dateFrom: startDate.toISOString().split("T")[0],
+          dateTo: endDate.toISOString().split("T")[0],
+          characters: [],
+          series: [],
+          tags: [],
+          noCharacters: false,
+          noSeries: false,
+          noTags: false,
+          page: 1 
+        }));
+      } else if (fieldType === "days") {
+        // Day format: "YYYY-MM-DD"
+        setSearchParams((prev) => ({ 
+          ...prev, 
+          dateFrom: itemName,
+          dateTo: itemName,
+          characters: [],
+          series: [],
+          tags: [],
+          noCharacters: false,
+          noSeries: false,
+          noTags: false,
+          page: 1 
+        }));
+      }
     }
   };
 
@@ -274,13 +338,17 @@ export default function SearchPage() {
         <button
           onClick={() => {
             setActiveTab("search");
-            // Clear all filters and show all posts
+            // Set date range to all posts if available, otherwise clear filters
             setSearchParams({
               query: "",
               characters: [],
               series: [],
               tags: [],
+              noCharacters: false,
+              noSeries: false,
               noTags: false,
+              dateFrom: postStats?.earliest_date ? postStats.earliest_date.split('T')[0] : null,
+              dateTo: postStats?.latest_date ? postStats.latest_date.split('T')[0] : null,
               page: 1,
               limit: 20,
               sortBy: "date",
@@ -346,6 +414,15 @@ export default function SearchPage() {
         }}
         onSortChange={handleSortChange}
         resolvedAliases={resolvedAliases}
+        dateFilter={(() => {
+          if (searchParams.dateFrom && searchParams.dateTo) {
+            if (searchParams.dateFrom === searchParams.dateTo) {
+              return searchParams.dateFrom;
+            }
+            return `${searchParams.dateFrom} to ${searchParams.dateTo}`;
+          }
+          return null;
+        })()}
       />
     </div>
   );

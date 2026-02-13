@@ -90,6 +90,8 @@ def search_posts(
     no_characters: Optional[bool] = None,
     no_series: Optional[bool] = None,
     no_tags: Optional[bool] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
     sort_by: str = "date",
@@ -109,6 +111,8 @@ def search_posts(
         no_characters: Filter for posts without any characters (characters = '{}' OR characters IS NULL)
         no_series: Filter for posts without any series (series = '{}' OR series IS NULL)
         no_tags: Filter for posts without any tags (tags = '{}' OR tags IS NULL)
+        date_from: Filter posts from this date (YYYY-MM-DD)
+        date_to: Filter posts up to this date (YYYY-MM-DD)
         page: Page number (1-indexed)
         limit: Results per page
         current_user_id: Optional current user ID for pending edits
@@ -228,6 +232,27 @@ def search_posts(
                 Post.tags == None
             )
         )
+
+    # Date range filtering
+    if date_from:
+        try:
+            from datetime import datetime
+            from_date = datetime.strptime(date_from, "%Y-%m-%d")
+            q = q.filter(Post.timestamp >= from_date)
+        except ValueError:
+            # Invalid date format, ignore
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            to_date = datetime.strptime(date_to, "%Y-%m-%d")
+            # Set to end of day
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+            q = q.filter(Post.timestamp <= to_date)
+        except ValueError:
+            # Invalid date format, ignore
+            pass
 
     # Get total count
     total = q.count()
@@ -655,18 +680,111 @@ def get_no_items_count(db: Session, field_type: str) -> dict:
     return {"count": count}
 
 
-def get_latest_post_date(db: Session) -> Optional[datetime]:
+def get_browse_by_date(
+    db: Session,
+    date_type: str,
+    page: int = 1,
+    limit: int = 50,
+) -> dict:
     """
-    Get the timestamp of the most recent published post.
+    Get posts grouped by month or day for browsing.
+    Returns date periods with their post counts, sorted by date descending.
+
+    Args:
+        db: Database session
+        date_type: "month" | "day"
+        page: Page number (1-indexed)
+        limit: Results per page
+
+    Returns:
+        Dict with items list and pagination info
+    """
+    offset = (page - 1) * limit
+
+    if date_type == "month":
+        # Group by year-month (e.g., "2024-01")
+        date_format = "YYYY-MM"
+        date_trunc = "date_trunc('month', timestamp)"
+        display_format = "YYYY-MM"
+    elif date_type == "day":
+        # Group by date (e.g., "2024-01-15")
+        date_format = "YYYY-MM-DD"
+        date_trunc = "date_trunc('day', timestamp)"
+        display_format = "YYYY-MM-DD"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid date_type. Must be 'month' or 'day'.",
+        )
+
+    # Get paginated results
+    results = db.execute(
+        text(f"""
+        SELECT 
+            TO_CHAR({date_trunc}, :display_format) as period,
+            COUNT(*) as count,
+            MIN(timestamp) as start_date,
+            MAX(timestamp) as end_date
+        FROM posts
+        WHERE status = 'published'
+        GROUP BY {date_trunc}
+        ORDER BY {date_trunc} DESC
+        LIMIT :limit OFFSET :offset
+        """),
+        {"display_format": display_format, "limit": limit, "offset": offset},
+    ).fetchall()
+
+    # Get total count of unique periods
+    total_result = db.execute(
+        text(f"""
+        SELECT COUNT(DISTINCT {date_trunc})
+        FROM posts
+        WHERE status = 'published'
+        """)
+    ).fetchone()
+
+    total = total_result[0] if total_result else 0
+    total_pages = (total + limit - 1) // limit if total > 0 else 0
+
+    items = [
+        {
+            "name": row[0],
+            "count": row[1],
+            "start_date": row[2].isoformat() if row[2] else None,
+            "end_date": row[3].isoformat() if row[3] else None,
+        }
+        for row in results
+    ]
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+    }
+
+
+def get_post_date_range(db: Session) -> dict:
+    """
+    Get the date range (min and max timestamps) of all published posts.
 
     Args:
         db: Database session
 
     Returns:
-        Datetime of the latest post, or None if no posts exist
+        Dict with earliest_date, latest_date, and total_count
     """
-    result = db.query(func.max(Post.timestamp)).filter(
+    result = db.query(
+        func.min(Post.timestamp).label("earliest"),
+        func.max(Post.timestamp).label("latest"),
+        func.count(Post.id).label("total")
+    ).filter(
         Post.status == "published"
-    ).scalar()
+    ).first()
     
-    return result
+    return {
+        "earliest_date": result.earliest.isoformat() if result.earliest else None,
+        "latest_date": result.latest.isoformat() if result.latest else None,
+        "total_count": result.total if result else 0
+    }
