@@ -156,6 +156,7 @@ class GlobalEditHistoryResponse(BaseModel):
     action_field: str
     action_value: Optional[str]
     applied_at: Optional[datetime]
+    affected_count: int = 0  # Number of posts affected by this global edit
 
     class Config:
         from_attributes = True

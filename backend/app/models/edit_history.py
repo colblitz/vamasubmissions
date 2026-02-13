@@ -27,7 +27,7 @@ class EditHistory(Base):
         CheckConstraint(
             "field_name IN ('characters', 'series', 'tags')", name="valid_history_field"
         ),
-        CheckConstraint("action IN ('ADD', 'DELETE')", name="valid_history_action"),
+        CheckConstraint("action IN ('ADD', 'DELETE', 'REJECTED')", name="valid_history_action"),
     )
 
     # Relationships

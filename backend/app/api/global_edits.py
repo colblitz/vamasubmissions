@@ -244,6 +244,9 @@ def get_global_edit_history(
     # Build responses with usernames
     responses = []
     for suggestion in suggestions:
+        # Calculate affected_count from previous_values (stores affected post IDs)
+        affected_count = len(suggestion.previous_values) if suggestion.previous_values else 0
+        
         responses.append(
             GlobalEditHistoryResponse(
                 id=suggestion.id,
@@ -257,6 +260,7 @@ def get_global_edit_history(
                 action_field=suggestion.action_field,
                 action_value=suggestion.action_value,
                 applied_at=suggestion.applied_at,
+                affected_count=affected_count,
             )
         )
 

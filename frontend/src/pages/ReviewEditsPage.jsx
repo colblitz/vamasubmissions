@@ -170,11 +170,24 @@ export default function ReviewEditsPage() {
     if (modalState.isOpen && modalState.editIndex !== null && activeTab === "pending") {
       const newEdit = pendingEdits[modalState.editIndex];
       if (newEdit) {
-        // Update to show the edit now at this index (next edit shifted down)
-        setModalState((prev) => ({
-          ...prev,
-          edit: newEdit,
-        }));
+        // Fetch the post data for the new edit to get updated thumbnails
+        api.get(`/api/posts/${newEdit.post_id}`).then(response => {
+          setModalState((prev) => ({
+            ...prev,
+            edit: newEdit,
+            post: {
+              title: newEdit.post_title,
+              thumbnail_urls: response.data.thumbnail_urls || [],
+            },
+          }));
+        }).catch(err => {
+          console.error("Failed to fetch post data:", err);
+          // Still update the edit even if fetching thumbnails fails
+          setModalState((prev) => ({
+            ...prev,
+            edit: newEdit,
+          }));
+        });
       } else {
         // No more edits at this index, close modal
         setModalState({ isOpen: false, post: null, edit: null, editIndex: null });
@@ -573,10 +586,18 @@ export default function ReviewEditsPage() {
                   );
                 }
 
-                return combinedHistory.map((item) => (
+                return combinedHistory.map((item) => {
+                  // Determine background color based on action
+                  const bgColorClass = item.action === "REJECTED"
+                    ? "bg-red-50"
+                    : (item.action === "ADD" || item.action === "DELETE")
+                      ? "bg-green-50"
+                      : "bg-white";
+
+                  return (
                   <div
                     key={`${item.type}-${item.id}`}
-                    className="bg-white rounded-lg shadow overflow-hidden flex"
+                    className={`${bgColorClass} rounded-lg shadow overflow-hidden flex`}
                   >
                     {/* Icon/Thumbnail - Fixed size, no padding */}
                     {item.type === "global" ? (
@@ -630,21 +651,26 @@ export default function ReviewEditsPage() {
                               GLOBAL
                             </span>
                             <span className="text-sm text-gray-600">
-                              {formatFieldName(item.field_name)}
+                              {item.action === "ADD" ? "Add Value" : "Delete Value"}
                             </span>
                           </div>
                           <div className="text-sm text-gray-900 mb-1">
-                            <span className="font-medium text-red-600">
-                              "{item.old_value}"
-                            </span>
-                            {" → "}
-                            <span className="font-medium text-green-600">
-                              "{item.new_value}"
-                            </span>
+                            Where <span className="font-medium">{formatFieldName(item.field_name)}</span> matches "<span className="font-medium">{item.pattern}</span>",{" "}
+                            {item.action === "ADD" ? (
+                              <>
+                                add "<span className="font-medium text-green-600">{item.action_value}</span>" to{" "}
+                                <span className="font-medium">{formatFieldName(item.action_field)}</span>
+                              </>
+                            ) : (
+                              <>
+                                delete matching values from{" "}
+                                <span className="font-medium">{formatFieldName(item.action_field)}</span>
+                              </>
+                            )}
                           </div>
                           <p className="text-xs text-gray-500">
-                            {item.affected_count} post
-                            {item.affected_count !== 1 ? "s" : ""} affected •{" "}
+                            {item.affected_count || 0} post
+                            {(item.affected_count || 0) !== 1 ? "s" : ""} affected •{" "}
                             {item.suggester_username && (
                               <>Suggested by: {item.suggester_username} • </>
                             )}
@@ -660,7 +686,13 @@ export default function ReviewEditsPage() {
                           <div className="text-sm text-gray-600 mt-1">
                             {formatFieldName(item.field_name)}:{" "}
                             <span
-                              className={`font-medium ${item.action === "ADD" ? "text-green-700" : "text-red-700"}`}
+                              className={`font-medium ${
+                                item.action === "REJECTED"
+                                  ? "text-red-700"
+                                  : item.action === "ADD"
+                                    ? "text-green-700"
+                                    : "text-red-700"
+                              }`}
                             >
                               {item.action === "ADD" ? "+" : "-"}
                               {item.value}
@@ -670,7 +702,9 @@ export default function ReviewEditsPage() {
                             {item.suggester_username && (
                               <>Suggested by: {item.suggester_username} • </>
                             )}
-                            Approved by: {item.approver_username} •{" "}
+                            {item.action === "REJECTED"
+                              ? <>Rejected by: {item.approver_username} • </>
+                              : <>Approved by: {item.approver_username} • </>}
                             {new Date(item.applied_at).toLocaleDateString()}
                           </p>
                         </>
@@ -711,7 +745,8 @@ export default function ReviewEditsPage() {
                       )}
                     </div>
                   </div>
-                ));
+                  );
+                });
               })()}
             </>
           )}

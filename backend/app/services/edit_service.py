@@ -270,6 +270,18 @@ def reject_edit(
     edit.approver_id = user_id
     edit.approved_at = datetime.utcnow()
 
+    # Create history entry for rejected edits (with REJECTED status indicator)
+    history = EditHistory(
+        post_id=edit.post_id,
+        suggester_id=edit.suggester_id,
+        approver_id=user_id,
+        field_name=edit.field_name,
+        action="REJECTED",  # Use special action to indicate rejection
+        value=edit.value,
+        applied_at=datetime.utcnow(),
+    )
+    db.add(history)
+
     db.commit()
     db.refresh(edit)
 
