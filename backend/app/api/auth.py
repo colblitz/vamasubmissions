@@ -1,19 +1,20 @@
 """Authentication API endpoints."""
 
+import logging
+from datetime import datetime, timedelta
+from typing import Optional
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-import httpx
-import logging
-from typing import Optional
 
-from app.core.database import get_db
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.security import create_access_token
-from app.schemas.auth import PatreonUserInfo
-from app.services import user_service, session_service
 from app.models.user import User
+from app.schemas.auth import PatreonUserInfo
+from app.services import session_service, user_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -192,8 +193,7 @@ async def callback(code: str, db: Session = Depends(get_db)):
 
         # Create or update user in database (only after validation passes)
         user = existing_user
-        is_new_user = user is None
-        
+
         if not user:
             user = user_service.create_user(
                 db,
@@ -415,7 +415,7 @@ async def check_subscription(
     # Note: This reflects the status at last login. For real-time verification,
     # users need to log in again through the OAuth flow.
     is_active = current_user.patron_status == "active_patron"
-    
+
     return {
         "is_subscribed": is_active,
         "patron_status": current_user.patron_status,

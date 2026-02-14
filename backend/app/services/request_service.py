@@ -1,20 +1,20 @@
 """Community Request service for business logic."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from fastapi import HTTPException, status
-from typing import List, Optional, Dict
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from fastapi import HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.models.community_request import CommunityRequest
-from app.models.user import User
 from app.schemas.community_request import (
     CommunityRequestCreate,
-    CommunityRequestUpdate,
-    CommunityRequestPublic,
     CommunityRequestList,
+    CommunityRequestPublic,
+    CommunityRequestUpdate,
 )
-from app.utils.validation import normalize_text, normalize_array_field
+from app.utils.validation import normalize_array_field, normalize_text
 
 
 def get_request_by_id(db: Session, request_id: int) -> Optional[CommunityRequest]:
@@ -215,7 +215,7 @@ def get_all_requests(
 
     # Filter out fulfilled if requested
     if not include_fulfilled:
-        q = q.filter(CommunityRequest.fulfilled == False)
+        q = q.filter(not CommunityRequest.fulfilled)
 
     # Order by requested_timestamp (oldest first - FIFO queue)
     q = q.order_by(CommunityRequest.requested_timestamp.asc())
@@ -294,7 +294,7 @@ def get_user_requests(
     q = db.query(CommunityRequest).filter(CommunityRequest.user_id == user_id)
 
     if not include_fulfilled:
-        q = q.filter(CommunityRequest.fulfilled == False)
+        q = q.filter(not CommunityRequest.fulfilled)
 
     requests = q.order_by(CommunityRequest.requested_timestamp.asc()).all()
 
@@ -339,7 +339,7 @@ def get_queue_position(db: Session, request_id: int) -> Optional[int]:
     position = (
         db.query(func.count(CommunityRequest.id))
         .filter(
-            CommunityRequest.fulfilled == False,
+            not CommunityRequest.fulfilled,
             CommunityRequest.requested_timestamp <= request.requested_timestamp,
             CommunityRequest.id <= request.id,  # Break ties by ID
         )

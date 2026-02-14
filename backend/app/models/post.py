@@ -1,8 +1,7 @@
 """Post model for VAMA's existing Patreon posts."""
 
-from sqlalchemy import Column, Integer, String, DateTime, func, ARRAY, Text
+from sqlalchemy import ARRAY, Column, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
 

@@ -2,14 +2,13 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.core.database import get_db
-from app.schemas.queue import QueueInfo, QueueSubmission
-from app.schemas.vote import VoteCreate, VoteAllowance
-from app.services import user_service, vote_service
-from app.models.user import User
 from app.models.submission import Submission
+from app.models.user import User
+from app.schemas.queue import QueueInfo, QueueSubmission
+from app.schemas.vote import VoteAllowance, VoteCreate
+from app.services import user_service, vote_service
 
 router = APIRouter()
 

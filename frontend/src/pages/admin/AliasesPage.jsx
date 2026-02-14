@@ -9,7 +9,7 @@ export default function AliasesPage() {
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   // Data state
-  const [aliases, setAliases] = useState([]);
+  const [, setAliases] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [groupedAliases, setGroupedAliases] = useState({});
 
@@ -21,7 +21,7 @@ export default function AliasesPage() {
 
   // Edit state
   const [editingAlias, setEditingAlias] = useState(null);
-  
+
   // Confirmation state
   const [confirmingDelete, setConfirmingDelete] = useState(null); // {type: 'alias'|'suggestion', id: aliasId|searchTerm}
 
@@ -133,22 +133,22 @@ export default function AliasesPage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Failed to create alias:", err);
-      
+
       // Extract error message properly
       let errorMessage = "Failed to create alias";
       if (err.response?.data?.detail) {
-        if (typeof err.response.data.detail === 'string') {
+        if (typeof err.response.data.detail === "string") {
           errorMessage = err.response.data.detail;
         } else if (Array.isArray(err.response.data.detail)) {
           // FastAPI validation errors are arrays
-          errorMessage = err.response.data.detail.map(e => e.msg).join(', ');
+          errorMessage = err.response.data.detail.map((e) => e.msg).join(", ");
         } else {
           errorMessage = JSON.stringify(err.response.data.detail);
         }
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
     }
   };
@@ -161,13 +161,15 @@ export default function AliasesPage() {
 
     // Scroll to the add form
     setTimeout(() => {
-      document.getElementById("add-alias-form")?.scrollIntoView({ behavior: "smooth" });
+      document
+        .getElementById("add-alias-form")
+        ?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
 
   // Delete a search suggestion - first click shows confirmation
   const handleDeleteSuggestionClick = (searchTerm) => {
-    setConfirmingDelete({ type: 'suggestion', id: searchTerm });
+    setConfirmingDelete({ type: "suggestion", id: searchTerm });
   };
 
   // Confirm delete suggestion
@@ -178,11 +180,13 @@ export default function AliasesPage() {
     setSuccess(null);
 
     try {
-      await api.delete(`/api/aliases/suggestions/${activeTab}/${encodeURIComponent(searchTerm)}`);
-      
+      await api.delete(
+        `/api/aliases/suggestions/${activeTab}/${encodeURIComponent(searchTerm)}`,
+      );
+
       setSuccess("Search suggestion deleted successfully!");
       fetchSuggestions(); // Refresh the list
-      
+
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to delete suggestion");
@@ -191,7 +195,7 @@ export default function AliasesPage() {
 
   // Delete an alias - first click shows confirmation
   const handleDeleteAliasClick = (aliasId) => {
-    setConfirmingDelete({ type: 'alias', id: aliasId });
+    setConfirmingDelete({ type: "alias", id: aliasId });
   };
 
   // Confirm delete alias
@@ -263,7 +267,8 @@ export default function AliasesPage() {
           Manage Aliases
         </h1>
         <p className="text-gray-600">
-          Create and manage aliases for characters, series, and tags to improve search accuracy
+          Create and manage aliases for characters, series, and tags to improve
+          search accuracy
         </p>
       </div>
 
@@ -318,179 +323,196 @@ export default function AliasesPage() {
 
         {/* Add New Alias Form */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Add New Alias</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Add New Alias
+          </h2>
           <form
             id="add-alias-form"
             onSubmit={handleCreateAlias}
             className="space-y-4 p-4 bg-gray-50 rounded-lg"
           >
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Canonical Value
-                </label>
-                <input
-                  type="text"
-                  value={canonicalValue}
-                  onChange={(e) => {
-                    setCanonicalValue(e.target.value);
-                    fetchCanonicalSuggestions(e.target.value);
-                  }}
-                  onFocus={() => {
-                    if (canonicalSuggestions.length > 0) {
-                      setShowCanonicalDropdown(true);
-                    }
-                  }}
-                  onBlur={() => {
-                    // Delay to allow clicking on suggestions
-                    setTimeout(() => setShowCanonicalDropdown(false), 200);
-                  }}
-                  placeholder={`Enter canonical ${activeTab} name`}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                />
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Canonical Value
+              </label>
+              <input
+                type="text"
+                value={canonicalValue}
+                onChange={(e) => {
+                  setCanonicalValue(e.target.value);
+                  fetchCanonicalSuggestions(e.target.value);
+                }}
+                onFocus={() => {
+                  if (canonicalSuggestions.length > 0) {
+                    setShowCanonicalDropdown(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay to allow clicking on suggestions
+                  setTimeout(() => setShowCanonicalDropdown(false), 200);
+                }}
+                placeholder={`Enter canonical ${activeTab} name`}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+              />
 
-                {/* Autocomplete Dropdown */}
-                {showCanonicalDropdown && canonicalSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {canonicalSuggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => {
-                          setCanonicalValue(suggestion);
-                          setShowCanonicalDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-gray-900 hover:bg-blue-50 transition-colors"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Autocomplete Dropdown */}
+              {showCanonicalDropdown && canonicalSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {canonicalSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setCanonicalValue(suggestion);
+                        setShowCanonicalDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-gray-900 hover:bg-blue-50 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Alias
-                </label>
-                <input
-                  type="text"
-                  value={aliasValue}
-                  onChange={(e) => setAliasValue(e.target.value)}
-                  placeholder="Enter alias or alternate spelling"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Alias
+              </label>
+              <input
+                type="text"
+                value={aliasValue}
+                onChange={(e) => setAliasValue(e.target.value)}
+                placeholder="Enter alias or alternate spelling"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+              />
+            </div>
 
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-              >
-                Add Alias
-              </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+            >
+              Add Alias
+            </button>
           </form>
         </div>
 
         {/* Existing Aliases */}
         <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Existing Aliases
-        </h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Existing Aliases
+          </h2>
 
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Loading aliases...</p>
-          </div>
-        ) : Object.keys(groupedAliases).length === 0 ? (
-          <p className="text-gray-600 text-center py-8">
-            No aliases found for this category
-          </p>
-        ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">Canonical Value</th>
-                <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">Aliases</th>
-                <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(groupedAliases).flatMap(([canonical, aliasList]) =>
-                aliasList.map((alias) => (
-                  <tr key={alias.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-4 font-medium text-gray-900">{canonical}</td>
-                    <td className="py-2 px-4">
-                      {editingAlias === alias.id ? (
-                        <input
-                          type="text"
-                          defaultValue={alias.alias_value}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleUpdateAlias(alias.id, e.target.value);
-                            } else if (e.key === "Escape") {
-                              setEditingAlias(null);
-                            }
-                          }}
-                          onBlur={(e) => {
-                            if (e.target.value !== alias.alias_value) {
-                              handleUpdateAlias(alias.id, e.target.value);
-                            } else {
-                              setEditingAlias(null);
-                            }
-                          }}
-                          autoFocus
-                          className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                        />
-                      ) : (
-                        <span className="text-gray-700">{alias.alias_value}</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4 text-right">
-                      {editingAlias === alias.id ? (
-                        <button
-                          onClick={() => setEditingAlias(null)}
-                          className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                        >
-                          Cancel
-                        </button>
-                      ) : confirmingDelete?.type === 'alias' && confirmingDelete?.id === alias.id ? (
-                        <span className="inline-flex gap-2">
-                          <button
-                            onClick={confirmDeleteAlias}
-                            className="px-2 py-1 bg-red-700 text-white rounded hover:bg-red-800 text-sm font-medium"
-                          >
-                            ✓ Confirm
-                          </button>
-                          <button
-                            onClick={cancelDelete}
-                            className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                          >
-                            Cancel
-                          </button>
-                        </span>
-                      ) : (
-                        <span className="inline-flex gap-2">
-                          <button
-                            onClick={() => setEditingAlias(alias.id)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAliasClick(alias.id)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium"
-                          >
-                            Delete
-                          </button>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Loading aliases...</p>
+            </div>
+          ) : Object.keys(groupedAliases).length === 0 ? (
+            <p className="text-gray-600 text-center py-8">
+              No aliases found for this category
+            </p>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">
+                    Canonical Value
+                  </th>
+                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">
+                    Aliases
+                  </th>
+                  <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(groupedAliases).flatMap(
+                  ([canonical, aliasList]) =>
+                    aliasList.map((alias) => (
+                      <tr
+                        key={alias.id}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="py-2 px-4 font-medium text-gray-900">
+                          {canonical}
+                        </td>
+                        <td className="py-2 px-4">
+                          {editingAlias === alias.id ? (
+                            <input
+                              type="text"
+                              defaultValue={alias.alias_value}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleUpdateAlias(alias.id, e.target.value);
+                                } else if (e.key === "Escape") {
+                                  setEditingAlias(null);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value !== alias.alias_value) {
+                                  handleUpdateAlias(alias.id, e.target.value);
+                                } else {
+                                  setEditingAlias(null);
+                                }
+                              }}
+                              autoFocus
+                              className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                            />
+                          ) : (
+                            <span className="text-gray-700">
+                              {alias.alias_value}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-4 text-right">
+                          {editingAlias === alias.id ? (
+                            <button
+                              onClick={() => setEditingAlias(null)}
+                              className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                            >
+                              Cancel
+                            </button>
+                          ) : confirmingDelete?.type === "alias" &&
+                            confirmingDelete?.id === alias.id ? (
+                            <span className="inline-flex gap-2">
+                              <button
+                                onClick={confirmDeleteAlias}
+                                className="px-2 py-1 bg-red-700 text-white rounded hover:bg-red-800 text-sm font-medium"
+                              >
+                                ✓ Confirm
+                              </button>
+                              <button
+                                onClick={cancelDelete}
+                                className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="inline-flex gap-2">
+                              <button
+                                onClick={() => setEditingAlias(alias.id)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAliasClick(alias.id)}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              >
+                                Delete
+                              </button>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )),
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -535,20 +557,40 @@ export default function AliasesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">Search Term</th>
-                    <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">Times Searched</th>
-                    <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">Last Searched</th>
-                    <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700">Action</th>
+                    <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">
+                      Search Term
+                    </th>
+                    <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">
+                      Times Searched
+                    </th>
+                    <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700">
+                      Last Searched
+                    </th>
+                    <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {suggestions.map((suggestion, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-2 px-4 font-medium text-gray-900">{suggestion.search_term}</td>
-                      <td className="py-2 px-4 text-gray-700">{suggestion.search_count}</td>
-                      <td className="py-2 px-4 text-gray-700">{new Date(suggestion.last_searched).toLocaleDateString()}</td>
+                    <tr
+                      key={index}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-2 px-4 font-medium text-gray-900">
+                        {suggestion.search_term}
+                      </td>
+                      <td className="py-2 px-4 text-gray-700">
+                        {suggestion.search_count}
+                      </td>
+                      <td className="py-2 px-4 text-gray-700">
+                        {new Date(
+                          suggestion.last_searched,
+                        ).toLocaleDateString()}
+                      </td>
                       <td className="py-2 px-4 text-right">
-                        {confirmingDelete?.type === 'suggestion' && confirmingDelete?.id === suggestion.search_term ? (
+                        {confirmingDelete?.type === "suggestion" &&
+                        confirmingDelete?.id === suggestion.search_term ? (
                           <span className="inline-flex gap-2">
                             <button
                               onClick={confirmDeleteSuggestion}
@@ -566,14 +608,20 @@ export default function AliasesPage() {
                         ) : (
                           <span className="inline-flex gap-2">
                             <button
-                              onClick={() => handleDeleteSuggestionClick(suggestion.search_term)}
+                              onClick={() =>
+                                handleDeleteSuggestionClick(
+                                  suggestion.search_term,
+                                )
+                              }
                               className="text-red-600 hover:text-red-800 text-sm font-medium"
                             >
                               Delete
                             </button>
                             <button
                               onClick={() =>
-                                handleCreateFromSuggestion(suggestion.search_term)
+                                handleCreateFromSuggestion(
+                                  suggestion.search_term,
+                                )
                               }
                               className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm transition-colors"
                             >

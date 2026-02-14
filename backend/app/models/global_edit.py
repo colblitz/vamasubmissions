@@ -2,10 +2,12 @@
 Database model for global edit suggestions
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, ARRAY, ForeignKey, Text
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from datetime import datetime
+
 from app.core.database import Base
 
 
@@ -16,10 +18,14 @@ class GlobalEditSuggestion(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     suggester_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    field_name = Column(String(50), nullable=False)  # 'characters', 'series', 'tags' - condition field
+    field_name = Column(
+        String(50), nullable=False
+    )  # 'characters', 'series', 'tags' - condition field
     pattern = Column(Text, nullable=False)
-    action = Column(String(10), nullable=False, default='ADD')  # 'ADD', 'DELETE'
-    action_field = Column(String(50), nullable=False)  # 'characters', 'series', 'tags' - field to modify
+    action = Column(String(10), nullable=False, default="ADD")  # 'ADD', 'DELETE'
+    action_field = Column(
+        String(50), nullable=False
+    )  # 'characters', 'series', 'tags' - field to modify
     action_value = Column(Text, nullable=True)
     status = Column(
         String(20), default="pending", nullable=False

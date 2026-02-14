@@ -10,7 +10,7 @@ export function extractOrdinal(url) {
   if (!url) return Infinity;
 
   // Extract filename from URL
-  const filename = url.split('/').pop();
+  const filename = url.split("/").pop();
 
   // Match pattern: anything-t-[digits]-anything
   const match = filename.match(/-t-(\d+)-/);
@@ -51,5 +51,5 @@ export function sortThumbnails(thumbnailUrls) {
   });
 
   // Return sorted URLs
-  return withOrdinals.map(item => item.url);
+  return withOrdinals.map((item) => item.url);
 }

@@ -1,14 +1,14 @@
 """User API endpoints."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.user import User
-from app.services import user_service, credit_service
-from app.models.user import User as UserModel
 from app.models.edit_history import EditHistory
+from app.models.user import User as UserModel
+from app.schemas.user import User
+from app.services import credit_service, user_service
 
 router = APIRouter()
 

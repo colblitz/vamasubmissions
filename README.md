@@ -187,6 +187,12 @@ openssl rand -hex 32
 
 # Run tests
 pytest
+
+# Lint
+cd backend && source venv/bin/activate && ruff check
+
+# Format
+cd backend && source venv/bin/activate && ruff format
 ```
 
 ### Frontend
@@ -199,6 +205,15 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Lint
+cd frontend && npm run lint
+
+# Format
+cd frontend && npm run format
+
+# Check formatting (without fixing)
+cd frontend && npm run format:check
 ```
 
 ### Database

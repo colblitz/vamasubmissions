@@ -3,7 +3,7 @@ import EditSection from "./EditSection";
 
 /**
  * MobilePostCard component - Mobile-optimized post card (< 768px)
- * 
+ *
  * Key differences from desktop PostCard:
  * - Smaller thumbnail (w-24 h-24) on left with object-contain
  * - Title is clickable link with external icon
@@ -14,9 +14,13 @@ import EditSection from "./EditSection";
  * @param {array} pendingEdits - Array of pending edit suggestions for this post
  * @param {function} onEditSuccess - Callback when edit is successfully submitted
  */
-export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess }) {
+export default function MobilePostCard({
+  post,
+  pendingEdits = [],
+  onEditSuccess,
+}) {
   const [editSectionOpen, setEditSectionOpen] = useState(false);
-  
+
   // Helper to get pending edits for a specific field
   const getPendingEditsForField = (fieldName) => {
     return pendingEdits.filter((edit) => edit.field_name === fieldName);
@@ -52,10 +56,7 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-      <div 
-        className="flex flex-row cursor-pointer"
-        onClick={handleCardClick}
-      >
+      <div className="flex flex-row cursor-pointer" onClick={handleCardClick}>
         {/* Thumbnail - Fixed size, edge-to-edge, object-cover */}
         {post.thumbnail_urls?.[0] ? (
           <img
@@ -88,9 +89,9 @@ export default function MobilePostCard({ post, pendingEdits = [], onEditSuccess 
         <div className="p-3 flex-1 flex flex-col min-w-0 hover:bg-gray-50 active:bg-gray-100 transition-colors">
           {/* Title (clickable) and Date */}
           <div className="flex justify-between items-start mb-1 gap-2">
-            <a 
-              href={post.patreon_url} 
-              target="_blank" 
+            <a
+              href={post.patreon_url}
+              target="_blank"
               rel="noopener noreferrer"
               onClick={handleTitleClick}
               className="font-semibold text-base text-gray-900 hover:text-blue-600 flex items-start gap-1 min-w-0"

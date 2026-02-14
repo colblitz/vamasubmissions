@@ -1,10 +1,11 @@
 """Security utilities for authentication and authorization."""
 
+import hashlib
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-import hashlib
 
 from app.core.config import settings
 

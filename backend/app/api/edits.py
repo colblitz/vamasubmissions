@@ -1,20 +1,20 @@
 """Post Edit API endpoints."""
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.user import User
 from app.schemas.post_edit import (
+    EditHistoryList,
     PostEdit,
     PostEditCreate,
     PostEditList,
-    EditHistoryList,
 )
 from app.services import edit_service
-from app.services.user_service import get_current_user, get_current_admin_user
-from app.models.user import User
+from app.services.user_service import get_current_admin_user, get_current_user
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -31,7 +31,7 @@ async def suggest_edit(
     """
     Suggest an edit to a post.
     Rate limited to 10 requests per minute.
-    
+
     If the user is an admin, the edit is automatically approved.
 
     Args:
@@ -45,17 +45,20 @@ async def suggest_edit(
     """
     # Create the edit suggestion
     edit = edit_service.suggest_edit(db, current_user.id, edit_data)
-    
+
     # Log edit submission
     import logging
+
     logger = logging.getLogger(__name__)
     action_type = "AUTO-APPROVED" if current_user.role == "admin" else "SUBMITTED"
-    logger.info(f"[EDIT] User {current_user.id} {action_type} edit {edit.id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}")
-    
+    logger.info(
+        f"[EDIT] User {current_user.id} {action_type} edit {edit.id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}"
+    )
+
     # If user is admin, auto-approve the edit immediately
     if current_user.role == "admin":
         edit = edit_service.approve_edit(db, edit.id, current_user.id)
-    
+
     return edit
 
 
@@ -158,12 +161,15 @@ async def approve_edit(
         Approved edit
     """
     edit = edit_service.approve_edit(db, edit_id, current_user.id)
-    
+
     # Log approval
     import logging
+
     logger = logging.getLogger(__name__)
-    logger.info(f"[APPROVE] User {current_user.id} approved edit {edit_id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}")
-    
+    logger.info(
+        f"[APPROVE] User {current_user.id} approved edit {edit_id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}"
+    )
+
     return edit
 
 
@@ -185,12 +191,15 @@ async def reject_edit(
         Rejected edit
     """
     edit = edit_service.reject_edit(db, edit_id, current_user.id, is_admin=True)
-    
+
     # Log rejection
     import logging
+
     logger = logging.getLogger(__name__)
-    logger.info(f"[REJECT] User {current_user.id} rejected edit {edit_id}: {edit.action} {edit.value} from {edit.field_name} on post {edit.post_id}")
-    
+    logger.info(
+        f"[REJECT] User {current_user.id} rejected edit {edit_id}: {edit.action} {edit.value} from {edit.field_name} on post {edit.post_id}"
+    )
+
     return edit
 
 

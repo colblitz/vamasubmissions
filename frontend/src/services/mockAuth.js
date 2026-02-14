@@ -129,7 +129,7 @@ export const mockAuth = {
 
     try {
       return JSON.parse(userStr);
-    } catch (e) {
+    } catch {
       return null;
     }
   },

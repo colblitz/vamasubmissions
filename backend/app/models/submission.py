@@ -1,6 +1,6 @@
 """Submission models."""
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base

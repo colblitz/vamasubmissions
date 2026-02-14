@@ -207,9 +207,9 @@ export default function SearchPage() {
 
   // Handle clear search
   const handleClear = () => {
-    setSearchParams((prev) => ({ 
-      ...prev, 
-      query: "", 
+    setSearchParams((prev) => ({
+      ...prev,
+      query: "",
       characters: [],
       series: [],
       tags: [],
@@ -218,7 +218,7 @@ export default function SearchPage() {
       noTags: false,
       dateFrom: null,
       dateTo: null,
-      page: 1 
+      page: 1,
     }));
     setResults([]);
     setTotal(0);
@@ -253,17 +253,71 @@ export default function SearchPage() {
 
     // Apply the filter based on field type
     if (fieldType === "characters") {
-      setSearchParams((prev) => ({ ...prev, characters: [itemName], noCharacters: false, noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
+      setSearchParams((prev) => ({
+        ...prev,
+        characters: [itemName],
+        noCharacters: false,
+        noSeries: false,
+        noTags: false,
+        dateFrom: null,
+        dateTo: null,
+        page: 1,
+      }));
     } else if (fieldType === "series") {
-      setSearchParams((prev) => ({ ...prev, series: [itemName], noCharacters: false, noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
+      setSearchParams((prev) => ({
+        ...prev,
+        series: [itemName],
+        noCharacters: false,
+        noSeries: false,
+        noTags: false,
+        dateFrom: null,
+        dateTo: null,
+        page: 1,
+      }));
     } else if (fieldType === "tags") {
-      setSearchParams((prev) => ({ ...prev, tags: [itemName], noCharacters: false, noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
+      setSearchParams((prev) => ({
+        ...prev,
+        tags: [itemName],
+        noCharacters: false,
+        noSeries: false,
+        noTags: false,
+        dateFrom: null,
+        dateTo: null,
+        page: 1,
+      }));
     } else if (fieldType === "no_characters") {
-      setSearchParams((prev) => ({ ...prev, noCharacters: true, characters: [], noSeries: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
+      setSearchParams((prev) => ({
+        ...prev,
+        noCharacters: true,
+        characters: [],
+        noSeries: false,
+        noTags: false,
+        dateFrom: null,
+        dateTo: null,
+        page: 1,
+      }));
     } else if (fieldType === "no_series") {
-      setSearchParams((prev) => ({ ...prev, noSeries: true, series: [], noCharacters: false, noTags: false, dateFrom: null, dateTo: null, page: 1 }));
+      setSearchParams((prev) => ({
+        ...prev,
+        noSeries: true,
+        series: [],
+        noCharacters: false,
+        noTags: false,
+        dateFrom: null,
+        dateTo: null,
+        page: 1,
+      }));
     } else if (fieldType === "no_tags") {
-      setSearchParams((prev) => ({ ...prev, noTags: true, tags: [], noCharacters: false, noSeries: false, dateFrom: null, dateTo: null, page: 1 }));
+      setSearchParams((prev) => ({
+        ...prev,
+        noTags: true,
+        tags: [],
+        noCharacters: false,
+        noSeries: false,
+        dateFrom: null,
+        dateTo: null,
+        page: 1,
+      }));
     } else if (fieldType === "months" || fieldType === "days") {
       // Date-based browsing - itemName is a date string (YYYY-MM for months, YYYY-MM-DD for days)
       // Parse the date to create a date range filter
@@ -273,14 +327,14 @@ export default function SearchPage() {
         // Format dates using local timezone to avoid ISO conversion issues
         const formatLocalDate = (date) => {
           const y = date.getFullYear();
-          const m = String(date.getMonth() + 1).padStart(2, '0');
-          const d = String(date.getDate()).padStart(2, '0');
+          const m = String(date.getMonth() + 1).padStart(2, "0");
+          const d = String(date.getDate()).padStart(2, "0");
           return `${y}-${m}-${d}`;
         };
         const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
         const endDate = new Date(parseInt(year), parseInt(month), 0);
-        setSearchParams((prev) => ({ 
-          ...prev, 
+        setSearchParams((prev) => ({
+          ...prev,
           dateFrom: formatLocalDate(startDate),
           dateTo: formatLocalDate(endDate),
           characters: [],
@@ -289,12 +343,12 @@ export default function SearchPage() {
           noCharacters: false,
           noSeries: false,
           noTags: false,
-          page: 1 
+          page: 1,
         }));
       } else if (fieldType === "days") {
         // Day format: "YYYY-MM-DD"
-        setSearchParams((prev) => ({ 
-          ...prev, 
+        setSearchParams((prev) => ({
+          ...prev,
           dateFrom: itemName,
           dateTo: itemName,
           characters: [],
@@ -303,7 +357,7 @@ export default function SearchPage() {
           noCharacters: false,
           noSeries: false,
           noTags: false,
-          page: 1 
+          page: 1,
         }));
       }
     }
@@ -312,7 +366,9 @@ export default function SearchPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">VAMA Posts</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          VAMA Posts
+        </h1>
         {latestPostDate && (
           <div className="text-sm text-gray-500">
             Latest post: {new Date(latestPostDate).toLocaleDateString()}
@@ -354,8 +410,12 @@ export default function SearchPage() {
               noCharacters: false,
               noSeries: false,
               noTags: false,
-              dateFrom: postStats?.earliest_date ? postStats.earliest_date.split('T')[0] : null,
-              dateTo: postStats?.latest_date ? postStats.latest_date.split('T')[0] : null,
+              dateFrom: postStats?.earliest_date
+                ? postStats.earliest_date.split("T")[0]
+                : null,
+              dateTo: postStats?.latest_date
+                ? postStats.latest_date.split("T")[0]
+                : null,
               page: 1,
               limit: 20,
               sortBy: "date",

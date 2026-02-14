@@ -1,8 +1,8 @@
 """Community Request model for unofficial queue tracking."""
 
-from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, func
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 

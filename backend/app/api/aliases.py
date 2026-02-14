@@ -1,20 +1,21 @@
 """Value Alias API endpoints."""
 
-from fastapi import APIRouter, Depends, Query, Path
-from sqlalchemy.orm import Session
 from typing import Optional
 
+from fastapi import APIRouter, Depends, Path, Query
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
+from app.models.user import User
 from app.schemas.value_alias import (
     ValueAlias,
     ValueAliasCreate,
-    ValueAliasUpdate,
     ValueAliasList,
+    ValueAliasUpdate,
     ZeroResultSuggestionList,
 )
 from app.services import alias_service
-from app.services.user_service import get_current_user, get_current_admin_user
-from app.models.user import User
+from app.services.user_service import get_current_admin_user
 
 router = APIRouter()
 
@@ -27,12 +28,12 @@ async def get_aliases(
 ):
     """
     Get all value aliases (admin only).
-    
+
     Args:
         field_type: Optional field type filter ('characters', 'series', 'tags')
         current_user: Current authenticated admin user
         db: Database session
-    
+
     Returns:
         List of aliases
     """
@@ -47,12 +48,12 @@ async def create_alias(
 ):
     """
     Create a new value alias (admin only).
-    
+
     Args:
         alias_data: Alias creation data
         current_user: Current authenticated admin user
         db: Database session
-    
+
     Returns:
         Created alias
     """
@@ -68,13 +69,13 @@ async def update_alias(
 ):
     """
     Update a value alias (admin only).
-    
+
     Args:
         alias_id: Alias ID
         alias_data: Alias update data
         current_user: Current authenticated admin user
         db: Database session
-    
+
     Returns:
         Updated alias
     """
@@ -89,7 +90,7 @@ async def delete_alias(
 ):
     """
     Delete a value alias (admin only).
-    
+
     Args:
         alias_id: Alias ID
         current_user: Current authenticated admin user
@@ -108,13 +109,13 @@ async def get_zero_result_suggestions(
 ):
     """
     Get zero-result search suggestions for creating aliases (admin only).
-    
+
     Args:
         field_type: Optional field type filter
         limit: Max results
         current_user: Current authenticated admin user
         db: Database session
-    
+
     Returns:
         List of zero-result search suggestions
     """
@@ -131,14 +132,14 @@ async def create_alias_from_suggestion(
 ):
     """
     Create an alias from a zero-result suggestion (admin only).
-    
+
     Args:
         field_type: Field type
         search_term: Search term to make an alias
         canonical_value: Canonical value to map to
         current_user: Current authenticated admin user
         db: Database session
-    
+
     Returns:
         Created alias
     """
@@ -156,7 +157,7 @@ async def delete_search_suggestion(
 ):
     """
     Delete all search analytics entries for a specific search term (admin only).
-    
+
     Args:
         field_type: Field type
         search_term: Search term to delete

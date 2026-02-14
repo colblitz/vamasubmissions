@@ -86,7 +86,7 @@ export default function AutocompleteInput({
       onSelect(internalValue.trim());
       setIsOpen(false);
     }
-    
+
     if (onKeyPress) {
       onKeyPress(e);
     }

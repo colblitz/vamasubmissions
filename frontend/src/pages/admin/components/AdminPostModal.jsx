@@ -4,7 +4,7 @@ import api from "../../../services/api";
 
 /**
  * AdminPostModal - Full-screen modal for editing pending posts
- * 
+ *
  * Features:
  * - View all images
  * - Edit characters and series with autocomplete
@@ -33,29 +33,29 @@ export default function AdminPostModal({
 }) {
   const [modalError, setModalError] = useState(null);
   const [modalSuccess, setModalSuccess] = useState(null);
-  const [publishing, setPublishing] = useState(false);
+  const [, setPublishing] = useState(false);
 
   // Input states for inline editing
   const [characterInput, setCharacterInput] = useState("");
   const [seriesInput, setSeriesInput] = useState("");
   const [tagInput, setTagInput] = useState("");
-  
+
   // Autocomplete suggestions
   const [characterSuggestions, setCharacterSuggestions] = useState([]);
   const [characterSeriesMap, setCharacterSeriesMap] = useState({});
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
-  
+
   // Refs for click-away detection
   const characterRef = useRef(null);
   const seriesRef = useRef(null);
   const tagRef = useRef(null);
-  
+
   // Ref for thumbnail grid scrolling
   const [thumbnailGridRef, setThumbnailGridRef] = useState(null);
 
   const canPublish = characters.length > 0 && series.length > 0;
-  
+
   // Fetch character suggestions with series info
   const fetchCharacterSuggestions = async (query) => {
     if (!query || query.length < 2) {
@@ -65,11 +65,14 @@ export default function AdminPostModal({
     }
 
     try {
-      const response = await api.get("/api/posts/autocomplete/characters-with-series", {
-        params: { q: query, limit: 100 },
-      });
+      const response = await api.get(
+        "/api/posts/autocomplete/characters-with-series",
+        {
+          params: { q: query, limit: 100 },
+        },
+      );
       const data = response.data || [];
-      
+
       // Build map of character -> series
       const charSeriesMap = {};
       const charNames = [];
@@ -77,14 +80,14 @@ export default function AdminPostModal({
         charSeriesMap[item.character] = item.series;
         charNames.push(item.character);
       });
-      
+
       setCharacterSeriesMap(charSeriesMap);
       setCharacterSuggestions(charNames);
     } catch (err) {
       console.error("Failed to fetch character suggestions:", err);
     }
   };
-  
+
   // Fetch series suggestions
   const fetchSeriesSuggestions = async (query) => {
     if (!query || query.length < 2) {
@@ -101,7 +104,7 @@ export default function AdminPostModal({
       console.error("Failed to fetch series suggestions:", err);
     }
   };
-  
+
   // Fetch tag suggestions
   const fetchTagSuggestions = async (query) => {
     if (!query || query.length < 2) {
@@ -118,7 +121,7 @@ export default function AdminPostModal({
       console.error("Failed to fetch tag suggestions:", err);
     }
   };
-  
+
   // Debounced autocomplete
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -126,14 +129,14 @@ export default function AdminPostModal({
     }, 500);
     return () => clearTimeout(timer);
   }, [characterInput]);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (seriesInput) fetchSeriesSuggestions(seriesInput);
     }, 500);
     return () => clearTimeout(timer);
   }, [seriesInput]);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (tagInput) fetchTagSuggestions(tagInput);
@@ -155,11 +158,17 @@ export default function AdminPostModal({
       } else if (e.key === "PageUp" && thumbnailGridRef) {
         e.preventDefault();
         // Scroll thumbnail grid up by one viewport height
-        thumbnailGridRef.scrollBy({ top: -thumbnailGridRef.clientHeight, behavior: 'smooth' });
+        thumbnailGridRef.scrollBy({
+          top: -thumbnailGridRef.clientHeight,
+          behavior: "smooth",
+        });
       } else if (e.key === "PageDown" && thumbnailGridRef) {
         e.preventDefault();
         // Scroll thumbnail grid down by one viewport height
-        thumbnailGridRef.scrollBy({ top: thumbnailGridRef.clientHeight, behavior: 'smooth' });
+        thumbnailGridRef.scrollBy({
+          top: thumbnailGridRef.clientHeight,
+          behavior: "smooth",
+        });
       }
     };
 
@@ -179,11 +188,14 @@ export default function AdminPostModal({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
-  
+
   // Click-away detection for autocomplete dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (characterRef.current && !characterRef.current.contains(event.target)) {
+      if (
+        characterRef.current &&
+        !characterRef.current.contains(event.target)
+      ) {
         setCharacterSuggestions([]);
         setCharacterSeriesMap({});
       }
@@ -204,17 +216,22 @@ export default function AdminPostModal({
   // Auto-fill from title
   const handleAutoFill = () => {
     const title = post.title;
-    console.log('[AUTO-FILL] Title:', title);
+    console.log("[AUTO-FILL] Title:", title);
 
     // Pattern: "Character Name (Series)" or "Character Name (Series) 500 pics"
     const pattern1 = /^([^(]+)\s*\(([^)]+)\)/i;
     const match1 = title.match(pattern1);
-    console.log('[AUTO-FILL] Match:', match1);
+    console.log("[AUTO-FILL] Match:", match1);
 
     if (match1) {
       const extractedChar = match1[1].trim();
       const extractedSeries = match1[2].trim();
-      console.log('[AUTO-FILL] Extracted - Character:', extractedChar, 'Series:', extractedSeries);
+      console.log(
+        "[AUTO-FILL] Extracted - Character:",
+        extractedChar,
+        "Series:",
+        extractedSeries,
+      );
 
       // Title case the names
       const titleCaseChar = extractedChar
@@ -230,22 +247,27 @@ export default function AdminPostModal({
           (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
         )
         .join(" ");
-      
-      console.log('[AUTO-FILL] Title-cased - Character:', titleCaseChar, 'Series:', titleCaseSeries);
-      console.log('[AUTO-FILL] Current characters:', characters);
-      console.log('[AUTO-FILL] Current series:', series);
+
+      console.log(
+        "[AUTO-FILL] Title-cased - Character:",
+        titleCaseChar,
+        "Series:",
+        titleCaseSeries,
+      );
+      console.log("[AUTO-FILL] Current characters:", characters);
+      console.log("[AUTO-FILL] Current series:", series);
 
       // Build new arrays with both character and series
-      const newCharacters = characters.includes(titleCaseChar) 
-        ? characters 
+      const newCharacters = characters.includes(titleCaseChar)
+        ? characters
         : [...characters, titleCaseChar];
-      
+
       const newSeries = series.includes(titleCaseSeries)
         ? series
         : [...series, titleCaseSeries];
-      
-      console.log('[AUTO-FILL] New characters:', newCharacters);
-      console.log('[AUTO-FILL] New series:', newSeries);
+
+      console.log("[AUTO-FILL] New characters:", newCharacters);
+      console.log("[AUTO-FILL] New series:", newSeries);
 
       // Update both at once using combined method
       onCharactersAndSeriesChange(newCharacters, newSeries);
@@ -255,7 +277,7 @@ export default function AdminPostModal({
       return;
     }
 
-    console.log('[AUTO-FILL] No match found');
+    console.log("[AUTO-FILL] No match found");
     setModalError(
       "Could not auto-fill: title format not recognized. Expected format: 'Character Name (Series)'",
     );
@@ -263,7 +285,7 @@ export default function AdminPostModal({
   };
 
   // Publish post
-  const handlePublish = async () => {
+  const _handlePublish = async () => {
     if (!canPublish) {
       setModalError(
         "Please add at least one character and series before publishing",
@@ -299,7 +321,7 @@ export default function AdminPostModal({
   };
 
   // Skip post
-  const handleSkip = async () => {
+  const _handleSkip = async () => {
     setModalError(null);
     setModalSuccess(null);
 
@@ -316,7 +338,7 @@ export default function AdminPostModal({
   };
 
   // Delete post
-  const handleDelete = async () => {
+  const _handleDelete = async () => {
     setModalError(null);
     setModalSuccess(null);
 
@@ -353,14 +375,31 @@ export default function AdminPostModal({
                 <h2 className="text-xl font-bold text-gray-900 truncate">
                   {post.title}
                 </h2>
-                <span className={`px-2 py-1 text-white text-xs font-bold rounded ${canPublish ? "bg-green-500" : "bg-yellow-500"}`}>
+                <span
+                  className={`px-2 py-1 text-white text-xs font-bold rounded ${canPublish ? "bg-green-500" : "bg-yellow-500"}`}
+                >
                   PENDING
                 </span>
                 {isSaving && (
                   <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded flex items-center gap-1">
-                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="w-3 h-3 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Saving...
                   </span>
@@ -466,7 +505,7 @@ export default function AdminPostModal({
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Images ({post.thumbnail_urls.length})
                 </h3>
-                <div 
+                <div
                   ref={setThumbnailGridRef}
                   className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[750px] overflow-y-auto"
                 >
@@ -511,16 +550,33 @@ export default function AdminPostModal({
                     <span
                       key={`char-${idx}`}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
-                      style={{ backgroundColor: 'hsl(0deg 75% 36%)', color: '#ffffff' }}
+                      style={{
+                        backgroundColor: "hsl(0deg 75% 36%)",
+                        color: "#ffffff",
+                      }}
                     >
                       {char}
                       <button
-                        onClick={() => onCharactersChange(characters.filter((_, i) => i !== idx))}
+                        onClick={() =>
+                          onCharactersChange(
+                            characters.filter((_, i) => i !== idx),
+                          )
+                        }
                         className="text-white hover:text-red-200 transition-colors"
                         title="Remove this character"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </span>
@@ -531,17 +587,32 @@ export default function AdminPostModal({
                     <span
                       key={`series-${idx}`}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
-                      style={{ backgroundColor: 'hsl(19deg 33% 90%)', color: 'hsl(19deg 33% 20%)' }}
+                      style={{
+                        backgroundColor: "hsl(19deg 33% 90%)",
+                        color: "hsl(19deg 33% 20%)",
+                      }}
                     >
                       {s}
                       <button
-                        onClick={() => onSeriesChange(series.filter((_, i) => i !== idx))}
+                        onClick={() =>
+                          onSeriesChange(series.filter((_, i) => i !== idx))
+                        }
                         className="hover:text-red-600 transition-colors"
-                        style={{ color: 'hsl(19deg 33% 20%)' }}
+                        style={{ color: "hsl(19deg 33% 20%)" }}
                         title="Remove this series"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </span>
@@ -555,12 +626,24 @@ export default function AdminPostModal({
                     >
                       {tag}
                       <button
-                        onClick={() => onTagsChange(tags.filter((_, i) => i !== idx))}
+                        onClick={() =>
+                          onTagsChange(tags.filter((_, i) => i !== idx))
+                        }
                         className="text-white hover:text-gray-300 transition-colors"
                         title="Remove this tag"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </span>
@@ -570,7 +653,10 @@ export default function AdminPostModal({
                 {/* All inputs in a row */}
                 <div className="flex flex-wrap gap-2">
                   {/* Character input with autocomplete */}
-                  <div ref={characterRef} className="relative inline-flex items-center gap-1">
+                  <div
+                    ref={characterRef}
+                    className="relative inline-flex items-center gap-1"
+                  >
                     <input
                       type="text"
                       value={characterInput}
@@ -579,7 +665,10 @@ export default function AdminPostModal({
                         if (e.key === "Enter" && characterInput.trim()) {
                           e.preventDefault();
                           if (!characters.includes(characterInput.trim())) {
-                            onCharactersChange([...characters, characterInput.trim()]);
+                            onCharactersChange([
+                              ...characters,
+                              characterInput.trim(),
+                            ]);
                           }
                           setCharacterInput("");
                           setCharacterSuggestions([]);
@@ -590,22 +679,38 @@ export default function AdminPostModal({
                     />
                     <button
                       onClick={() => {
-                        if (characterInput.trim() && !characters.includes(characterInput.trim())) {
-                          onCharactersChange([...characters, characterInput.trim()]);
+                        if (
+                          characterInput.trim() &&
+                          !characters.includes(characterInput.trim())
+                        ) {
+                          onCharactersChange([
+                            ...characters,
+                            characterInput.trim(),
+                          ]);
                           setCharacterInput("");
                           setCharacterSuggestions([]);
                         }
                       }}
                       disabled={!characterInput.trim()}
                       className="p-1 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      style={{ backgroundColor: 'hsl(0deg 75% 36%)' }}
+                      style={{ backgroundColor: "hsl(0deg 75% 36%)" }}
                       title="Add character"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                     </button>
-                    
+
                     {/* Character autocomplete dropdown with series info */}
                     {characterSuggestions.length > 0 && (
                       <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -613,22 +718,28 @@ export default function AdminPostModal({
                           <button
                             key={idx}
                             onClick={() => {
-                              const newChars = characters.includes(suggestion) 
-                                ? characters 
+                              const newChars = characters.includes(suggestion)
+                                ? characters
                                 : [...characters, suggestion];
-                              
-                              const associatedSeries = characterSeriesMap[suggestion];
-                              const newSeries = (associatedSeries && !series.includes(associatedSeries))
-                                ? [...series, associatedSeries]
-                                : series;
-                              
+
+                              const associatedSeries =
+                                characterSeriesMap[suggestion];
+                              const newSeries =
+                                associatedSeries &&
+                                !series.includes(associatedSeries)
+                                  ? [...series, associatedSeries]
+                                  : series;
+
                               // Update both at once if series was added
                               if (newSeries !== series) {
-                                onCharactersAndSeriesChange(newChars, newSeries);
+                                onCharactersAndSeriesChange(
+                                  newChars,
+                                  newSeries,
+                                );
                               } else {
                                 onCharactersChange(newChars);
                               }
-                              
+
                               setCharacterInput("");
                               setCharacterSuggestions([]);
                               setCharacterSeriesMap({});
@@ -650,7 +761,10 @@ export default function AdminPostModal({
                   </div>
 
                   {/* Series input with autocomplete */}
-                  <div ref={seriesRef} className="relative inline-flex items-center gap-1">
+                  <div
+                    ref={seriesRef}
+                    className="relative inline-flex items-center gap-1"
+                  >
                     <input
                       type="text"
                       value={seriesInput}
@@ -670,7 +784,10 @@ export default function AdminPostModal({
                     />
                     <button
                       onClick={() => {
-                        if (seriesInput.trim() && !series.includes(seriesInput.trim())) {
+                        if (
+                          seriesInput.trim() &&
+                          !series.includes(seriesInput.trim())
+                        ) {
                           onSeriesChange([...series, seriesInput.trim()]);
                           setSeriesInput("");
                           setSeriesSuggestions([]);
@@ -678,14 +795,27 @@ export default function AdminPostModal({
                       }}
                       disabled={!seriesInput.trim()}
                       className="p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      style={{ backgroundColor: 'hsl(19deg 33% 50%)', color: '#ffffff' }}
+                      style={{
+                        backgroundColor: "hsl(19deg 33% 50%)",
+                        color: "#ffffff",
+                      }}
                       title="Add series"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                     </button>
-                    
+
                     {/* Series autocomplete dropdown */}
                     {seriesSuggestions.length > 0 && (
                       <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -709,7 +839,10 @@ export default function AdminPostModal({
                   </div>
 
                   {/* Tag input with autocomplete */}
-                  <div ref={tagRef} className="relative inline-flex items-center gap-1">
+                  <div
+                    ref={tagRef}
+                    className="relative inline-flex items-center gap-1"
+                  >
                     <input
                       type="text"
                       value={tagInput}
@@ -729,7 +862,10 @@ export default function AdminPostModal({
                     />
                     <button
                       onClick={() => {
-                        if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+                        if (
+                          tagInput.trim() &&
+                          !tags.includes(tagInput.trim())
+                        ) {
                           onTagsChange([...tags, tagInput.trim()]);
                           setTagInput("");
                           setTagSuggestions([]);
@@ -739,11 +875,21 @@ export default function AdminPostModal({
                       className="p-1 bg-slate-600 text-white rounded hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       title="Add tag"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                     </button>
-                    
+
                     {/* Tag autocomplete dropdown */}
                     {tagSuggestions.length > 0 && (
                       <div className="absolute top-full left-0 z-20 w-64 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { submissionsAPI } from "../services/api";
 
 export default function DashboardPageV2() {
@@ -513,7 +513,8 @@ export default function DashboardPageV2() {
               No Results Found
             </h3>
             <p className="text-gray-600 max-w-md mx-auto">
-              We couldn't find any completed requests matching "{searchQuery}". Try a different search term or browse all posts.
+              We couldn't find any completed requests matching "{searchQuery}".
+              Try a different search term or browse all posts.
             </p>
           </div>
         )}
@@ -545,7 +546,8 @@ export default function DashboardPageV2() {
                 No Submissions Yet
               </h3>
               <p className="text-gray-600 mb-4 max-w-md mx-auto">
-                You haven't submitted any character requests yet. Use the form above to create your first submission!
+                You haven't submitted any character requests yet. Use the form
+                above to create your first submission!
               </p>
             </div>
           ) : (

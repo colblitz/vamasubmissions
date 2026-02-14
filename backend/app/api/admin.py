@@ -10,10 +10,11 @@ It includes sub-routers for different functional areas:
 
 from fastapi import APIRouter
 
+from app.api.admin_legacy import router as legacy_router
+from app.api.admin_patreon import router as patreon_router
+
 # Import sub-routers
 from app.api.admin_posts import router as posts_router
-from app.api.admin_patreon import router as patreon_router
-from app.api.admin_legacy import router as legacy_router
 
 # Create main admin router
 router = APIRouter()

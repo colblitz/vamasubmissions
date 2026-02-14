@@ -1,0 +1,19 @@
+[tool.ruff]
+# Same as Black
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`), pycodestyle (`E`, `W`), and isort (`I`)
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+# Use single quotes for strings
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

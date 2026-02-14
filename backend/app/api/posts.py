@@ -1,14 +1,15 @@
 """Post API endpoints."""
 
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import Optional, List
 
 from app.core.database import get_db
-from app.schemas.post import Post, PostSearchResult, PostSearchResultOptimized, PostDetail
+from app.models.user import User
+from app.schemas.post import Post, PostSearchResultOptimized
 from app.services import post_service
 from app.services.user_service import get_current_user
-from app.models.user import User
 
 router = APIRouter()
 
@@ -23,7 +24,9 @@ async def search_posts(
     ),
     series: Optional[str] = Query(None, description="Filter by series names (comma-separated)"),
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
-    no_characters: Optional[bool] = Query(None, description="Filter for posts without any characters"),
+    no_characters: Optional[bool] = Query(
+        None, description="Filter for posts without any characters"
+    ),
     no_series: Optional[bool] = Query(None, description="Filter for posts without any series"),
     no_tags: Optional[bool] = Query(None, description="Filter for posts without any tags"),
     date_from: Optional[str] = Query(None, description="Filter posts from this date (YYYY-MM-DD)"),
@@ -66,7 +69,9 @@ async def search_posts(
     # Log date-based search
     if date_from or date_to:
         date_range = f"{date_from or 'start'} to {date_to or 'end'}"
-        logger.info(f"[DATE] User {current_user.id if current_user else 'anonymous'} searched date range: {date_range}")
+        logger.info(
+            f"[DATE] User {current_user.id if current_user else 'anonymous'} searched date range: {date_range}"
+        )
 
     result = post_service.search_posts(
         db,
@@ -102,10 +107,10 @@ async def search_posts(
         filters.append("no_series=True")
     if no_tags:
         filters.append("no_tags=True")
-    
+
     filter_str = ", ".join(filters) if filters else "no filters"
     total_pages = (result.total + limit - 1) // limit
-    
+
     logger.info(
         f"[SEARCH] {current_user.patreon_username} searched [{filter_str}] "
         f"-> {result.total} results, page {page}/{total_pages}"
@@ -157,12 +162,15 @@ async def get_post(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
-    
+
     # Log post view
     import logging
+
     logger = logging.getLogger(__name__)
-    logger.info(f"[VIEW] User {current_user.id if current_user else 'anonymous'} viewed post {post_id}")
-    
+    logger.info(
+        f"[VIEW] User {current_user.id if current_user else 'anonymous'} viewed post {post_id}"
+    )
+
     return post
 
 
@@ -303,8 +311,12 @@ async def browse_posts(
     field_type: str,
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(100, ge=1, le=500, description="Results per page"),
-    sort_by: str = Query("count", regex="^(count|alpha)$", description="Sort by count or alphabetically"),
-    starts_with: Optional[str] = Query(None, max_length=1, description="Filter items starting with this letter (alpha sort only)"),
+    sort_by: str = Query(
+        "count", regex="^(count|alpha)$", description="Sort by count or alphabetically"
+    ),
+    starts_with: Optional[str] = Query(
+        None, max_length=1, description="Filter items starting with this letter (alpha sort only)"
+    ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

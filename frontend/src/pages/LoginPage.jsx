@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { mockAuth } from "../services/mockAuth";
 import { siteContent } from "../content/siteContent";
 
@@ -36,7 +36,9 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="card max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold mb-6">{siteContent.login.heading}</h1>
+          <h1 className="text-3xl font-bold mb-6">
+            {siteContent.login.heading}
+          </h1>
 
           {error && (
             <div className="bg-red-50 border-2 border-red-500 text-red-900 px-6 py-4 rounded-lg mb-6 text-left">
@@ -69,7 +71,9 @@ export default function LoginPage() {
                     <p className="font-semibold mb-1">Available tiers:</p>
                     <ul className="list-disc list-inside space-y-0.5">
                       {siteContent.login.tiers.map((tier, idx) => (
-                        <li key={idx}>{tier.name} ({tier.price})</li>
+                        <li key={idx}>
+                          {tier.name} ({tier.price})
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -117,14 +121,16 @@ export default function LoginPage() {
                     {siteContent.login.privacyInfo.oauthScopes.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    {siteContent.login.privacyInfo.oauthScopes.scopes.map((scope, idx) => (
-                      <li key={idx}>
-                        <span className="font-medium text-gray-800 dark:text-gray-200">
-                          {scope.name}
-                        </span>{" "}
-                        - {scope.description}
-                      </li>
-                    ))}
+                    {siteContent.login.privacyInfo.oauthScopes.scopes.map(
+                      (scope, idx) => (
+                        <li key={idx}>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {scope.name}
+                          </span>{" "}
+                          - {scope.description}
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </div>
 
@@ -133,9 +139,11 @@ export default function LoginPage() {
                     {siteContent.login.privacyInfo.dataStorage.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    {siteContent.login.privacyInfo.dataStorage.items.map((item, idx) => (
-                      <li key={idx}>{item}</li>
-                    ))}
+                    {siteContent.login.privacyInfo.dataStorage.items.map(
+                      (item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ),
+                    )}
                   </ul>
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-500 italic">
                     {siteContent.login.privacyInfo.dataStorage.note}
@@ -150,9 +158,11 @@ export default function LoginPage() {
                     {siteContent.login.privacyInfo.whyNeeded.description}
                   </p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    {siteContent.login.privacyInfo.whyNeeded.features.map((feature, idx) => (
-                      <li key={idx}>{feature}</li>
-                    ))}
+                    {siteContent.login.privacyInfo.whyNeeded.features.map(
+                      (feature, idx) => (
+                        <li key={idx}>{feature}</li>
+                      ),
+                    )}
                   </ul>
                 </div>
 
@@ -161,31 +171,33 @@ export default function LoginPage() {
                     {siteContent.login.privacyInfo.privacySecurity.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    {siteContent.login.privacyInfo.privacySecurity.points.map((point, idx) => (
-                      <li key={idx}>
-                        {point.prefix && `${point.prefix} `}
-                        {point.label && (
-                          <span className="font-medium text-gray-800 dark:text-gray-200">
-                            {point.label}
-                          </span>
-                        )}
-                        {point.label && point.description && " "}
-                        {point.description}
-                        {point.link && (
-                          <>
-                            {" "}
-                            <a
-                              href={point.link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                            >
-                              {point.link.text}
-                            </a>
-                          </>
-                        )}
-                      </li>
-                    ))}
+                    {siteContent.login.privacyInfo.privacySecurity.points.map(
+                      (point, idx) => (
+                        <li key={idx}>
+                          {point.prefix && `${point.prefix} `}
+                          {point.label && (
+                            <span className="font-medium text-gray-800 dark:text-gray-200">
+                              {point.label}
+                            </span>
+                          )}
+                          {point.label && point.description && " "}
+                          {point.description}
+                          {point.link && (
+                            <>
+                              {" "}
+                              <a
+                                href={point.link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                              >
+                                {point.link.text}
+                              </a>
+                            </>
+                          )}
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </div>
 
@@ -209,7 +221,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="card max-w-md w-full">
         <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded mb-6">
-          <p className="font-semibold">{siteContent.login.mockAuth.banner.title}</p>
+          <p className="font-semibold">
+            {siteContent.login.mockAuth.banner.title}
+          </p>
           <p className="text-sm">
             {siteContent.login.mockAuth.banner.description}
           </p>

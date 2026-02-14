@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import PostCardV2 from "./PostCardV2";
 import PostLightboxModal from "./PostLightboxModal";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 
 /**
  * SearchResults component - Displays search results with pagination
@@ -30,29 +30,32 @@ export default function SearchResults({
   resolvedAliases = {},
   dateFilter = null,
 }) {
-  const [modalState, setModalState] = useState({ isOpen: false, postIndex: null });
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    postIndex: null,
+  });
   const [localResults, setLocalResults] = useState(results);
   const totalPages = Math.ceil(total / pagination.limit);
   const { isAdmin } = useAuth();
-  
+
   // Track pending navigation after page change
   const pendingNavigationRef = useRef(null);
 
   // Update local results when results prop changes
   useEffect(() => {
     setLocalResults(results);
-    
+
     // If there's a pending navigation, execute it now that results have loaded
     if (pendingNavigationRef.current !== null && results.length > 0) {
       let targetIndex = pendingNavigationRef.current;
-      
+
       // Handle sentinel value: -1 means "go to last item"
       if (targetIndex === -1) {
         targetIndex = results.length - 1;
       }
-      
+
       pendingNavigationRef.current = null; // Clear pending navigation
-      
+
       // Navigate to the target index
       setModalState({ isOpen: true, postIndex: targetIndex });
     }
@@ -75,7 +78,7 @@ export default function SearchResults({
     // Determine where to navigate after page loads
     const wasAtEnd = modalState.postIndex === localResults.length - 1;
     const wasAtStart = modalState.postIndex === 0;
-    
+
     // Set pending navigation: 0 for start of new page, -1 for end of new page
     if (wasAtEnd) {
       // Was at end of previous page, go to start of new page
@@ -85,7 +88,7 @@ export default function SearchResults({
       // We'll calculate the actual index when results load (use -1 as sentinel)
       pendingNavigationRef.current = -1;
     }
-    
+
     // Change the page - this will trigger results to update
     await onPageChange(newPage);
   };
@@ -96,15 +99,17 @@ export default function SearchResults({
       setLocalResults((prevResults) => {
         // Find the post by post_id from editData or use modalState.postIndex
         let postIndex = modalState.postIndex;
-        
+
         // If we don't have a modal index, find the post by post_id
         if (postIndex === null && editData.post_id) {
-          postIndex = prevResults.findIndex(p => p.post_id === editData.post_id);
+          postIndex = prevResults.findIndex(
+            (p) => p.post_id === editData.post_id,
+          );
         }
-        
+
         if (postIndex !== null && postIndex >= 0) {
           const post = prevResults[postIndex];
-          
+
           // If user is admin, apply the edit directly to the post fields
           // Otherwise, add to pending_edits
           let updatedPost;
@@ -113,30 +118,30 @@ export default function SearchResults({
             const fieldName = editData.field_name;
             const action = editData.action;
             const value = editData.value;
-            
-            if (action === 'ADD') {
+
+            if (action === "ADD") {
               // Add value to the field array if not already present
               updatedPost = {
                 ...post,
-                [fieldName]: post[fieldName]?.includes(value) 
-                  ? post[fieldName] 
-                  : [...(post[fieldName] || []), value]
+                [fieldName]: post[fieldName]?.includes(value)
+                  ? post[fieldName]
+                  : [...(post[fieldName] || []), value],
               };
-            } else if (action === 'DELETE') {
+            } else if (action === "DELETE") {
               // Remove value from the field array
               updatedPost = {
                 ...post,
-                [fieldName]: (post[fieldName] || []).filter(v => v !== value)
+                [fieldName]: (post[fieldName] || []).filter((v) => v !== value),
               };
             }
           } else {
             // Non-admin: Add to pending_edits
             updatedPost = {
               ...post,
-              pending_edits: [...(post.pending_edits || []), editData]
+              pending_edits: [...(post.pending_edits || []), editData],
             };
           }
-          
+
           // Create a completely new array with the updated post object
           return prevResults.map((p, idx) => {
             if (idx === postIndex) {
@@ -145,11 +150,11 @@ export default function SearchResults({
             return p;
           });
         }
-        
+
         return prevResults;
       });
     }
-    
+
     // Still call the parent callback for any other side effects (like showing a toast)
     // but don't trigger a full reload
     if (onEditSuccess) {
@@ -203,23 +208,29 @@ export default function SearchResults({
   // Build resolved aliases display text
   const getResolvedAliasesText = () => {
     const resolvedValues = [];
-    
-    if (resolvedAliases.characters && Object.keys(resolvedAliases.characters).length > 0) {
-      Object.entries(resolvedAliases.characters).forEach(([original, canonical]) => {
+
+    if (
+      resolvedAliases.characters &&
+      Object.keys(resolvedAliases.characters).length > 0
+    ) {
+      Object.entries(resolvedAliases.characters).forEach(([, canonical]) => {
         resolvedValues.push(`"${canonical}"`);
       });
     }
-    if (resolvedAliases.series && Object.keys(resolvedAliases.series).length > 0) {
-      Object.entries(resolvedAliases.series).forEach(([original, canonical]) => {
+    if (
+      resolvedAliases.series &&
+      Object.keys(resolvedAliases.series).length > 0
+    ) {
+      Object.entries(resolvedAliases.series).forEach(([, canonical]) => {
         resolvedValues.push(`"${canonical}"`);
       });
     }
     if (resolvedAliases.tags && Object.keys(resolvedAliases.tags).length > 0) {
-      Object.entries(resolvedAliases.tags).forEach(([original, canonical]) => {
+      Object.entries(resolvedAliases.tags).forEach(([, canonical]) => {
         resolvedValues.push(`"${canonical}"`);
       });
     }
-    
+
     return resolvedValues.length > 0 ? resolvedValues.join(", ") : null;
   };
 
@@ -245,7 +256,9 @@ export default function SearchResults({
 
         {/* Sort Dropdown */}
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600 whitespace-nowrap">Sort by:</label>
+          <label className="text-sm text-gray-600 whitespace-nowrap">
+            Sort by:
+          </label>
           <select
             value={`${sortParams.sortBy}-${sortParams.sortOrder}`}
             onChange={(e) => {
@@ -299,7 +312,7 @@ export default function SearchResults({
             if (windowStart > 1) {
               pages.push(1);
               if (windowStart > 2) {
-                pages.push('...');
+                pages.push("...");
               }
             }
 
@@ -311,13 +324,13 @@ export default function SearchResults({
             // Add ellipsis + last page if window doesn't end at totalPages
             if (windowEnd < totalPages) {
               if (windowEnd < totalPages - 1) {
-                pages.push('...');
+                pages.push("...");
               }
               pages.push(totalPages);
             }
 
             return pages.map((page, index) => {
-              if (page === '...') {
+              if (page === "...") {
                 return (
                   <span
                     key={`ellipsis-${index}`}
@@ -336,11 +349,11 @@ export default function SearchResults({
                   disabled={isCurrentPage}
                   className={`px-4 py-3 rounded min-h-[44px] ${
                     isCurrentPage
-                      ? 'bg-blue-600 text-white cursor-default'
-                      : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                      ? "bg-blue-600 text-white cursor-default"
+                      : "bg-gray-200 text-gray-900 hover:bg-gray-300"
                   }`}
                   aria-label={`Page ${page}`}
-                  aria-current={isCurrentPage ? 'page' : undefined}
+                  aria-current={isCurrentPage ? "page" : undefined}
                 >
                   {page}
                 </button>

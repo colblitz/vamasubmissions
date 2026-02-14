@@ -1,9 +1,10 @@
 """Post schemas."""
 
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class PostStatus(str, Enum):
@@ -122,7 +123,7 @@ class PostSearchResultOptimized(BaseModel):
     total_pages: int
     resolved_aliases: Dict[str, Dict[str, str]] = Field(
         default_factory=dict,
-        description="Map of field_type to {original: canonical} for resolved aliases"
+        description="Map of field_type to {original: canonical} for resolved aliases",
     )
 
 

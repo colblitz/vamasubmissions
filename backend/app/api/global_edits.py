@@ -2,24 +2,22 @@
 API routes for global edit suggestions (bulk rename)
 """
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.core.database import get_db
 from app.models.user import User
-from app.services.user_service import get_current_user
-from app.services.global_edit_service import GlobalEditService
 from app.schemas.global_edit import (
+    GlobalEditHistoryResponse,
+    GlobalEditPreview,
     GlobalEditPreviewRequest,
     GlobalEditSuggestionCreate,
     GlobalEditSuggestionResponse,
-    GlobalEditPreview,
-    GlobalEditHistoryResponse,
-    GlobalEditApproveRequest,
-    GlobalEditRejectRequest,
-    GlobalEditUndoRequest,
 )
+from app.services.global_edit_service import GlobalEditService
+from app.services.user_service import get_current_user
 
 router = APIRouter(prefix="/api/global-edits", tags=["global-edits"])
 
@@ -35,7 +33,7 @@ def preview_global_edit(
 
     This endpoint shows a preview before creating the suggestion.
     Only requires field_name and pattern - action and action_value are not needed for preview.
-    
+
     Args:
         data: The preview request (field_name and pattern only)
     """
@@ -58,7 +56,7 @@ def create_global_edit_suggestion(
     Create a new global edit suggestion
 
     This will find all posts matching the pattern and create a suggestion
-    to perform the specified action (replace with action_value or remove) 
+    to perform the specified action (replace with action_value or remove)
     across all affected posts.
     """
     try:
@@ -68,7 +66,9 @@ def create_global_edit_suggestion(
         response = GlobalEditSuggestionResponse(
             id=suggestion.id,
             suggester_id=suggestion.suggester_id,
-            suggester_username=suggestion.suggester.patreon_username if suggestion.suggester else None,
+            suggester_username=suggestion.suggester.patreon_username
+            if suggestion.suggester
+            else None,
             field_name=suggestion.field_name,
             pattern=suggestion.pattern,
             action=suggestion.action,
@@ -104,7 +104,9 @@ def get_pending_global_edits(
             GlobalEditSuggestionResponse(
                 id=suggestion.id,
                 suggester_id=suggestion.suggester_id,
-                suggester_username=suggestion.suggester.patreon_username if suggestion.suggester else None,
+                suggester_username=suggestion.suggester.patreon_username
+                if suggestion.suggester
+                else None,
                 field_name=suggestion.field_name,
                 pattern=suggestion.pattern,
                 action=suggestion.action,
@@ -112,7 +114,9 @@ def get_pending_global_edits(
                 action_value=suggestion.action_value,
                 status=suggestion.status,
                 approver_id=suggestion.approver_id,
-                approver_username=suggestion.approver.patreon_username if suggestion.approver else None,
+                approver_username=suggestion.approver.patreon_username
+                if suggestion.approver
+                else None,
                 created_at=suggestion.created_at,
                 approved_at=suggestion.approved_at,
                 applied_at=suggestion.applied_at,
@@ -130,7 +134,7 @@ def get_global_edit_preview(
 ):
     """
     Get preview of affected posts for a specific global edit suggestion
-    
+
     This retrieves a fresh preview based on the current state of posts,
     using the pattern from the stored suggestion.
     """
@@ -140,11 +144,7 @@ def get_global_edit_preview(
         raise HTTPException(status_code=404, detail="Global edit suggestion not found")
 
     # Get fresh preview (in case posts have changed since suggestion was created)
-    preview = GlobalEditService.preview_global_edit(
-        db, 
-        suggestion.field_name, 
-        suggestion.pattern
-    )
+    preview = GlobalEditService.preview_global_edit(db, suggestion.field_name, suggestion.pattern)
 
     return preview
 
@@ -172,7 +172,9 @@ def approve_global_edit(
         response = GlobalEditSuggestionResponse(
             id=suggestion.id,
             suggester_id=suggestion.suggester_id,
-            suggester_username=suggestion.suggester.patreon_username if suggestion.suggester else None,
+            suggester_username=suggestion.suggester.patreon_username
+            if suggestion.suggester
+            else None,
             field_name=suggestion.field_name,
             pattern=suggestion.pattern,
             action=suggestion.action,
@@ -209,7 +211,9 @@ def reject_global_edit(
         response = GlobalEditSuggestionResponse(
             id=suggestion.id,
             suggester_id=suggestion.suggester_id,
-            suggester_username=suggestion.suggester.patreon_username if suggestion.suggester else None,
+            suggester_username=suggestion.suggester.patreon_username
+            if suggestion.suggester
+            else None,
             field_name=suggestion.field_name,
             pattern=suggestion.pattern,
             action=suggestion.action,
@@ -246,14 +250,18 @@ def get_global_edit_history(
     for suggestion in suggestions:
         # Calculate affected_count from previous_values (stores affected post IDs)
         affected_count = len(suggestion.previous_values) if suggestion.previous_values else 0
-        
+
         responses.append(
             GlobalEditHistoryResponse(
                 id=suggestion.id,
                 suggester_id=suggestion.suggester_id,
-                suggester_username=suggestion.suggester.patreon_username if suggestion.suggester else None,
+                suggester_username=suggestion.suggester.patreon_username
+                if suggestion.suggester
+                else None,
                 approver_id=suggestion.approver_id,
-                approver_username=suggestion.approver.patreon_username if suggestion.approver else None,
+                approver_username=suggestion.approver.patreon_username
+                if suggestion.approver
+                else None,
                 field_name=suggestion.field_name,
                 pattern=suggestion.pattern,
                 action=suggestion.action,
@@ -289,7 +297,9 @@ def undo_global_edit(
         response = GlobalEditSuggestionResponse(
             id=suggestion.id,
             suggester_id=suggestion.suggester_id,
-            suggester_username=suggestion.suggester.patreon_username if suggestion.suggester else None,
+            suggester_username=suggestion.suggester.patreon_username
+            if suggestion.suggester
+            else None,
             field_name=suggestion.field_name,
             pattern=suggestion.pattern,
             action=suggestion.action,

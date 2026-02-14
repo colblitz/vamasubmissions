@@ -1,8 +1,9 @@
 """Search Analytics model."""
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, CheckConstraint
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -10,10 +11,10 @@ from app.core.database import Base
 class SearchAnalytics(Base):
     """
     Search Analytics model - tracks all searches to identify zero-result queries.
-    
+
     Used to suggest new aliases for common searches that return no results.
     """
-    
+
     __tablename__ = "search_analytics"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -28,10 +29,7 @@ class SearchAnalytics(Base):
 
     # Constraints
     __table_args__ = (
-        CheckConstraint(
-            "field_type IN ('characters', 'series', 'tags')",
-            name="check_field_type"
-        ),
+        CheckConstraint("field_type IN ('characters', 'series', 'tags')", name="check_field_type"),
     )
 
     def __repr__(self):

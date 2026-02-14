@@ -2,17 +2,20 @@
 Pydantic schemas for global edit suggestions
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, field_validator
+
 from app.utils.validation import normalize_text
 
 
 class GlobalEditPreviewRequest(BaseModel):
     """Schema for previewing a global edit (before creating suggestion)
-    
+
     Only requires field_name and pattern to show which posts match.
     """
+
     field_name: str = Field(..., pattern="^(characters|series|tags)$")
     pattern: str = Field(..., min_length=1, max_length=255)
 
@@ -28,7 +31,7 @@ class GlobalEditPreviewRequest(BaseModel):
 
 class GlobalEditSuggestionCreate(BaseModel):
     """Schema for creating a global edit suggestion
-    
+
     Example for ADD action:
         {
             "condition_field": "characters",
@@ -37,7 +40,7 @@ class GlobalEditSuggestionCreate(BaseModel):
             "action_field": "tags",
             "action_value": "new_tag_name"
         }
-    
+
     Example for DELETE action:
         {
             "condition_field": "tags",
@@ -69,7 +72,7 @@ class GlobalEditSuggestionCreate(BaseModel):
     def validate_action_value(cls, v: Optional[str], info) -> Optional[str]:
         """Validate action_value based on action type"""
         action = info.data.get("action")
-        
+
         if action == "DELETE":
             if v is not None:
                 raise ValueError("action_value must be None for DELETE action")
@@ -79,7 +82,7 @@ class GlobalEditSuggestionCreate(BaseModel):
             pattern = info.data.get("pattern")
             if pattern and v == pattern:
                 raise ValueError("action_value must be different from pattern for ADD action")
-        
+
         return v
 
     @field_validator("action_field")
@@ -88,11 +91,11 @@ class GlobalEditSuggestionCreate(BaseModel):
         """Validate action_field based on action type"""
         action = info.data.get("action")
         condition_field = info.data.get("condition_field")
-        
+
         if action == "DELETE" and condition_field:
             if v != condition_field:
                 raise ValueError("action_field must equal condition_field for DELETE action")
-        
+
         return v
 
 

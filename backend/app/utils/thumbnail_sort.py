@@ -19,19 +19,19 @@ def extract_ordinal(url: str) -> int:
         Ordinal number, or float('inf') if not found (sorts to end)
     """
     if not url:
-        return float('inf')
+        return float("inf")
 
     # Extract filename from URL
-    filename = url.split('/')[-1]
+    filename = url.split("/")[-1]
 
     # Match pattern: anything-t-[digits]-anything
-    match = re.search(r'-t-(\d+)-', filename)
+    match = re.search(r"-t-(\d+)-", filename)
 
     if match:
         return int(match.group(1))
 
     # If pattern doesn't match, return infinity (sorts to end)
-    return float('inf')
+    return float("inf")
 
 
 def sort_thumbnails(thumbnail_urls: List[str]) -> List[str]:
@@ -49,10 +49,7 @@ def sort_thumbnails(thumbnail_urls: List[str]) -> List[str]:
         return thumbnail_urls
 
     # Create list of (url, ordinal, original_index) tuples
-    with_ordinals = [
-        (url, extract_ordinal(url), idx)
-        for idx, url in enumerate(thumbnail_urls)
-    ]
+    with_ordinals = [(url, extract_ordinal(url), idx) for idx, url in enumerate(thumbnail_urls)]
 
     # Sort by ordinal, then by original index (stable sort)
     with_ordinals.sort(key=lambda x: (x[1], x[2]))

@@ -30,14 +30,14 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         field_name: conditionField,
         pattern: normalizedPattern,
       };
-      
+
       const response = await api.post("/api/global-edits/preview", payload);
       setPreview(response.data);
     } catch (err) {
       const errorMsg = err.response?.data?.detail || "Failed to preview";
       // Handle validation errors
       if (Array.isArray(errorMsg)) {
-        setError(errorMsg.map(e => e.msg).join(", "));
+        setError(errorMsg.map((e) => e.msg).join(", "));
       } else {
         setError(errorMsg);
       }
@@ -82,10 +82,11 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
 
       await api.post("/api/global-edits/suggest", payload);
 
-      const actionText = action === "ADD" 
-        ? `"${normalizedPattern}" → "${normalizeText(actionValue)}"` 
-        : `Delete "${normalizedPattern}"`;
-      
+      const actionText =
+        action === "ADD"
+          ? `"${normalizedPattern}" → "${normalizeText(actionValue)}"`
+          : `Delete "${normalizedPattern}"`;
+
       setSuccess(`Global edit suggested: ${actionText}`);
       setPattern("");
       setActionValue("");
@@ -109,7 +110,8 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         Suggest Global Edit
       </h2>
       <p className="text-sm text-gray-600 mb-4">
-        Add or remove values across all posts at once. Supports wildcards for pattern matching (case-insensitive).
+        Add or remove values across all posts at once. Supports wildcards for
+        pattern matching (case-insensitive).
       </p>
 
       {/* Success Message */}
@@ -129,8 +131,10 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
       <div className="space-y-6 mb-4">
         {/* Condition Section */}
         <div className="border-b pb-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Condition</h3>
-          
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            Condition
+          </h3>
+
           {/* Condition Field Selection */}
           <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -163,7 +167,8 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
               className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Use * for wildcards (e.g., "Marin*" matches "Marin", "Marina", "Marine"). Matching is case-insensitive.
+              Use * for wildcards (e.g., "Marin*" matches "Marin", "Marina",
+              "Marine"). Matching is case-insensitive.
             </p>
           </div>
         </div>
@@ -171,7 +176,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         {/* Action Section */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Action</h3>
-          
+
           {/* Action Type Selection */}
           <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">

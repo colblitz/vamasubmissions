@@ -1,15 +1,16 @@
 """User service for business logic."""
 
-from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from app.models.user import User
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_access_token
-from app.core.config import settings
+from app.models.user import User
 
 security = HTTPBearer()
 
@@ -125,7 +126,7 @@ def update_user(
 def refresh_user_credits(db: Session, user: User) -> User:
     """
     Refresh user credits based on their patron status.
-    
+
     NOTE: This is legacy code from Phase 1. Credit refresh logic has been moved
     to the credit_service and is now triggered by Patreon webhooks.
     This function is kept for backward compatibility but does nothing.

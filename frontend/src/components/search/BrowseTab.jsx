@@ -31,7 +31,11 @@ export default function BrowseTab({ onSelectItem }) {
 
   // Fetch count of posts with no items for current tab (only for character/series/tags)
   useEffect(() => {
-    if (activeSubTab === "characters" || activeSubTab === "series" || activeSubTab === "tags") {
+    if (
+      activeSubTab === "characters" ||
+      activeSubTab === "series" ||
+      activeSubTab === "tags"
+    ) {
       fetchNoItemsCount();
     } else {
       setNoItemsCount(0);
@@ -48,13 +52,15 @@ export default function BrowseTab({ onSelectItem }) {
         limit: pagination.limit,
         sort_by: sortBy,
       };
-      
+
       // Add starts_with parameter if in alpha mode and a letter is selected
       if (sortBy === "alpha" && startsWith) {
         params.starts_with = startsWith;
       }
-      
-      const response = await api.get(`/api/posts/browse/${activeSubTab}`, { params });
+
+      const response = await api.get(`/api/posts/browse/${activeSubTab}`, {
+        params,
+      });
 
       setItems(response.data.items || []);
       setPagination({
@@ -75,7 +81,9 @@ export default function BrowseTab({ onSelectItem }) {
   const fetchNoItemsCount = async () => {
     try {
       // Call the no-items-count endpoint for the current field type
-      const response = await api.get(`/api/posts/browse/${activeSubTab}/no-items-count`);
+      const response = await api.get(
+        `/api/posts/browse/${activeSubTab}/no-items-count`,
+      );
       setNoItemsCount(response.data.count || 0);
     } catch (err) {
       console.error("Failed to fetch no items count:", err);
@@ -92,8 +100,11 @@ export default function BrowseTab({ onSelectItem }) {
         page: pagination.page,
         limit: pagination.limit,
       };
-      
-      const endpoint = activeSubTab === "months" ? "/api/posts/browse/months" : "/api/posts/browse/days";
+
+      const endpoint =
+        activeSubTab === "months"
+          ? "/api/posts/browse/months"
+          : "/api/posts/browse/days";
       const response = await api.get(endpoint, { params });
 
       setItems(response.data.items || []);
@@ -212,7 +223,9 @@ export default function BrowseTab({ onSelectItem }) {
         {/* Sort Dropdown - Top Right (hidden for date-based browsing) */}
         {activeSubTab !== "months" && activeSubTab !== "days" && (
           <div className="flex items-center gap-2 pb-2">
-            <label className="text-xs text-gray-600 whitespace-nowrap">Sort by:</label>
+            <label className="text-xs text-gray-600 whitespace-nowrap">
+              Sort by:
+            </label>
             <select
               value={sortBy}
               onChange={(e) => {
@@ -238,7 +251,13 @@ export default function BrowseTab({ onSelectItem }) {
       {/* Loading State */}
       {loading && (
         <div className="text-center py-8 text-gray-600">
-          Loading {activeSubTab === "months" ? "months" : activeSubTab === "days" ? "days" : activeSubTab}...
+          Loading{" "}
+          {activeSubTab === "months"
+            ? "months"
+            : activeSubTab === "days"
+              ? "days"
+              : activeSubTab}
+          ...
         </div>
       )}
 
@@ -295,7 +314,12 @@ export default function BrowseTab({ onSelectItem }) {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-gray-700 text-sm md:text-base">
-                    No {activeSubTab === "characters" ? "Characters" : activeSubTab === "series" ? "Series" : "Tags"}
+                    No{" "}
+                    {activeSubTab === "characters"
+                      ? "Characters"
+                      : activeSubTab === "series"
+                        ? "Series"
+                        : "Tags"}
                   </span>
                   <span className="text-sm text-gray-600 flex-shrink-0">
                     ({noItemsCount})
@@ -306,31 +330,33 @@ export default function BrowseTab({ onSelectItem }) {
           )}
 
           {/* Alphabet Navigation (only in alpha mode for non-date tabs) */}
-          {sortBy === "alpha" && activeSubTab !== "months" && activeSubTab !== "days" && (
-            <div className="flex justify-center items-center gap-1 mt-4 flex-wrap">
-              {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => {
-                const isCurrentLetter = 
-                  items.length > 0 && 
-                  items[0].name && 
-                  items[0].name.charAt(0).toUpperCase() === letter;
+          {sortBy === "alpha" &&
+            activeSubTab !== "months" &&
+            activeSubTab !== "days" && (
+              <div className="flex justify-center items-center gap-1 mt-4 flex-wrap">
+                {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => {
+                  const isCurrentLetter =
+                    items.length > 0 &&
+                    items[0].name &&
+                    items[0].name.charAt(0).toUpperCase() === letter;
 
-                return (
-                  <button
-                    key={letter}
-                    onClick={() => handleLetterClick(letter)}
-                    className={`px-2 py-1 rounded text-sm ${
-                      isCurrentLetter
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                    }`}
-                    aria-label={`Jump to ${letter}`}
-                  >
-                    {letter}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                  return (
+                    <button
+                      key={letter}
+                      onClick={() => handleLetterClick(letter)}
+                      className={`px-2 py-1 rounded text-sm ${
+                        isCurrentLetter
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                      }`}
+                      aria-label={`Jump to ${letter}`}
+                    >
+                      {letter}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
           {/* Page Navigation (always show if multiple pages) */}
           {pagination.totalPages > 1 && (
@@ -347,75 +373,75 @@ export default function BrowseTab({ onSelectItem }) {
 
               {/* Page Numbers */}
               {(() => {
-                    const pages = [];
-                    const maxVisible = 7;
-                    const current = pagination.page;
-                    const totalPages = pagination.totalPages;
+                const pages = [];
+                const maxVisible = 7;
+                const current = pagination.page;
+                const totalPages = pagination.totalPages;
 
-                    if (totalPages <= maxVisible) {
-                      // Show all pages
-                      for (let i = 1; i <= totalPages; i++) {
-                        pages.push(i);
-                      }
-                    } else {
-                      // Show with ellipsis
-                      if (current <= 4) {
-                        // Near start: 1 2 3 4 5 ... 20
-                        for (let i = 1; i <= 5; i++) {
-                          pages.push(i);
-                        }
-                        pages.push("...");
-                        pages.push(totalPages);
-                      } else if (current >= totalPages - 3) {
-                        // Near end: 1 ... 16 17 18 19 20
-                        pages.push(1);
-                        pages.push("...");
-                        for (let i = totalPages - 4; i <= totalPages; i++) {
-                          pages.push(i);
-                        }
-                      } else {
-                        // In middle: 1 ... 5 6 7 ... 20
-                        pages.push(1);
-                        pages.push("...");
-                        for (let i = current - 1; i <= current + 1; i++) {
-                          pages.push(i);
-                        }
-                        pages.push("...");
-                        pages.push(totalPages);
-                      }
+                if (totalPages <= maxVisible) {
+                  // Show all pages
+                  for (let i = 1; i <= totalPages; i++) {
+                    pages.push(i);
+                  }
+                } else {
+                  // Show with ellipsis
+                  if (current <= 4) {
+                    // Near start: 1 2 3 4 5 ... 20
+                    for (let i = 1; i <= 5; i++) {
+                      pages.push(i);
                     }
+                    pages.push("...");
+                    pages.push(totalPages);
+                  } else if (current >= totalPages - 3) {
+                    // Near end: 1 ... 16 17 18 19 20
+                    pages.push(1);
+                    pages.push("...");
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                      pages.push(i);
+                    }
+                  } else {
+                    // In middle: 1 ... 5 6 7 ... 20
+                    pages.push(1);
+                    pages.push("...");
+                    for (let i = current - 1; i <= current + 1; i++) {
+                      pages.push(i);
+                    }
+                    pages.push("...");
+                    pages.push(totalPages);
+                  }
+                }
 
-                    return pages.map((page, index) => {
-                      if (page === "...") {
-                        return (
-                          <span
-                            key={`ellipsis-${index}`}
-                            className="px-4 py-3 text-gray-900 flex items-center min-h-[44px]"
-                          >
-                            ...
-                          </span>
-                        );
-                      }
+                return pages.map((page, index) => {
+                  if (page === "...") {
+                    return (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-4 py-3 text-gray-900 flex items-center min-h-[44px]"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
 
-                      const isCurrentPage = page === current;
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          disabled={isCurrentPage}
-                          className={`px-4 py-3 rounded min-h-[44px] ${
-                            isCurrentPage
-                              ? "bg-blue-600 text-white cursor-default"
-                              : "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                          }`}
-                          aria-label={`Page ${page}`}
-                          aria-current={isCurrentPage ? "page" : undefined}
-                        >
-                          {page}
-                        </button>
-                      );
-                    });
-                  })()}
+                  const isCurrentPage = page === current;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      disabled={isCurrentPage}
+                      className={`px-4 py-3 rounded min-h-[44px] ${
+                        isCurrentPage
+                          ? "bg-blue-600 text-white cursor-default"
+                          : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                      }`}
+                      aria-label={`Page ${page}`}
+                      aria-current={isCurrentPage ? "page" : undefined}
+                    >
+                      {page}
+                    </button>
+                  );
+                });
+              })()}
 
               {/* Next Button */}
               <button

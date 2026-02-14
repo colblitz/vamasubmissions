@@ -1,8 +1,18 @@
 """Value Alias model."""
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, CheckConstraint, UniqueConstraint
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -10,13 +20,13 @@ from app.core.database import Base
 class ValueAlias(Base):
     """
     Value Alias model - maps alias values to canonical values.
-    
+
     Examples:
     - FGO -> Fate/Grand Order
     - FF7 -> Final Fantasy VII
     - Kafka -> Kafka (Honkai: Star Rail)
     """
-    
+
     __tablename__ = "value_aliases"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -32,11 +42,8 @@ class ValueAlias(Base):
 
     # Constraints
     __table_args__ = (
-        CheckConstraint(
-            "field_type IN ('characters', 'series', 'tags')",
-            name="check_field_type"
-        ),
-        UniqueConstraint('field_type', 'alias_value', name='unique_alias_per_field'),
+        CheckConstraint("field_type IN ('characters', 'series', 'tags')", name="check_field_type"),
+        UniqueConstraint("field_type", "alias_value", name="unique_alias_per_field"),
     )
 
     def __repr__(self):

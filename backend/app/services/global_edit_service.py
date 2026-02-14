@@ -2,19 +2,19 @@
 Service layer for global edit suggestions (bulk rename functionality)
 """
 
-from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
+from datetime import datetime
+from typing import List, Optional
+
 from sqlalchemy import text
-from app.models.post import Post
+from sqlalchemy.orm import Session
+
 from app.models.global_edit import GlobalEditSuggestion
-from app.models.user import User
+from app.models.post import Post
 from app.schemas.global_edit import (
-    GlobalEditSuggestionCreate,
     GlobalEditPreview,
     GlobalEditPreviewPost,
+    GlobalEditSuggestionCreate,
 )
-from datetime import datetime
-import json
 
 
 class GlobalEditService:
@@ -35,20 +35,20 @@ class GlobalEditService:
             GlobalEditPreview with list of affected posts
         """
         # Convert pattern to SQL ILIKE pattern (replace * with % for SQL wildcard)
-        sql_pattern = pattern.replace('*', '%')
-        
+        sql_pattern = pattern.replace("*", "%")
+
         # Query posts using raw SQL with EXISTS for pattern matching
         query_text = text(f"""
             SELECT id, post_id, title, {field_name}
             FROM posts
             WHERE status = 'published'
               AND EXISTS (
-                SELECT 1 
-                FROM unnest({field_name}) AS val 
+                SELECT 1
+                FROM unnest({field_name}) AS val
                 WHERE val ILIKE :pattern
               )
         """)
-        
+
         result = db.execute(query_text, {"pattern": sql_pattern})
         rows = result.fetchall()
 
@@ -176,6 +176,7 @@ class GlobalEditService:
         if suggestion.suggester_id == approver_id:
             # Get approver user to check if they're an admin
             from app.models.user import User
+
             approver = db.query(User).filter(User.id == approver_id).first()
             if not approver or approver.role != "admin":
                 raise ValueError("Cannot approve your own global edit suggestion")
@@ -184,16 +185,16 @@ class GlobalEditService:
         condition_field = suggestion.field_name
         # action_field is where to perform the ADD/DELETE operation
         action_field = suggestion.action_field
-        
+
         # Get pattern and action from suggestion
         pattern = suggestion.pattern
         action = suggestion.action
         action_value = suggestion.action_value
-        
-        # Convert pattern to SQL ILIKE pattern
-        sql_pattern = pattern.replace('*', '%')
 
-        if action == 'ADD':
+        # Convert pattern to SQL ILIKE pattern
+        sql_pattern = pattern.replace("*", "%")
+
+        if action == "ADD":
             # ADD: Add action_value to action_field for all posts matching the pattern in condition_field
             # Only add if the value doesn't already exist
             update_query = text(f"""
@@ -202,19 +203,16 @@ class GlobalEditService:
                     updated_at = NOW()
                 WHERE status = 'published'
                   AND EXISTS (
-                    SELECT 1 
-                    FROM unnest({condition_field}) AS val 
+                    SELECT 1
+                    FROM unnest({condition_field}) AS val
                     WHERE val ILIKE :pattern
                   )
                   AND NOT (:action_value = ANY({action_field}))
             """)
-            
-            db.execute(
-                update_query, 
-                {"pattern": sql_pattern, "action_value": action_value}
-            )
-            
-        elif action == 'DELETE':
+
+            db.execute(update_query, {"pattern": sql_pattern, "action_value": action_value})
+
+        elif action == "DELETE":
             # DELETE: Remove all values matching the pattern from action_field
             # First, find all distinct values that match the pattern in the action_field
             find_values_query = text(f"""
@@ -223,15 +221,15 @@ class GlobalEditService:
                 WHERE status = 'published'
                   AND val ILIKE :pattern
                   AND EXISTS (
-                    SELECT 1 
-                    FROM unnest({condition_field}) AS cval 
+                    SELECT 1
+                    FROM unnest({condition_field}) AS cval
                     WHERE cval ILIKE :pattern
                   )
             """)
-            
+
             result = db.execute(find_values_query, {"pattern": sql_pattern})
             matching_values = [row[0] for row in result.fetchall()]
-            
+
             # Remove each matching value from all posts that match the condition
             for value_to_remove in matching_values:
                 delete_query = text(f"""
@@ -240,14 +238,16 @@ class GlobalEditService:
                         updated_at = NOW()
                     WHERE status = 'published'
                       AND EXISTS (
-                        SELECT 1 
-                        FROM unnest({condition_field}) AS cval 
+                        SELECT 1
+                        FROM unnest({condition_field}) AS cval
                         WHERE cval ILIKE :pattern
                       )
                       AND :value_to_remove = ANY({action_field})
                 """)
-                
-                db.execute(delete_query, {"value_to_remove": value_to_remove, "pattern": sql_pattern})
+
+                db.execute(
+                    delete_query, {"value_to_remove": value_to_remove, "pattern": sql_pattern}
+                )
 
         # Update suggestion status
         suggestion.status = "approved"

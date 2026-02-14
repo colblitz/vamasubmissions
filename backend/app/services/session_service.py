@@ -1,11 +1,12 @@
 """Session service for managing user sessions."""
 
-from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional
 
-from app.models.session import Session as UserSession
+from sqlalchemy.orm import Session
+
 from app.core.security import hash_token
+from app.models.session import Session as UserSession
 
 
 def create_session(

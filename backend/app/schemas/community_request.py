@@ -1,9 +1,11 @@
 """Community Request schemas."""
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List
 from datetime import datetime
-from app.utils.validation import normalize_text, normalize_array_field
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, field_validator
+
+from app.utils.validation import normalize_array_field, normalize_text
 
 
 class CommunityRequestBase(BaseModel):

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { submissionsAPI } from "../services/api";
 
 export default function SubmissionEditPage() {
@@ -9,7 +9,7 @@ export default function SubmissionEditPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [submission, setSubmission] = useState(null);
+  const [, setSubmission] = useState(null);
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
 
   const [formData, setFormData] = useState({

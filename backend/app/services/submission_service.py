@@ -1,17 +1,18 @@
 """Submission service for managing character requests."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from fastapi import HTTPException, status, UploadFile
-from typing import Optional, List
-from datetime import datetime, timedelta
 import os
 import uuid
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import List, Optional
 
+from fastapi import HTTPException, UploadFile, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.models.submission import Submission, SubmissionImage
 from app.models.user import User
-from app.core.config import settings
 from app.services import credit_service
 
 
@@ -603,11 +604,11 @@ def search_submissions(
     if user:
         # Show public submissions OR user's own submissions
         search_query = search_query.filter(
-            (Submission.is_public == True) | (Submission.user_id == user.id)
+            (Submission.is_public) | (Submission.user_id == user.id)
         )
     else:
         # Only show public submissions
-        search_query = search_query.filter(Submission.is_public == True)
+        search_query = search_query.filter(Submission.is_public)
 
     return search_query.order_by(Submission.completed_at.desc()).all()
 

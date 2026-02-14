@@ -2,19 +2,20 @@
 
 """Admin API endpoints for legacy submission system."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import desc, func
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.submission import SubmissionInDB, SubmissionComplete
-from app.schemas.queue import QueueStats
-from app.schemas.user import UserStats
-from app.services import user_service, submission_service, credit_service
-from app.models.user import User
 from app.models.submission import Submission
+from app.models.user import User
+from app.schemas.queue import QueueStats
+from app.schemas.submission import SubmissionComplete, SubmissionInDB
+from app.schemas.user import UserStats
+from app.services import credit_service, submission_service, user_service
 
 router = APIRouter()
 
@@ -172,8 +173,6 @@ async def start_submission(
             detail="Can only start pending submissions",
         )
 
-    from datetime import datetime
-
     submission.status = "in_progress"
     submission.started_at = datetime.utcnow()
     db.commit()
@@ -328,7 +327,6 @@ async def adjust_user_credits(
     Returns:
         Success message
     """
-    from app.services import credit_service
 
     user = user_service.get_user_by_id(db, user_id)
 

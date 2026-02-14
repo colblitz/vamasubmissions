@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 
 export default function VotesPage() {
-  const { user } = useAuth();
+  useAuth();
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -213,9 +213,6 @@ export default function VotesPage() {
 
   const openSessions = sessions.filter((s) => s.status === "open");
   const closedSessions = sessions.filter((s) => s.status === "closed");
-
-  // Check if user has already voted in the active session
-  const userHasVoted = activeSession?.submissions.some((s) => s.user_has_voted);
 
   return (
     <div className="space-y-6">

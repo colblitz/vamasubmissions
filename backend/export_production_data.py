@@ -11,10 +11,11 @@ This script:
 Usage:
     python3 export_production_data.py --user-email your@email.com
 """
+
+import argparse
 import os
 import sys
 from pathlib import Path
-import argparse
 
 try:
     import psycopg2
@@ -25,13 +26,10 @@ except ImportError:
 
 
 def export_production_data(
-    db_url: str,
-    user_email: str,
-    static_thumbnail_base: str,
-    output_file: Path
+    db_url: str, user_email: str, static_thumbnail_base: str, output_file: Path
 ):
     """Export production-ready data from local database."""
-    
+
     print("=" * 60)
     print("Export Production Data")
     print("=" * 60)
@@ -41,12 +39,12 @@ def export_production_data(
     print(f"Static thumbnail base: {static_thumbnail_base}")
     print(f"Output file: {output_file}")
     print()
-    
+
     conn = psycopg2.connect(db_url)
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-    
+
     # Open output file
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         f.write("-- Production Data Export\n")
         f.write(f"-- Generated: {os.popen('date').read().strip()}\n")
         f.write("-- This file contains:\n")
@@ -55,26 +53,29 @@ def export_production_data(
         f.write("--   3. Clean data (no test edits/requests)\n")
         f.write("\n")
         f.write("BEGIN;\n\n")
-        
+
         # Export user
         print("[1/2] Exporting user account...")
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM users WHERE email = %s
-        """, (user_email,))
-        
+        """,
+            (user_email,),
+        )
+
         user = cursor.fetchone()
         if not user:
             print(f"ERROR: User with email '{user_email}' not found!")
             sys.exit(1)
-        
+
         print(f"  Found user: {user['email']} (ID: {user['id']})")
-        
+
         # Write user insert
         f.write("-- User account\n")
         f.write("INSERT INTO users (")
         f.write(", ".join(user.keys()))
         f.write(") VALUES (")
-        
+
         values = []
         for key, value in user.items():
             if value is None:
@@ -85,12 +86,12 @@ def export_production_data(
                 values.append(f"'{escaped}'")
             elif isinstance(value, bool):
                 values.append("TRUE" if value else "FALSE")
-            elif hasattr(value, 'isoformat'):
+            elif hasattr(value, "isoformat"):
                 # Handle datetime/date objects
                 values.append(f"'{value.isoformat()}'")
             else:
                 values.append(str(value))
-        
+
         f.write(", ".join(values))
         f.write(")\n")
         f.write("ON CONFLICT (patreon_id) DO UPDATE SET\n")
@@ -98,15 +99,15 @@ def export_production_data(
         f.write("  tier = EXCLUDED.tier,\n")
         f.write("  tier_name = EXCLUDED.tier_name,\n")
         f.write("  last_login = EXCLUDED.last_login;\n\n")
-        
+
         # Export posts
         print("[2/2] Exporting posts with updated thumbnail URLs...")
         cursor.execute("SELECT COUNT(*) as count FROM posts")
-        post_count = cursor.fetchone()['count']
+        post_count = cursor.fetchone()["count"]
         print(f"  Found {post_count} posts")
-        
+
         cursor.execute("""
-            SELECT 
+            SELECT
                 post_id,
                 timestamp,
                 url,
@@ -120,85 +121,87 @@ def export_production_data(
             FROM posts
             ORDER BY timestamp DESC
         """)
-        
+
         f.write("-- Posts\n")
-        
+
         posts_exported = 0
         for post in cursor:
             # Update thumbnail URLs to static format
             # Format: https://vamarequests.com/static/thumbnails/{post_id}-thumbnail-square.webp
             # Note: Patreon serves thumbnails as .webp format
-            static_thumbnail_url = f"{static_thumbnail_base}/{post['post_id']}-thumbnail-square.webp"
-            
+            static_thumbnail_url = (
+                f"{static_thumbnail_base}/{post['post_id']}-thumbnail-square.webp"
+            )
+
             # Build INSERT statement
             f.write("INSERT INTO posts (")
             f.write("post_id, timestamp, url, title, characters, series, tags, ")
             f.write("image_urls, thumbnail_urls, status")
             f.write(") VALUES (")
-            
+
             # post_id
             f.write(f"'{post['post_id']}', ")
-            
+
             # timestamp
-            if hasattr(post['timestamp'], 'isoformat'):
+            if hasattr(post["timestamp"], "isoformat"):
                 f.write(f"'{post['timestamp'].isoformat()}', ")
             else:
                 f.write(f"'{post['timestamp']}', ")
-            
+
             # url
-            url_escaped = post['url'].replace("'", "''")
+            url_escaped = post["url"].replace("'", "''")
             f.write(f"'{url_escaped}', ")
-            
+
             # title
-            title_escaped = post['title'].replace("'", "''")
+            title_escaped = post["title"].replace("'", "''")
             f.write(f"'{title_escaped}', ")
-            
+
             # characters (array)
-            if post['characters']:
+            if post["characters"]:
                 chars_escaped = []
-                for c in post['characters']:
+                for c in post["characters"]:
                     escaped = c.replace("'", "''")
                     chars_escaped.append(f"'{escaped}'")
                 f.write(f"ARRAY[{', '.join(chars_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
-            
+
             # series (array)
-            if post['series']:
+            if post["series"]:
                 series_escaped = []
-                for s in post['series']:
+                for s in post["series"]:
                     escaped = s.replace("'", "''")
                     series_escaped.append(f"'{escaped}'")
                 f.write(f"ARRAY[{', '.join(series_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
-            
+
             # tags (array)
-            if post['tags']:
+            if post["tags"]:
                 tags_escaped = []
-                for t in post['tags']:
+                for t in post["tags"]:
                     escaped = t.replace("'", "''")
                     tags_escaped.append(f"'{escaped}'")
                 f.write(f"ARRAY[{', '.join(tags_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
-            
+
             # image_urls (array)
-            if post['image_urls']:
+            if post["image_urls"]:
                 imgs_escaped = []
-                for i in post['image_urls']:
+                for i in post["image_urls"]:
                     escaped = i.replace("'", "''")
                     imgs_escaped.append(f"'{escaped}'")
                 f.write(f"ARRAY[{', '.join(imgs_escaped)}]::text[], ")
             else:
                 f.write("ARRAY[]::text[], ")
-            
+
             # thumbnail_urls (array) - USE STATIC URL
             f.write(f"ARRAY['{static_thumbnail_url}']::text[], ")
-            
+
             # status (last field, no comma)
             f.write(f"'{post['status']}'")
-            
+
             f.write(")\n")
             f.write("ON CONFLICT (post_id) DO UPDATE SET\n")
             f.write("  title = EXCLUDED.title,\n")
@@ -206,18 +209,18 @@ def export_production_data(
             f.write("  series = EXCLUDED.series,\n")
             f.write("  tags = EXCLUDED.tags,\n")
             f.write("  thumbnail_urls = EXCLUDED.thumbnail_urls;\n\n")
-            
+
             posts_exported += 1
             if posts_exported % 100 == 0:
                 print(f"  Exported {posts_exported}/{post_count} posts...")
-        
+
         f.write("COMMIT;\n")
-        
+
         print(f"  Exported {posts_exported} posts")
-    
+
     cursor.close()
     conn.close()
-    
+
     print()
     print("=" * 60)
     print("Export Complete!")
@@ -228,66 +231,64 @@ def export_production_data(
     print()
     print("To import on production server:")
     print(f"  1. Upload file: rsync -avz {output_file} deploy@YOUR_SERVER_IP:~/")
-    print(f"  2. SSH to server: ssh deploy@YOUR_SERVER_IP")
+    print("  2. SSH to server: ssh deploy@YOUR_SERVER_IP")
     print(f"  3. Import: sudo -u postgres psql vamasubmissions < ~/{output_file.name}")
     print()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Export production-ready data from local database',
+        description="Export production-ready data from local database",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Export with your email
   python3 export_production_data.py --user-email your@email.com
-  
+
   # Custom database URL
   python3 export_production_data.py \\
     --user-email your@email.com \\
     --db-url postgresql://user:pass@localhost/vamasubmissions
-  
+
   # Custom output file
   python3 export_production_data.py \\
     --user-email your@email.com \\
     --output production_data.sql
-        """
+        """,
     )
-    
+
     parser.add_argument(
-        '--user-email',
-        required=True,
-        help='Your email address (to identify your user account)'
+        "--user-email", required=True, help="Your email address (to identify your user account)"
     )
-    
+
     parser.add_argument(
-        '--db-url',
-        default=os.environ.get('DATABASE_URL', 'postgresql://localhost/vamasubmissions'),
-        help='Database URL (default: postgresql://localhost/vamasubmissions)'
+        "--db-url",
+        default=os.environ.get("DATABASE_URL", "postgresql://localhost/vamasubmissions"),
+        help="Database URL (default: postgresql://localhost/vamasubmissions)",
     )
-    
+
     parser.add_argument(
-        '--static-thumbnail-base',
-        default='https://vamarequests.com/static/thumbnails',
-        help='Base URL for static thumbnails (default: https://vamarequests.com/static/thumbnails)'
+        "--static-thumbnail-base",
+        default="https://vamarequests.com/static/thumbnails",
+        help="Base URL for static thumbnails (default: https://vamarequests.com/static/thumbnails)",
     )
-    
+
     parser.add_argument(
-        '--output',
+        "--output",
         type=Path,
-        default=Path('production_data.sql'),
-        help='Output SQL file (default: production_data.sql)'
+        default=Path("production_data.sql"),
+        help="Output SQL file (default: production_data.sql)",
     )
-    
+
     args = parser.parse_args()
-    
+
     export_production_data(
         db_url=args.db_url,
         user_email=args.user_email,
         static_thumbnail_base=args.static_thumbnail_base,
-        output_file=args.output
+        output_file=args.output,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

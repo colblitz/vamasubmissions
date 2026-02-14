@@ -9,16 +9,18 @@ TODO (Phase 2 Cleanup):
 - Update token refresh logic to use new PatreonToken model
 """
 
+from datetime import datetime
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from datetime import datetime
 
 from app.core.database import get_db
-from app.schemas.post import Post as PostSchema, PostUpdate
-from app.services import user_service
-from app.models.user import User
 from app.models.post import Post
+from app.models.user import User
+from app.schemas.post import Post as PostSchema
+from app.schemas.post import PostUpdate
+from app.services import user_service
 from app.utils.validation import normalize_array_field, normalize_text
 
 router = APIRouter()

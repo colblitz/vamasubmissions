@@ -68,7 +68,7 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
       try {
         const response = await api.get(`/api/global-edits/${editId}/preview`);
         setPreviewData((prev) => ({ ...prev, [editId]: response.data }));
-      } catch (err) {
+      } catch {
         setErrorMessage("Failed to load preview");
         setTimeout(() => setErrorMessage(""), 3000);
         return;

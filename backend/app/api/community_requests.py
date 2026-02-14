@@ -1,22 +1,20 @@
 """Community Request API endpoints."""
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
-from sqlalchemy.orm import Session
-from typing import List
+from fastapi import APIRouter, Depends, Query, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.user import User
 from app.schemas.community_request import (
     CommunityRequest,
     CommunityRequestCreate,
-    CommunityRequestUpdate,
     CommunityRequestList,
-    CommunityRequestFulfill,
+    CommunityRequestUpdate,
 )
 from app.services import request_service
-from app.services.user_service import get_current_user, get_current_admin_user
-from app.models.user import User
+from app.services.user_service import get_current_user
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)

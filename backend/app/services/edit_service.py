@@ -1,21 +1,22 @@
 """Post Edit service for business logic."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from fastapi import HTTPException, status
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
+from fastapi import HTTPException, status
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
+
+from app.models.edit_history import EditHistory
 from app.models.post import Post
 from app.models.post_edit import PostEdit
-from app.models.edit_history import EditHistory
 from app.models.user import User
 from app.schemas.post_edit import (
-    PostEditCreate,
-    PostEditWithDetails,
-    PostEditList,
     EditHistoryEntry,
     EditHistoryList,
+    PostEditCreate,
+    PostEditList,
+    PostEditWithDetails,
 )
 from app.utils.validation import normalize_text
 

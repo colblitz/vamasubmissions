@@ -1,6 +1,6 @@
 """System configuration model."""
 
-from sqlalchemy import Column, String, Text, DateTime, func
+from sqlalchemy import Column, DateTime, String, Text, func
 
 from app.core.database import Base
 

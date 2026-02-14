@@ -1,44 +1,44 @@
 """Pydantic schemas for request/response validation."""
 
-from app.schemas.user import User, UserCreate, UserUpdate, UserInDB
-from app.schemas.submission import (
-    Submission,
-    SubmissionCreate,
-    SubmissionUpdate,
-    SubmissionInDB,
-    SubmissionImage,
-    SubmissionWithImages,
+from app.schemas.auth import PatreonCallback, Token, TokenData
+from app.schemas.community_request import (
+    CommunityRequest,
+    CommunityRequestCreate,
+    CommunityRequestFulfill,
+    CommunityRequestList,
+    CommunityRequestPublic,
+    CommunityRequestUpdate,
 )
-from app.schemas.auth import Token, TokenData, PatreonCallback
-from app.schemas.queue import QueueInfo, QueueSubmission
-from app.schemas.vote import Vote, VoteCreate
 
 # Phase 1: Community Features
 from app.schemas.post import (
     Post,
     PostCreate,
-    PostUpdate,
-    PostSearchResult,
     PostDetail,
-)
-from app.schemas.community_request import (
-    CommunityRequest,
-    CommunityRequestCreate,
-    CommunityRequestUpdate,
-    CommunityRequestPublic,
-    CommunityRequestList,
-    CommunityRequestFulfill,
+    PostSearchResult,
+    PostUpdate,
 )
 from app.schemas.post_edit import (
-    PostEdit,
-    PostEditCreate,
-    PostEditUpdate,
-    PostEditWithDetails,
-    PostEditApprove,
-    PostEditList,
     EditHistoryEntry,
     EditHistoryList,
+    PostEdit,
+    PostEditApprove,
+    PostEditCreate,
+    PostEditList,
+    PostEditUpdate,
+    PostEditWithDetails,
 )
+from app.schemas.queue import QueueInfo, QueueSubmission
+from app.schemas.submission import (
+    Submission,
+    SubmissionCreate,
+    SubmissionImage,
+    SubmissionInDB,
+    SubmissionUpdate,
+    SubmissionWithImages,
+)
+from app.schemas.user import User, UserCreate, UserInDB, UserUpdate
+from app.schemas.vote import Vote, VoteCreate
 
 __all__ = [
     # Legacy schemas

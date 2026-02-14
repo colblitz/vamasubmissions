@@ -1,6 +1,6 @@
 """Edit History model for audit logging."""
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, func, CheckConstraint
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base

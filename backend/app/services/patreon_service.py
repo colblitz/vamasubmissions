@@ -5,18 +5,19 @@ Handles fetching posts from Patreon using gallery-dl.
 Uses OAuth token for authentication.
 """
 
-import requests
-import subprocess
 import json
-import tempfile
 import os
 import sqlite3
+import subprocess
+import tempfile
 import time
-from pathlib import Path
-from typing import List, Dict, Tuple, Optional
-from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from urllib.request import urlopen, Request
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+from urllib.request import Request, urlopen
+
+import requests
 
 from app.core.config import settings
 from app.utils.thumbnail_utils import generate_thumbnail_filename, get_file_extension
@@ -57,8 +58,8 @@ def find_chrome_profile_with_patreon_cookies() -> Optional[str]:
             conn = sqlite3.connect(f"file:{cookies_path}?mode=ro", uri=True)
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT COUNT(*) 
-                FROM cookies 
+                SELECT COUNT(*)
+                FROM cookies
                 WHERE host_key LIKE '%patreon.com%' AND name = 'session_id'
             """)
             count = cursor.fetchone()[0]
@@ -83,7 +84,7 @@ class PatreonService:
     def __init__(self, access_token: Optional[str] = None):
         """
         Initialize Patreon service with optional access token.
-        
+
         Access token is only required for OAuth API methods.
         For gallery-dl methods (fetch_posts_with_gallery_dl), access token is not needed.
 
@@ -263,7 +264,7 @@ class PatreonService:
                 "--option",
                 "browser=true",  # Enable browser mode
                 "--option",
-                'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                "user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             ]
 
             # Add cookies (prefer cookie_file over session_id)
@@ -281,11 +282,11 @@ class PatreonService:
                     f.write(cookie_content)
 
                 cmd.extend(["--cookies", str(temp_cookie_file)])
-                print(f"[GALLERY-DL] Using session_id cookie from parameter (legacy)")
+                print("[GALLERY-DL] Using session_id cookie from parameter (legacy)")
 
             # Add date filter if provided
             if since_date:
-                date_str = since_date.strftime("%Y-%m-%d")
+                since_date.strftime("%Y-%m-%d")
                 filter_expr = f"date >= datetime({since_date.year}, {since_date.month}, {since_date.day}) or abort()"
                 cmd.extend(["--filter", filter_expr])
                 print(f"[GALLERY-DL] Date filter: {filter_expr}")
@@ -295,14 +296,17 @@ class PatreonService:
             cmd.append(patreon_url)
 
             # Log the full command (redact sensitive info)
-            cmd_display = [arg if not str(cookie_file) in arg else "[COOKIES]" for arg in cmd]
+            cmd_display = [arg if str(cookie_file) not in arg else "[COOKIES]" for arg in cmd]
             print(f"[GALLERY-DL] Command: {' '.join(cmd_display)}")
-            print(f"[GALLERY-DL] Executing...")
+            print("[GALLERY-DL] Executing...")
 
             # Run gallery-dl
             try:
                 result = subprocess.run(
-                    cmd, capture_output=True, text=True, timeout=300  # 5 minute timeout
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 minute timeout
                 )
 
                 print(f"[GALLERY-DL] Return code: {result.returncode}")
@@ -324,7 +328,7 @@ class PatreonService:
             for root, dirs, files in os.walk(temp_dir):
                 if "info.json" in files:
                     info_json_files.append(os.path.join(root, "info.json"))
-            
+
             print(f"[GALLERY-DL] Found {len(info_json_files)} info.json files")
 
             posts = []
@@ -333,10 +337,12 @@ class PatreonService:
                     with open(info_json_path, "r") as f:
                         metadata = json.load(f)
                         post_id = str(metadata.get("id", ""))
-                        
+
                         if post_id:
                             posts.append(metadata)
-                            print(f"[GALLERY-DL] Found post {post_id}: {metadata.get('title', 'Untitled')}")
+                            print(
+                                f"[GALLERY-DL] Found post {post_id}: {metadata.get('title', 'Untitled')}"
+                            )
                 except json.JSONDecodeError as e:
                     print(f"[GALLERY-DL] Failed to parse {info_json_path}: {e}")
                     continue
@@ -399,71 +405,69 @@ class PatreonService:
     def _download_single_image(self, url: str, output_path: str, timeout: int = 60) -> bool:
         """
         Download a single image from URL to output path.
-        
+
         Args:
             url: Image URL
             output_path: Path to save file
             timeout: Download timeout in seconds
-        
+
         Returns:
             True if successful, False otherwise
         """
         try:
             # Create request with user agent to avoid blocks
-            req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            
+            req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
             with urlopen(req, timeout=timeout) as response:
-                with open(output_path, 'wb') as f:
+                with open(output_path, "wb") as f:
                     f.write(response.read())
-            
+
             return True
-        
+
         except Exception as e:
             print(f"[ERROR] Failed to download {os.path.basename(output_path)}: {e}")
             return False
 
     def _download_images_parallel(
-        self,
-        images_info: List[Dict],
-        post_id: str,
-        output_dir: Path,
-        max_workers: int = 10
+        self, images_info: List[Dict], post_id: str, output_dir: Path, max_workers: int = 10
     ) -> List[str]:
         """
         Download multiple images in parallel.
-        
+
         Args:
             images_info: List of dicts with keys: ordinal, url, filename, extension
             post_id: Post ID
             output_dir: Output directory
             max_workers: Number of parallel download threads
-        
+
         Returns:
             List of successfully downloaded filenames
         """
-        print(f"[IMPORT] Downloading {len(images_info)} images in parallel (max {max_workers} threads)...")
-        
+        print(
+            f"[IMPORT] Downloading {len(images_info)} images in parallel (max {max_workers} threads)..."
+        )
+
         successful_filenames = []
-        
+
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all download tasks
             future_to_info = {}
             for info in images_info:
-                output_path = output_dir / info['filename']
-                future = executor.submit(self._download_single_image, info['url'], str(output_path))
+                output_path = output_dir / info["filename"]
+                future = executor.submit(self._download_single_image, info["url"], str(output_path))
                 future_to_info[future] = info
-            
+
             # Process completed downloads
             for future in as_completed(future_to_info):
                 info = future_to_info[future]
                 try:
                     success = future.result()
                     if success:
-                        successful_filenames.append(info['filename'])
+                        successful_filenames.append(info["filename"])
                         print(f"[IMPORT] Downloaded: {info['filename']}")
                 except Exception as e:
                     print(f"[IMPORT] Exception downloading {info['filename']}: {e}")
-        
+
         return successful_filenames
 
     def fetch_post_with_info_json(
@@ -473,22 +477,22 @@ class PatreonService:
     ) -> Optional[Dict]:
         """
         Fetch a single post's metadata using gallery-dl --write-info-json.
-        
+
         Args:
             post_id: Patreon post ID
             session_id: Patreon session_id cookie (required for patron-only content)
-        
+
         Returns:
             Parsed info.json dict, or None on error
-        
+
         Raises:
             PatreonAPIError: If gallery-dl fails
         """
         print(f"[IMPORT] Fetching metadata for post {post_id}")
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            
+
             # Build gallery-dl command
             cmd = [
                 "gallery-dl",
@@ -497,7 +501,7 @@ class PatreonService:
                 "--option",
                 f"base-directory={temp_dir}",
             ]
-            
+
             # Add session cookie if provided
             if session_id:
                 cookie_file = temp_path / "cookies.txt"
@@ -506,41 +510,39 @@ class PatreonService:
 """
                 with open(cookie_file, "w") as f:
                     f.write(cookie_content)
-                
+
                 cmd.extend(["--cookies", str(cookie_file)])
-            
+
             # Add post URL
             post_url = f"https://www.patreon.com/posts/{post_id}"
             cmd.append(post_url)
-            
+
             # Run gallery-dl
             try:
-                result = subprocess.run(
-                    cmd, capture_output=True, text=True, timeout=300
-                )
-                
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+
                 if result.returncode != 0:
                     print(f"[IMPORT] gallery-dl failed for post {post_id}: {result.stderr}")
                     return None
-                
+
                 # Find info.json file
                 info_json_path = None
                 for root, dirs, files in os.walk(temp_dir):
                     if "info.json" in files:
                         info_json_path = os.path.join(root, "info.json")
                         break
-                
+
                 if not info_json_path:
                     print(f"[IMPORT] info.json not found for post {post_id}")
                     return None
-                
+
                 # Parse info.json
-                with open(info_json_path, 'r') as f:
+                with open(info_json_path, "r") as f:
                     info_data = json.load(f)
-                
+
                 print(f"[IMPORT] Successfully fetched metadata for post {post_id}")
                 return info_data
-            
+
             except subprocess.TimeoutExpired:
                 print(f"[IMPORT] gallery-dl timed out for post {post_id}")
                 return None
@@ -552,22 +554,22 @@ class PatreonService:
         """
         Extract post data from gallery-dl info.json format.
         Downloads all images with new naming convention: [postid]-t-[ordinal]-[uuid].ext
-        
+
         Args:
             gallery_dl_metadata: Metadata dict from gallery-dl info.json
-        
+
         Returns:
             Dict with extracted post data ready for database import
         """
         start_time = time.time()
-        
+
         # Extract basic post info
         post_id = str(gallery_dl_metadata.get("id", ""))
         title = gallery_dl_metadata.get("title", "Untitled")
         url = gallery_dl_metadata.get("url", "")
-        
+
         print(f"[IMPORT] Processing post {post_id}: {title}")
-        
+
         # Parse date (use published_at if available, fallback to date)
         date_str = gallery_dl_metadata.get("published_at") or gallery_dl_metadata.get("date")
         timestamp = None
@@ -578,12 +580,12 @@ class PatreonService:
                     timestamp = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
                 else:
                     timestamp = date_str
-            except:
+            except Exception:
                 timestamp = datetime.now()
-        
+
         # Get images array from info.json
-        images = gallery_dl_metadata.get('images', [])
-        
+        images = gallery_dl_metadata.get("images", [])
+
         if not images:
             print(f"[IMPORT] WARNING: No images found for post {post_id}")
             return {
@@ -599,52 +601,58 @@ class PatreonService:
                 "tags": [],
                 "raw_patreon_json": gallery_dl_metadata,
             }
-        
+
         print(f"[IMPORT] Found {len(images)} images for post {post_id}")
-        
+
         # Prepare output directory
         thumbnails_dir = Path(__file__).parent.parent.parent / "static" / "thumbnails"
         thumbnails_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Prepare download info for all images
         images_info = []
         for ordinal, image in enumerate(images):
-            file_name = image.get('file_name', '')
-            
+            file_name = image.get("file_name", "")
+
             if not file_name:
                 print(f"[IMPORT] WARNING: Image {ordinal} missing file_name, skipping")
                 continue
-            
+
             # Extract extension
             extension = get_file_extension(file_name)
-            
+
             if not extension:
                 print(f"[IMPORT] WARNING: Could not determine extension for {file_name}, skipping")
                 continue
-            
+
             # Get thumbnail URL from info.json (360x360 square, much smaller than original)
             # Prefer thumbnail over full download_url for better performance
-            image_urls = image.get('image_urls', {})
-            thumbnail_url = image_urls.get('thumbnail')
-            
+            image_urls = image.get("image_urls", {})
+            thumbnail_url = image_urls.get("thumbnail")
+
             if not thumbnail_url:
-                print(f"[IMPORT] WARNING: Image {ordinal} missing thumbnail URL, trying download_url")
-                thumbnail_url = image.get('download_url')
-            
+                print(
+                    f"[IMPORT] WARNING: Image {ordinal} missing thumbnail URL, trying download_url"
+                )
+                thumbnail_url = image.get("download_url")
+
             if not thumbnail_url:
-                print(f"[IMPORT] WARNING: Image {ordinal} missing both thumbnail and download_url, skipping")
+                print(
+                    f"[IMPORT] WARNING: Image {ordinal} missing both thumbnail and download_url, skipping"
+                )
                 continue
-            
+
             # Generate new filename with UUID
             new_filename = generate_thumbnail_filename(post_id, ordinal, extension)
-            
-            images_info.append({
-                'ordinal': ordinal,
-                'url': thumbnail_url,
-                'filename': new_filename,
-                'extension': extension
-            })
-        
+
+            images_info.append(
+                {
+                    "ordinal": ordinal,
+                    "url": thumbnail_url,
+                    "filename": new_filename,
+                    "extension": extension,
+                }
+            )
+
         if not images_info:
             print(f"[IMPORT] ERROR: No valid images to download for post {post_id}")
             return {
@@ -660,37 +668,39 @@ class PatreonService:
                 "tags": [],
                 "raw_patreon_json": gallery_dl_metadata,
             }
-        
+
         # Download all images in parallel
         download_start = time.time()
         successful_filenames = self._download_images_parallel(
             images_info, post_id, thumbnails_dir, max_workers=10
         )
         download_time = time.time() - download_start
-        
-        print(f"[IMPORT] Downloaded {len(successful_filenames)}/{len(images_info)} images in {download_time:.2f}s")
-        
+
+        print(
+            f"[IMPORT] Downloaded {len(successful_filenames)}/{len(images_info)} images in {download_time:.2f}s"
+        )
+
         # Build thumbnail URLs for database
         thumbnail_urls = [f"/static/thumbnails/{fn}" for fn in successful_filenames]
-        
+
         # Archive JSON file
         try:
             archive_dir = Path(__file__).parent.parent.parent / "static" / "archive"
             archive_dir.mkdir(parents=True, exist_ok=True)
-            
+
             archive_filename = f"{post_id}-metadata.json"
             archive_path = archive_dir / archive_filename
-            
+
             with open(archive_path, "w") as f:
                 json.dump(gallery_dl_metadata, f, indent=2, default=str)
-            
+
             print(f"[IMPORT] Saved JSON for post {post_id}: {archive_filename}")
         except Exception as e:
             print(f"[IMPORT] ERROR saving JSON for post {post_id}: {e}")
-        
+
         total_time = time.time() - start_time
         print(f"[IMPORT] Total processing time for post {post_id}: {total_time:.2f}s")
-        
+
         return {
             "post_id": post_id,
             "title": title,

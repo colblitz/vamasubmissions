@@ -32,7 +32,7 @@ export default function PostLightboxModal({
   onEditSuccess,
   onPageChange,
 }) {
-  const [editSectionOpen, setEditSectionOpen] = useState(true);
+  const [, setEditSectionOpen] = useState(true);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [thumbnailGridRef, setThumbnailGridRef] = useState(null);
 
@@ -82,17 +82,35 @@ export default function PostLightboxModal({
       } else if (e.key === "PageUp" && thumbnailGridRef) {
         e.preventDefault();
         // Scroll thumbnail grid up by one viewport height
-        thumbnailGridRef.scrollBy({ top: -thumbnailGridRef.clientHeight, behavior: 'smooth' });
+        thumbnailGridRef.scrollBy({
+          top: -thumbnailGridRef.clientHeight,
+          behavior: "smooth",
+        });
       } else if (e.key === "PageDown" && thumbnailGridRef) {
         e.preventDefault();
         // Scroll thumbnail grid down by one viewport height
-        thumbnailGridRef.scrollBy({ top: thumbnailGridRef.clientHeight, behavior: 'smooth' });
+        thumbnailGridRef.scrollBy({
+          top: thumbnailGridRef.clientHeight,
+          behavior: "smooth",
+        });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isLoadingPage, currentIndex, allPosts.length, currentPage, totalResults, pageSize, thumbnailGridRef]);
+  }, [
+    isOpen,
+    isLoadingPage,
+    currentIndex,
+    allPosts.length,
+    currentPage,
+    totalResults,
+    pageSize,
+    thumbnailGridRef,
+    handleNavigatePrevious,
+    handleNavigateNext,
+    onClose,
+  ]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -112,14 +130,17 @@ export default function PostLightboxModal({
   // Check if we can navigate to previous/next (including across pages)
   const totalPages = Math.ceil(totalResults / pageSize);
   const hasPrevious = currentIndex > 0 || currentPage > 1;
-  const hasNext = currentIndex < allPosts.length - 1 || currentPage < totalPages;
+  const hasNext =
+    currentIndex < allPosts.length - 1 || currentPage < totalPages;
 
   // Calculate global index for display
   const globalIndex = (currentPage - 1) * pageSize + currentIndex + 1;
   const displayTotal = totalResults > 0 ? totalResults : allPosts.length;
 
   // Sort thumbnails by ordinal (defensive - backend should already sort)
-  const sortedThumbnails = post.thumbnail_urls ? sortThumbnails(post.thumbnail_urls) : [];
+  const sortedThumbnails = post.thumbnail_urls
+    ? sortThumbnails(post.thumbnail_urls)
+    : [];
 
   return (
     <div
@@ -200,9 +221,10 @@ export default function PostLightboxModal({
           {post.thumbnail_urls && post.thumbnail_urls.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Images ({post.thumbnail_urls.length}) - Use PageUp/PageDown to scroll
+                Images ({post.thumbnail_urls.length}) - Use PageUp/PageDown to
+                scroll
               </h3>
-              <div 
+              <div
                 ref={setThumbnailGridRef}
                 className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto"
               >

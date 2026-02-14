@@ -3,7 +3,7 @@ import { sortThumbnails } from "../../utils/thumbnailSort";
 
 /**
  * PostThumbnailModal - Modal for viewing post thumbnails from ReviewEditsPage
- * 
+ *
  * @param {boolean} isOpen - Whether modal is open
  * @param {function} onClose - Callback to close modal
  * @param {object} post - Post object with title and thumbnail_urls
@@ -17,9 +17,9 @@ import { sortThumbnails } from "../../utils/thumbnailSort";
  * @param {boolean} canApprove - Whether current user can approve this edit
  * @param {boolean} showActions - Whether to show approve/reject buttons
  */
-export default function PostThumbnailModal({ 
-  isOpen, 
-  onClose, 
+export default function PostThumbnailModal({
+  isOpen,
+  onClose,
   post,
   edit = null,
   currentIndex = null,
@@ -46,7 +46,7 @@ export default function PostThumbnailModal({
   // Handle keyboard shortcuts
   useEffect(() => {
     if (!isOpen || confirmingAction) return;
-    
+
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
@@ -56,16 +56,30 @@ export default function PostThumbnailModal({
         onNext();
       } else if (e.key === "PageUp" && thumbnailGridRef) {
         e.preventDefault();
-        thumbnailGridRef.scrollBy({ top: -thumbnailGridRef.clientHeight, behavior: 'smooth' });
+        thumbnailGridRef.scrollBy({
+          top: -thumbnailGridRef.clientHeight,
+          behavior: "smooth",
+        });
       } else if (e.key === "PageDown" && thumbnailGridRef) {
         e.preventDefault();
-        thumbnailGridRef.scrollBy({ top: thumbnailGridRef.clientHeight, behavior: 'smooth' });
+        thumbnailGridRef.scrollBy({
+          top: thumbnailGridRef.clientHeight,
+          behavior: "smooth",
+        });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, onPrevious, onNext, thumbnailGridRef, confirmingAction, actionInProgress]);
+  }, [
+    isOpen,
+    onClose,
+    onPrevious,
+    onNext,
+    thumbnailGridRef,
+    confirmingAction,
+    actionInProgress,
+  ]);
 
   // Handle approve/reject with confirmation
   const handleApproveClick = () => {
@@ -126,8 +140,10 @@ export default function PostThumbnailModal({
 
   if (!isOpen || !post) return null;
 
-  const sortedThumbnails = post.thumbnail_urls ? sortThumbnails(post.thumbnail_urls) : [];
-  
+  const sortedThumbnails = post.thumbnail_urls
+    ? sortThumbnails(post.thumbnail_urls)
+    : [];
+
   // Helper to format field name
   const formatFieldName = (fieldName) => {
     return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
@@ -152,7 +168,9 @@ export default function PostThumbnailModal({
               {edit && (
                 <div className="text-sm text-gray-600 mt-1">
                   {formatFieldName(edit.field_name)}:{" "}
-                  <span className={`font-medium ${edit.action === "ADD" ? "text-green-700" : "text-red-700"}`}>
+                  <span
+                    className={`font-medium ${edit.action === "ADD" ? "text-green-700" : "text-red-700"}`}
+                  >
                     {edit.action === "ADD" ? "+" : "-"}
                     {edit.value}
                   </span>
@@ -174,8 +192,18 @@ export default function PostThumbnailModal({
               className="flex-shrink-0 p-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
               title="Close (ESC)"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -186,14 +214,18 @@ export default function PostThumbnailModal({
           {sortedThumbnails.length > 0 ? (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Images ({sortedThumbnails.length}) - Use PageUp/PageDown to scroll
+                Images ({sortedThumbnails.length}) - Use PageUp/PageDown to
+                scroll
               </h3>
-              <div 
+              <div
                 ref={setThumbnailGridRef}
                 className="grid grid-cols-[repeat(auto-fit,200px)] justify-start gap-3 max-h-[600px] overflow-y-auto"
               >
                 {sortedThumbnails.map((url, idx) => (
-                  <div key={idx} className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden">
+                  <div
+                    key={idx}
+                    className="w-[200px] h-[200px] bg-gray-100 rounded overflow-hidden"
+                  >
                     <img
                       src={url}
                       alt={`${post.title} - Image ${idx + 1}`}
@@ -224,8 +256,18 @@ export default function PostThumbnailModal({
                     className="p-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     title="Previous edit (Left arrow)"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                   </button>
                 )}
@@ -236,8 +278,18 @@ export default function PostThumbnailModal({
                     className="p-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     title="Next edit (Right arrow)"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </button>
                 )}

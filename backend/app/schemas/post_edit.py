@@ -1,8 +1,10 @@
 """Post Edit schemas."""
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Literal
 from datetime import datetime
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, Field, field_validator
+
 from app.utils.validation import normalize_text
 
 

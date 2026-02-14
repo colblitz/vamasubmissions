@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
 /**
  * LayoutTestPage - Visual comparison of different PostCard layout options
- * 
+ *
  * This page displays 4 different layout variations side-by-side using the same mock data
  * to help determine which layout is most space-efficient and readable.
  */
@@ -20,15 +20,16 @@ const mockPost = {
     "/test_thumbnails/Ahri_03.jpg",
     "/test_thumbnails/Ahri_04.jpg",
     "/test_thumbnails/Ahri_05.jpg",
-    "/test_thumbnails/Ahri_06.jpg"
+    "/test_thumbnails/Ahri_06.jpg",
   ],
   timestamp: "2026-01-28T10:30:00Z",
-  patreon_url: "#"
+  patreon_url: "#",
 };
 
 // Option A: Compact Horizontal Layout (150px thumbnail, tighter spacing)
 function CompactHorizontalCard({ post }) {
-  const additionalImageCount = post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
+  const additionalImageCount =
+    post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden flex">
@@ -72,7 +73,9 @@ function CompactHorizontalCard({ post }) {
           {post.characters?.length > 0 && (
             <div className="truncate">
               <span className="font-medium text-gray-600">Characters: </span>
-              <span className="text-gray-900">{post.characters.join(", ")}</span>
+              <span className="text-gray-900">
+                {post.characters.join(", ")}
+              </span>
             </div>
           )}
 
@@ -86,7 +89,10 @@ function CompactHorizontalCard({ post }) {
           {post.tags?.length > 0 && (
             <div className="flex flex-wrap gap-0.5 mt-1">
               {post.tags.slice(0, 3).map((tag, idx) => (
-                <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                <span
+                  key={idx}
+                  className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                >
                   {tag}
                 </span>
               ))}
@@ -118,7 +124,8 @@ function CompactHorizontalCard({ post }) {
 
 // Option B: Vertical Card (Pinterest-style - thumbnail on top, content below)
 function VerticalCard({ post }) {
-  const additionalImageCount = post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
+  const additionalImageCount =
+    post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden flex flex-col max-w-[240px]">
@@ -162,7 +169,9 @@ function VerticalCard({ post }) {
           {post.characters?.length > 0 && (
             <div>
               <span className="font-medium text-gray-600">Characters: </span>
-              <span className="text-gray-900">{post.characters.join(", ")}</span>
+              <span className="text-gray-900">
+                {post.characters.join(", ")}
+              </span>
             </div>
           )}
 
@@ -178,7 +187,10 @@ function VerticalCard({ post }) {
               <span className="font-medium text-gray-600">Tags: </span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {post.tags.slice(0, 5).map((tag, idx) => (
-                  <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                  >
                     {tag}
                   </span>
                 ))}
@@ -211,7 +223,8 @@ function VerticalCard({ post }) {
 
 // Option C: Grid Card (Square thumbnail with minimal text)
 function GridCard({ post }) {
-  const additionalImageCount = post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
+  const additionalImageCount =
+    post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden max-w-[240px]">
@@ -254,7 +267,10 @@ function GridCard({ post }) {
         {/* Tags */}
         <div className="flex flex-wrap gap-1 mb-2">
           {post.tags?.slice(0, 3).map((tag, idx) => (
-            <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+            <span
+              key={idx}
+              className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+            >
               {tag}
             </span>
           ))}
@@ -266,7 +282,10 @@ function GridCard({ post }) {
         </div>
         {/* Actions */}
         <div className="flex gap-1 justify-between items-center pt-1 border-t border-gray-100">
-          <a href={post.patreon_url} className="text-blue-600 hover:text-blue-800 text-xs font-medium">
+          <a
+            href={post.patreon_url}
+            className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+          >
             Patreon →
           </a>
           <button className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-medium">
@@ -280,7 +299,8 @@ function GridCard({ post }) {
 
 // Option D: Two-column Grid View (showing how 2 cards look side-by-side)
 function TwoColumnGridDemo({ post }) {
-  const additionalImageCount = post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
+  const additionalImageCount =
+    post.thumbnail_urls?.length > 1 ? post.thumbnail_urls.length - 1 : 0;
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-xl transition-shadow overflow-hidden flex flex-col">
@@ -324,7 +344,9 @@ function TwoColumnGridDemo({ post }) {
           {post.characters?.length > 0 && (
             <div>
               <span className="font-medium text-gray-600">Characters: </span>
-              <span className="text-gray-900">{post.characters.join(", ")}</span>
+              <span className="text-gray-900">
+                {post.characters.join(", ")}
+              </span>
             </div>
           )}
 
@@ -340,7 +362,10 @@ function TwoColumnGridDemo({ post }) {
               <span className="font-medium text-gray-600">Tags: </span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {post.tags.slice(0, 5).map((tag, idx) => (
-                  <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                  >
                     {tag}
                   </span>
                 ))}
@@ -382,8 +407,8 @@ export default function LayoutTestPage() {
             PostCard Layout Comparison
           </h1>
           <p className="text-gray-600">
-            Compare different layout options side-by-side using the same mock data.
-            Evaluate space efficiency and readability.
+            Compare different layout options side-by-side using the same mock
+            data. Evaluate space efficiency and readability.
           </p>
         </div>
 
@@ -396,7 +421,8 @@ export default function LayoutTestPage() {
                 Option A: Compact Horizontal
               </h2>
               <p className="text-gray-600">
-                150px thumbnail, tighter spacing, horizontal layout. Best for list views with limited vertical space.
+                150px thumbnail, tighter spacing, horizontal layout. Best for
+                list views with limited vertical space.
               </p>
             </div>
             <div className="max-w-2xl">
@@ -411,7 +437,8 @@ export default function LayoutTestPage() {
                 Option B: Vertical Card (Pinterest-style)
               </h2>
               <p className="text-gray-600">
-                Thumbnail on top (3:4 aspect ratio), content below. Emphasizes visual content, good for browsing.
+                Thumbnail on top (3:4 aspect ratio), content below. Emphasizes
+                visual content, good for browsing.
               </p>
             </div>
             <div className="max-w-sm">
@@ -426,7 +453,8 @@ export default function LayoutTestPage() {
                 Option C: Grid Card
               </h2>
               <p className="text-gray-600">
-                Square thumbnail with text overlay and minimal content below. Most compact, image-focused design.
+                Square thumbnail with text overlay and minimal content below.
+                Most compact, image-focused design.
               </p>
             </div>
             <div className="max-w-xs">
@@ -441,7 +469,8 @@ export default function LayoutTestPage() {
                 Option D: Two-column Grid View
               </h2>
               <p className="text-gray-600">
-                Shows how cards look side-by-side in a 2-column layout. Current design style.
+                Shows how cards look side-by-side in a 2-column layout. Current
+                design style.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4 max-w-3xl">

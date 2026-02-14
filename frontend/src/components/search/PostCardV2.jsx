@@ -49,7 +49,9 @@ export default function PostCardV2({
   const handleEditSuccess = (message, editData) => {
     if (onEditSuccess) {
       // Include post_id in editData so parent can identify which post was edited
-      const enrichedEditData = editData ? { ...editData, post_id: post.post_id } : null;
+      const enrichedEditData = editData
+        ? { ...editData, post_id: post.post_id }
+        : null;
       onEditSuccess(message, enrichedEditData);
     }
   };
@@ -104,7 +106,7 @@ export default function PostCardV2({
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setShowingEdit(true);
               }
@@ -120,11 +122,16 @@ export default function PostCardV2({
                   <span
                     key={`char-${idx}`}
                     className={`px-2 py-0.5 rounded text-xs ${
-                      isDeleting
-                        ? "bg-gray-200 text-gray-400 line-through"
-                        : ""
+                      isDeleting ? "bg-gray-200 text-gray-400 line-through" : ""
                     }`}
-                    style={!isDeleting ? { backgroundColor: 'hsl(0deg 75% 36%)', color: '#ffffff' } : {}}
+                    style={
+                      !isDeleting
+                        ? {
+                            backgroundColor: "hsl(0deg 75% 36%)",
+                            color: "#ffffff",
+                          }
+                        : {}
+                    }
                   >
                     {char}
                     {isDeleting && (
@@ -151,11 +158,16 @@ export default function PostCardV2({
                   <span
                     key={`series-${idx}`}
                     className={`px-2 py-0.5 rounded text-xs ${
-                      isDeleting
-                        ? "bg-gray-200 text-gray-400 line-through"
-                        : ""
+                      isDeleting ? "bg-gray-200 text-gray-400 line-through" : ""
                     }`}
-                    style={!isDeleting ? { backgroundColor: 'hsl(19deg 33% 90%)', color: 'hsl(19deg 33% 20%)' } : {}}
+                    style={
+                      !isDeleting
+                        ? {
+                            backgroundColor: "hsl(19deg 33% 90%)",
+                            color: "hsl(19deg 33% 20%)",
+                          }
+                        : {}
+                    }
                   >
                     {s}
                     {isDeleting && (

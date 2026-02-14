@@ -1,10 +1,10 @@
 """Credit service for managing user credits."""
 
-from sqlalchemy.orm import Session
 from typing import Optional
 
+from sqlalchemy.orm import Session
+
 from app.models.credit import CreditTransaction
-from app.models.user import User
 
 
 def add_credits(

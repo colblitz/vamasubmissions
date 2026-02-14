@@ -1,15 +1,16 @@
 """Post service for business logic."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, func, and_, text
-from fastapi import HTTPException, status
-from typing import List, Optional, Tuple
 from datetime import datetime
+from typing import List, Optional, Tuple
+
+from fastapi import HTTPException, status
+from sqlalchemy import func, or_, text
+from sqlalchemy.orm import Session
 
 from app.models.post import Post
-from app.schemas.post import PostCreate, PostUpdate, PostSearchResult
-from app.utils.thumbnail_sort import sort_thumbnails
+from app.schemas.post import PostCreate, PostSearchResult, PostUpdate
 from app.services import alias_service
+from app.utils.thumbnail_sort import sort_thumbnails
 
 
 def get_post_by_id(db: Session, post_id: int) -> Optional[Post]:
@@ -122,41 +123,41 @@ def search_posts(
     """
     # Track resolved aliases
     resolved_aliases = {}
-    
+
     # Resolve aliases for search terms
     if characters:
         resolved_chars = []
         for c in characters:
-            resolved = alias_service.AliasCache.resolve_alias(db, 'characters', c)
+            resolved = alias_service.AliasCache.resolve_alias(db, "characters", c)
             if resolved.lower() != c.lower():
-                if 'characters' not in resolved_aliases:
-                    resolved_aliases['characters'] = {}
-                resolved_aliases['characters'][c] = resolved
+                if "characters" not in resolved_aliases:
+                    resolved_aliases["characters"] = {}
+                resolved_aliases["characters"][c] = resolved
             resolved_chars.append(resolved)
         characters = resolved_chars
-    
+
     if series_list:
         resolved_series = []
         for s in series_list:
-            resolved = alias_service.AliasCache.resolve_alias(db, 'series', s)
+            resolved = alias_service.AliasCache.resolve_alias(db, "series", s)
             if resolved.lower() != s.lower():
-                if 'series' not in resolved_aliases:
-                    resolved_aliases['series'] = {}
-                resolved_aliases['series'][s] = resolved
+                if "series" not in resolved_aliases:
+                    resolved_aliases["series"] = {}
+                resolved_aliases["series"][s] = resolved
             resolved_series.append(resolved)
         series_list = resolved_series
-    
+
     if tags:
         resolved_tags = []
         for t in tags:
-            resolved = alias_service.AliasCache.resolve_alias(db, 'tags', t)
+            resolved = alias_service.AliasCache.resolve_alias(db, "tags", t)
             if resolved.lower() != t.lower():
-                if 'tags' not in resolved_aliases:
-                    resolved_aliases['tags'] = {}
-                resolved_aliases['tags'][t] = resolved
+                if "tags" not in resolved_aliases:
+                    resolved_aliases["tags"] = {}
+                resolved_aliases["tags"][t] = resolved
             resolved_tags.append(resolved)
         tags = resolved_tags
-    
+
     # Start with base query - ONLY PUBLISHED POSTS
     q = db.query(Post).filter(Post.status == "published")
 
@@ -208,44 +209,31 @@ def search_posts(
 
     if no_characters:
         # Filter for posts without any characters (empty array or NULL)
-        q = q.filter(
-            or_(
-                Post.characters == [],
-                Post.characters == None
-            )
-        )
+        q = q.filter(or_(Post.characters == [], Post.characters is None))
 
     if no_series:
         # Filter for posts without any series (empty array or NULL)
-        q = q.filter(
-            or_(
-                Post.series == [],
-                Post.series == None
-            )
-        )
+        q = q.filter(or_(Post.series == [], Post.series is None))
 
     if no_tags:
         # Filter for posts without any tags (empty array or NULL)
-        q = q.filter(
-            or_(
-                Post.tags == [],
-                Post.tags == None
-            )
-        )
+        q = q.filter(or_(Post.tags == [], Post.tags is None))
 
     # Date range filtering
     if date_from:
         try:
             from datetime import datetime
+
             from_date = datetime.strptime(date_from, "%Y-%m-%d")
             q = q.filter(Post.timestamp >= from_date)
         except ValueError:
             # Invalid date format, ignore
             pass
-    
+
     if date_to:
         try:
             from datetime import datetime
+
             to_date = datetime.strptime(date_to, "%Y-%m-%d")
             # Set to end of day
             to_date = to_date.replace(hour=23, minute=59, second=59)
@@ -260,18 +248,21 @@ def search_posts(
     # Track searches for analytics (only single-value searches)
     if current_user_id:
         import logging
+
         logger = logging.getLogger(__name__)
-        logger.info(f"[TRACK] Checking tracking: characters={characters}, series={series_list}, tags={tags}, query={query}, total={total}")
-        
+        logger.info(
+            f"[TRACK] Checking tracking: characters={characters}, series={series_list}, tags={tags}, query={query}, total={total}"
+        )
+
         if len(characters) == 1 and not series_list and not tags and not query:
             logger.info(f"[TRACK] Tracking character search: {characters[0]}")
-            alias_service.track_search(db, 'characters', characters[0], total, current_user_id)
+            alias_service.track_search(db, "characters", characters[0], total, current_user_id)
         elif len(series_list) == 1 and not characters and not tags and not query:
             logger.info(f"[TRACK] Tracking series search: {series_list[0]}")
-            alias_service.track_search(db, 'series', series_list[0], total, current_user_id)
+            alias_service.track_search(db, "series", series_list[0], total, current_user_id)
         elif len(tags) == 1 and not characters and not series_list and not query:
             logger.info(f"[TRACK] Tracking tags search: {tags[0]}")
-            alias_service.track_search(db, 'tags', tags[0], total, current_user_id)
+            alias_service.track_search(db, "tags", tags[0], total, current_user_id)
 
     # Apply sorting
     if sort_by == "date":
@@ -335,11 +326,11 @@ def get_autocomplete_characters(
         List of character names
     """
     # Resolve alias first
-    resolved_query = alias_service.AliasCache.resolve_alias(db, 'characters', query)
+    resolved_query = alias_service.AliasCache.resolve_alias(db, "characters", query)
     # If resolved to something different, search for that instead
     if resolved_query.lower() != query.lower():
         query = resolved_query
-    
+
     # Use unnest in a subquery to expand arrays and get distinct values
     search_term = f"%{query.lower()}%"
 
@@ -379,11 +370,11 @@ def get_autocomplete_series(
         List of series names
     """
     # Resolve alias first
-    resolved_query = alias_service.AliasCache.resolve_alias(db, 'series', query)
+    resolved_query = alias_service.AliasCache.resolve_alias(db, "series", query)
     # If resolved to something different, search for that instead
     if resolved_query.lower() != query.lower():
         query = resolved_query
-    
+
     search_term = f"%{query.lower()}%"
 
     results = db.execute(
@@ -422,11 +413,11 @@ def get_autocomplete_tags(
         List of tags
     """
     # Resolve alias first
-    resolved_query = alias_service.AliasCache.resolve_alias(db, 'tags', query)
+    resolved_query = alias_service.AliasCache.resolve_alias(db, "tags", query)
     # If resolved to something different, search for that instead
     if resolved_query.lower() != query.lower():
         query = resolved_query
-    
+
     search_term = f"%{query.lower()}%"
 
     results = db.execute(
@@ -469,14 +460,14 @@ def get_character_series_map(
     results = db.execute(
         text("""
         WITH character_series AS (
-            SELECT 
+            SELECT
                 unnest(characters) as character,
                 unnest(series) as series
             FROM posts
             WHERE status = 'published'
         ),
         ranked_series AS (
-            SELECT 
+            SELECT
                 character,
                 series,
                 COUNT(*) as frequency,
@@ -563,12 +554,12 @@ def get_browse_data(
 
     # If starts_with is provided (for alpha sort), find the offset to the first matching item
     offset = (page - 1) * limit
-    
+
     if starts_with and sort_by == "alpha":
         # Find the position of the first item starting with this letter
         letter_upper = starts_with.upper()
-        letter_lower = starts_with.lower()
-        
+        starts_with.lower()
+
         # Count how many items come before this letter
         offset_result = db.execute(
             text(f"""
@@ -588,7 +579,7 @@ def get_browse_data(
             """),
             {"letter_upper": letter_upper},
         ).fetchone()
-        
+
         offset = offset_result[0] if offset_result else 0
         # Calculate which page this offset corresponds to
         page = (offset // limit) + 1
@@ -612,14 +603,16 @@ def get_browse_data(
     ).fetchall()
 
     # Get total count of unique items
-    total_result = db.execute(text(f"""
+    total_result = db.execute(
+        text(f"""
         WITH unnested AS (
             SELECT DISTINCT unnest({field}) as name
             FROM posts
             WHERE status = 'published'
         )
         SELECT COUNT(*) FROM unnested
-        """)).fetchone()
+        """)
+    ).fetchone()
 
     total = total_result[0] if total_result else 0
     total_pages = (total + limit - 1) // limit if total > 0 else 0
@@ -668,8 +661,8 @@ def get_no_items_count(db: Session, field_type: str) -> dict:
         FROM posts
         WHERE status = 'published'
           AND (
-            {field} = '{{}}' OR 
-            {field} IS NULL OR 
+            {field} = '{{}}' OR
+            {field} IS NULL OR
             array_length({field}, 1) IS NULL
           )
         """)
@@ -703,12 +696,10 @@ def get_browse_by_date(
 
     if date_type == "month":
         # Group by year-month (e.g., "2024-01")
-        date_format = "YYYY-MM"
         date_trunc = "date_trunc('month', timestamp)"
         display_format = "YYYY-MM"
     elif date_type == "day":
         # Group by date (e.g., "2024-01-15")
-        date_format = "YYYY-MM-DD"
         date_trunc = "date_trunc('day', timestamp)"
         display_format = "YYYY-MM-DD"
     else:
@@ -720,7 +711,7 @@ def get_browse_by_date(
     # Get paginated results
     results = db.execute(
         text(f"""
-        SELECT 
+        SELECT
             TO_CHAR({date_trunc}, :display_format) as period,
             COUNT(*) as count,
             MIN(timestamp) as start_date,
@@ -775,16 +766,18 @@ def get_post_date_range(db: Session) -> dict:
     Returns:
         Dict with earliest_date, latest_date, and total_count
     """
-    result = db.query(
-        func.min(Post.timestamp).label("earliest"),
-        func.max(Post.timestamp).label("latest"),
-        func.count(Post.id).label("total")
-    ).filter(
-        Post.status == "published"
-    ).first()
-    
+    result = (
+        db.query(
+            func.min(Post.timestamp).label("earliest"),
+            func.max(Post.timestamp).label("latest"),
+            func.count(Post.id).label("total"),
+        )
+        .filter(Post.status == "published")
+        .first()
+    )
+
     return {
         "earliest_date": result.earliest.isoformat() if result.earliest else None,
         "latest_date": result.latest.isoformat() if result.latest else None,
-        "total_count": result.total if result else 0
+        "total_count": result.total if result else 0,
     }

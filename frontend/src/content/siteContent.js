@@ -1,6 +1,6 @@
 /**
  * VAMA Community Tracker - Centralized Text Content
- * 
+ *
  * This file contains all text content used throughout the application,
  * organized by page/section for easy editing and maintenance.
  */
@@ -92,7 +92,8 @@ export const siteContent = {
             prefix: "Your data is only used for",
           },
           {
-            description: "Your subscription is checked with Patreon on each login",
+            description:
+              "Your subscription is checked with Patreon on each login",
           },
           {
             description: "You can revoke access anytime through your",

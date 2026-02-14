@@ -1,13 +1,14 @@
 """Vote service for tier 1 submission voting."""
 
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from app.models.vote import Vote, UserVoteAllowance
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.models.submission import Submission
 from app.models.user import User
+from app.models.vote import UserVoteAllowance, Vote
 from app.services.config_service import get_config_value
 
 

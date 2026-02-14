@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Header() {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
@@ -39,10 +39,12 @@ export default function Header() {
     <header className="bg-gray-800 text-white shadow-lg">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className={`text-2xl font-bold transition-colors ${
-              location.pathname === '/' ? 'text-blue-400' : 'hover:text-blue-400'
+              location.pathname === "/"
+                ? "text-blue-400"
+                : "hover:text-blue-400"
             }`}
           >
             VAMA Posts
@@ -56,7 +58,9 @@ export default function Header() {
                   <Link
                     to="/about"
                     className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
-                      location.pathname === '/about' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                      location.pathname === "/about"
+                        ? "text-blue-400 bg-gray-700 rounded"
+                        : ""
                     }`}
                   >
                     About
@@ -64,7 +68,9 @@ export default function Header() {
                   <Link
                     to="/search"
                     className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
-                      location.pathname === '/search' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                      location.pathname === "/search"
+                        ? "text-blue-400 bg-gray-700 rounded"
+                        : ""
                     }`}
                   >
                     Search
@@ -72,7 +78,9 @@ export default function Header() {
                   <Link
                     to="/review"
                     className={`hover:text-blue-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
-                      location.pathname === '/review' ? 'text-blue-400 bg-gray-700 rounded' : ''
+                      location.pathname === "/review"
+                        ? "text-blue-400 bg-gray-700 rounded"
+                        : ""
                     }`}
                   >
                     Review Edits
@@ -82,7 +90,9 @@ export default function Header() {
                       <Link
                         to="/admin/import"
                         className={`hover:text-yellow-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
-                          location.pathname === '/admin/import' ? 'text-yellow-400 bg-gray-700 rounded' : ''
+                          location.pathname === "/admin/import"
+                            ? "text-yellow-400 bg-gray-700 rounded"
+                            : ""
                         }`}
                       >
                         Import Posts
@@ -90,7 +100,9 @@ export default function Header() {
                       <Link
                         to="/admin/aliases"
                         className={`hover:text-yellow-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
-                          location.pathname === '/admin/aliases' ? 'text-yellow-400 bg-gray-700 rounded' : ''
+                          location.pathname === "/admin/aliases"
+                            ? "text-yellow-400 bg-gray-700 rounded"
+                            : ""
                         }`}
                       >
                         Manage Aliases
@@ -119,9 +131,11 @@ export default function Header() {
               <div className="flex md:hidden items-center gap-4">
                 {/* User Avatar (mobile only) */}
                 <div className="text-sm">
-                  <div className="font-semibold text-xs">{user.patreon_username}</div>
+                  <div className="font-semibold text-xs">
+                    {user.patreon_username}
+                  </div>
                 </div>
-                
+
                 {/* Hamburger Menu Button */}
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
@@ -181,7 +195,9 @@ export default function Header() {
 
                     {/* User Info Section */}
                     <div className="px-6 py-4 border-b border-gray-700">
-                      <div className="text-lg font-semibold">{user.patreon_username}</div>
+                      <div className="text-lg font-semibold">
+                        {user.patreon_username}
+                      </div>
                       <div className="text-sm text-gray-400">
                         {user.tier_name || "Free Tier"}
                       </div>
@@ -192,7 +208,9 @@ export default function Header() {
                       <Link
                         to="/about"
                         className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
-                          location.pathname === '/about' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                          location.pathname === "/about"
+                            ? "bg-gray-700 text-blue-400 border-l-4 border-blue-400"
+                            : ""
                         }`}
                         onClick={closeMobileMenu}
                       >
@@ -201,7 +219,9 @@ export default function Header() {
                       <Link
                         to="/search"
                         className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
-                          location.pathname === '/search' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                          location.pathname === "/search"
+                            ? "bg-gray-700 text-blue-400 border-l-4 border-blue-400"
+                            : ""
                         }`}
                         onClick={closeMobileMenu}
                       >
@@ -210,7 +230,9 @@ export default function Header() {
                       <Link
                         to="/review"
                         className={`px-6 py-3 hover:bg-gray-700 hover:text-blue-400 transition-colors min-h-[44px] flex items-center ${
-                          location.pathname === '/review' ? 'bg-gray-700 text-blue-400 border-l-4 border-blue-400' : ''
+                          location.pathname === "/review"
+                            ? "bg-gray-700 text-blue-400 border-l-4 border-blue-400"
+                            : ""
                         }`}
                         onClick={closeMobileMenu}
                       >
@@ -221,7 +243,9 @@ export default function Header() {
                           <Link
                             to="/admin/import"
                             className={`px-6 py-3 hover:bg-gray-700 hover:text-yellow-400 transition-colors min-h-[44px] flex items-center ${
-                              location.pathname === '/admin/import' ? 'bg-gray-700 text-yellow-400 border-l-4 border-yellow-400' : ''
+                              location.pathname === "/admin/import"
+                                ? "bg-gray-700 text-yellow-400 border-l-4 border-yellow-400"
+                                : ""
                             }`}
                             onClick={closeMobileMenu}
                           >
@@ -230,7 +254,9 @@ export default function Header() {
                           <Link
                             to="/admin/aliases"
                             className={`px-6 py-3 hover:bg-gray-700 hover:text-yellow-400 transition-colors min-h-[44px] flex items-center ${
-                              location.pathname === '/admin/aliases' ? 'bg-gray-700 text-yellow-400 border-l-4 border-yellow-400' : ''
+                              location.pathname === "/admin/aliases"
+                                ? "bg-gray-700 text-yellow-400 border-l-4 border-yellow-400"
+                                : ""
                             }`}
                             onClick={closeMobileMenu}
                           >

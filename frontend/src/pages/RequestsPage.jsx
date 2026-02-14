@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 
 export default function RequestsPage() {
-  const { user } = useAuth();
+  useAuth();
   const [requestsQueue, setRequestsQueue] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -89,7 +89,9 @@ export default function RequestsPage() {
   return (
     <div className="space-y-6">
       <div className="card">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Queue</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Queue
+        </h1>
         <p className="text-gray-600">
           Strict first-in-first-out ordering for tier 2+ submissions
         </p>

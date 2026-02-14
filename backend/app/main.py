@@ -1,14 +1,30 @@
 """Main FastAPI application."""
 
-from fastapi import FastAPI, Request
+import logging
+import logging.handlers
+import os
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import os
-import logging
-import logging.handlers
+from slowapi.util import get_remote_address
+
+from app.api import (
+    admin,
+    aliases,
+    auth,
+    community_requests,
+    edits,
+    global_edits,
+    posts,
+    queue,
+    submissions,
+    users,
+)
+from app.core.config import settings
+from app.core.database import Base, engine
 
 # Configure logging
 log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
@@ -18,8 +34,8 @@ os.makedirs(log_dir, exist_ok=True)
 stream_handler = logging.StreamHandler()
 file_handler = logging.handlers.RotatingFileHandler(
     os.path.join(log_dir, "backend.log"),
-    maxBytes=10*1024*1024,  # 10MB per file
-    backupCount=5  # Keep 5 old files (50MB total)
+    maxBytes=10 * 1024 * 1024,  # 10MB per file
+    backupCount=5,  # Keep 5 old files (50MB total)
 )
 
 # Set format
@@ -43,31 +59,7 @@ for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error"]:
     logger.setLevel(logging.INFO)
     logger.propagate = False  # Don't propagate to root logger
 
-from app.core.config import settings
-from app.core.database import engine, Base
-
 # Import all models to ensure they're registered with SQLAlchemy
-from app.models import (
-    User,
-    Submission,
-    SubmissionImage,
-    CreditTransaction,
-    Vote,
-    UserVoteAllowance,
-    UserSession,
-    SystemConfig,
-    Post,
-    CommunityRequest,
-    PostEdit,
-    EditHistory,
-)
-from app.models.global_edit import GlobalEditSuggestion
-from app.models.value_alias import ValueAlias
-from app.models.search_analytics import SearchAnalytics
-from app.api import auth, submissions, queue, admin, users
-
-# Phase 1: Community Features
-from app.api import posts, community_requests, edits, global_edits, aliases
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
