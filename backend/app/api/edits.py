@@ -52,7 +52,7 @@ async def suggest_edit(
     logger = logging.getLogger(__name__)
     action_type = "AUTO-APPROVED" if current_user.role == "admin" else "SUBMITTED"
     logger.info(
-        f"[EDIT] User {current_user.id} {action_type} edit {edit.id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}"
+        f"[EDIT] {current_user.patreon_username} {action_type} edit {edit.id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}"
     )
 
     # If user is admin, auto-approve the edit immediately
@@ -167,7 +167,7 @@ async def approve_edit(
 
     logger = logging.getLogger(__name__)
     logger.info(
-        f"[APPROVE] User {current_user.id} approved edit {edit_id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}"
+        f"[APPROVE] {current_user.patreon_username} approved edit {edit_id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}"
     )
 
     return edit
@@ -197,7 +197,7 @@ async def reject_edit(
 
     logger = logging.getLogger(__name__)
     logger.info(
-        f"[REJECT] User {current_user.id} rejected edit {edit_id}: {edit.action} {edit.value} from {edit.field_name} on post {edit.post_id}"
+        f"[REJECT] {current_user.patreon_username} rejected edit {edit_id}: {edit.action} {edit.value} from {edit.field_name} on post {edit.post_id}"
     )
 
     return edit

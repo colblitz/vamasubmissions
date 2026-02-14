@@ -70,7 +70,7 @@ async def search_posts(
     if date_from or date_to:
         date_range = f"{date_from or 'start'} to {date_to or 'end'}"
         logger.info(
-            f"[DATE] User {current_user.id if current_user else 'anonymous'} searched date range: {date_range}"
+            f"[DATE] {current_user.patreon_username if current_user else 'anonymous'} searched date range: {date_range}"
         )
 
     result = post_service.search_posts(
@@ -168,7 +168,7 @@ async def get_post(
 
     logger = logging.getLogger(__name__)
     logger.info(
-        f"[VIEW] User {current_user.id if current_user else 'anonymous'} viewed post {post_id}"
+        f"[VIEW] {current_user.patreon_username if current_user else 'anonymous'} viewed post {post_id}"
     )
 
     return post
