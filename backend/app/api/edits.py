@@ -46,6 +46,12 @@ async def suggest_edit(
     # Create the edit suggestion
     edit = edit_service.suggest_edit(db, current_user.id, edit_data)
     
+    # Log edit submission
+    import logging
+    logger = logging.getLogger(__name__)
+    action_type = "AUTO-APPROVED" if current_user.role == "admin" else "SUBMITTED"
+    logger.info(f"[EDIT] User {current_user.id} {action_type} edit {edit.id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}")
+    
     # If user is admin, auto-approve the edit immediately
     if current_user.role == "admin":
         edit = edit_service.approve_edit(db, edit.id, current_user.id)
@@ -151,7 +157,14 @@ async def approve_edit(
     Returns:
         Approved edit
     """
-    return edit_service.approve_edit(db, edit_id, current_user.id)
+    edit = edit_service.approve_edit(db, edit_id, current_user.id)
+    
+    # Log approval
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[APPROVE] User {current_user.id} approved edit {edit_id}: {edit.action} {edit.value} to {edit.field_name} on post {edit.post_id}")
+    
+    return edit
 
 
 @router.post("/{edit_id}/reject", response_model=PostEdit)
@@ -171,7 +184,14 @@ async def reject_edit(
     Returns:
         Rejected edit
     """
-    return edit_service.reject_edit(db, edit_id, current_user.id, is_admin=True)
+    edit = edit_service.reject_edit(db, edit_id, current_user.id, is_admin=True)
+    
+    # Log rejection
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[REJECT] User {current_user.id} rejected edit {edit_id}: {edit.action} {edit.value} from {edit.field_name} on post {edit.post_id}")
+    
+    return edit
 
 
 @router.get("/history", response_model=EditHistoryList)

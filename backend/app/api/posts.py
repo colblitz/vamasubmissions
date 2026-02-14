@@ -63,6 +63,11 @@ async def search_posts(
     series_list = [s.strip() for s in series.split(",")] if series else []
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
 
+    # Log date-based search
+    if date_from or date_to:
+        date_range = f"{date_from or 'start'} to {date_to or 'end'}"
+        logger.info(f"[DATE] User {current_user.id if current_user else 'anonymous'} searched date range: {date_range}")
+
     result = post_service.search_posts(
         db,
         query=q,
@@ -152,6 +157,12 @@ async def get_post(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
+    
+    # Log post view
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[VIEW] User {current_user.id if current_user else 'anonymous'} viewed post {post_id}")
+    
     return post
 
 
