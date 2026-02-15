@@ -21,7 +21,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/suggest", response_model=PostEdit, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")
+@limiter.limit("20/minute")
 async def suggest_edit(
     request: Request,
     edit_data: PostEditCreate,
