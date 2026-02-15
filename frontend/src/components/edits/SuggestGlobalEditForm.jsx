@@ -3,10 +3,10 @@ import api from "../../services/api";
 import { normalizeText } from "../../utils/validation";
 
 export default function SuggestGlobalEditForm({ onSuccess }) {
-  const [conditionField, setConditionField] = useState("characters");
+  const [conditionField, setConditionField] = useState("tags");
   const [pattern, setPattern] = useState("");
   const [action, setAction] = useState("ADD");
-  const [actionField, setActionField] = useState("characters");
+  const [actionField, setActionField] = useState("tags");
   const [actionValue, setActionValue] = useState("");
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,10 +56,10 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
       return;
     }
 
-    if (action === "ADD") {
+    if (action === "ADD" || action === "REPLACE") {
       const normalizedActionValue = normalizeText(actionValue);
       if (!normalizedActionValue) {
-        setError("Action value is required for ADD action");
+        setError(`Action value is required for ${action} action`);
         return;
       }
     }
@@ -72,7 +72,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         action: action,
       };
 
-      if (action === "ADD") {
+      if (action === "ADD" || action === "REPLACE") {
         payload.action_field = actionField;
         payload.action_value = normalizeText(actionValue);
       } else {
@@ -82,10 +82,14 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
 
       await api.post("/api/global-edits/suggest", payload);
 
-      const actionText =
-        action === "ADD"
-          ? `"${normalizedPattern}" → "${normalizeText(actionValue)}"`
-          : `Delete "${normalizedPattern}"`;
+      let actionText;
+      if (action === "ADD") {
+        actionText = `Add "${normalizeText(actionValue)}" to posts with "${normalizedPattern}"`;
+      } else if (action === "REPLACE") {
+        actionText = `Replace "${normalizedPattern}" with "${normalizeText(actionValue)}"`;
+      } else {
+        actionText = `Delete "${normalizedPattern}"`;
+      }
 
       setSuccess(`Global edit suggested: ${actionText}`);
       setPattern("");
@@ -110,7 +114,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         Suggest Global Edit
       </h2>
       <p className="text-sm text-gray-600 mb-4">
-        Add or remove values across all posts at once. Supports wildcards for
+        Add, replace, or remove values across all posts at once. Supports wildcards for
         pattern matching (case-insensitive).
       </p>
 
@@ -191,7 +195,17 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
                   onChange={(e) => setAction(e.target.value)}
                   className="mr-2"
                 />
-                <span className="text-gray-900">Add/Replace</span>
+                <span className="text-gray-900">Add</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="REPLACE"
+                  checked={action === "REPLACE"}
+                  onChange={(e) => setAction(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-900">Replace</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -206,8 +220,8 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
             </div>
           </div>
 
-          {/* Action Field (only for ADD) */}
-          {action === "ADD" && (
+          {/* Action Field (for ADD and REPLACE) */}
+          {(action === "ADD" || action === "REPLACE") && (
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Action Field
@@ -222,26 +236,28 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
                 <option value="tags">Tags</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Which field to add the value to
+                Which field to {action === "ADD" ? "add the value to" : "perform the replacement on"}
               </p>
             </div>
           )}
 
-          {/* Action Value (only for ADD) */}
-          {action === "ADD" && (
+          {/* Action Value (for ADD and REPLACE) */}
+          {(action === "ADD" || action === "REPLACE") && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Action Value
+                {action === "ADD" ? "Value to Add" : "New Value"}
               </label>
               <input
                 type="text"
                 value={actionValue}
                 onChange={(e) => setActionValue(e.target.value)}
-                placeholder="e.g., Naruto Uzumaki"
+                placeholder={action === "ADD" ? "e.g., New Tag" : "e.g., Corrected Name"}
                 className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
-                The value to add or replace matching patterns with
+                {action === "ADD"
+                  ? "The value to add to matching posts"
+                  : "The value to replace matching patterns with"}
               </p>
             </div>
           )}
@@ -259,7 +275,7 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!pattern || (action === "ADD" && !actionValue) || loading}
+          disabled={!pattern || ((action === "ADD" || action === "REPLACE") && !actionValue) || loading}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Submitting..." : "Submit Global Edit"}

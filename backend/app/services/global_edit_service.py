@@ -212,6 +212,54 @@ class GlobalEditService:
 
             db.execute(update_query, {"pattern": sql_pattern, "action_value": action_value})
 
+        elif action == "REPLACE":
+            # REPLACE: Replace values matching the pattern with action_value
+            # First, find all distinct values that match the pattern in the action_field
+            find_values_query = text(f"""
+                SELECT DISTINCT val
+                FROM posts, unnest({action_field}) AS val
+                WHERE status = 'published'
+                  AND val ILIKE :pattern
+                  AND EXISTS (
+                    SELECT 1
+                    FROM unnest({condition_field}) AS cval
+                    WHERE cval ILIKE :pattern
+                  )
+            """)
+
+            result = db.execute(find_values_query, {"pattern": sql_pattern})
+            matching_values = [row[0] for row in result.fetchall()]
+
+            # For each matching value, remove it and add the new value
+            for value_to_replace in matching_values:
+                if value_to_replace == action_value:
+                    continue  # Skip if trying to replace with same value
+
+                replace_query = text(f"""
+                    UPDATE posts
+                    SET {action_field} = array_append(
+                            array_remove({action_field}, :value_to_replace),
+                            :action_value
+                        ),
+                        updated_at = NOW()
+                    WHERE status = 'published'
+                      AND EXISTS (
+                        SELECT 1
+                        FROM unnest({condition_field}) AS cval
+                        WHERE cval ILIKE :pattern
+                      )
+                      AND :value_to_replace = ANY({action_field})
+                      AND NOT (:action_value = ANY({action_field}))
+                """)
+
+                db.execute(
+                    replace_query, {
+                        "value_to_replace": value_to_replace,
+                        "action_value": action_value,
+                        "pattern": sql_pattern
+                    }
+                )
+
         elif action == "DELETE":
             # DELETE: Remove all values matching the pattern from action_field
             # First, find all distinct values that match the pattern in the action_field

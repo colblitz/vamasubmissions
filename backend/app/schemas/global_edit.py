@@ -5,7 +5,7 @@ Pydantic schemas for global edit suggestions
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.utils.validation import normalize_text
 
@@ -52,7 +52,7 @@ class GlobalEditSuggestionCreate(BaseModel):
 
     condition_field: str = Field(..., pattern="^(characters|series|tags)$")
     pattern: str = Field(..., min_length=1, max_length=255)
-    action: str = Field(..., pattern="^(ADD|DELETE)$")
+    action: str = Field(..., pattern="^(ADD|DELETE|REPLACE)$")
     action_field: str = Field(..., pattern="^(characters|series|tags)$")
     action_value: Optional[str] = Field(None, max_length=255)
 
@@ -76,12 +76,12 @@ class GlobalEditSuggestionCreate(BaseModel):
         if action == "DELETE":
             if v is not None:
                 raise ValueError("action_value must be None for DELETE action")
-        elif action == "ADD":
+        elif action in ("ADD", "REPLACE"):
             if v is None:
-                raise ValueError("action_value is required for ADD action")
+                raise ValueError(f"action_value is required for {action} action")
             pattern = info.data.get("pattern")
             if pattern and v == pattern:
-                raise ValueError("action_value must be different from pattern for ADD action")
+                raise ValueError(f"action_value must be different from pattern for {action} action")
 
         return v
 

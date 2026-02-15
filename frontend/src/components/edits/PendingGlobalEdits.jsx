@@ -130,6 +130,8 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
                     className={`px-2 py-1 text-xs font-medium rounded ${
                       edit.action === "ADD"
                         ? "bg-green-100 text-green-800"
+                        : edit.action === "REPLACE"
+                        ? "bg-blue-100 text-blue-800"
                         : "bg-red-100 text-red-800"
                     }`}
                   >
@@ -151,6 +153,10 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
                     {edit.action === "ADD" ? (
                       <span className="font-medium text-green-600">
                         Add: "{edit.action_value}"
+                      </span>
+                    ) : edit.action === "REPLACE" ? (
+                      <span className="font-medium text-blue-600">
+                        Replace with: "{edit.action_value}"
                       </span>
                     ) : (
                       <span className="font-medium text-red-600">
