@@ -613,7 +613,7 @@ export default function ReviewEditsPage() {
                   );
                 }
 
-                return combinedHistory.map((item) => {
+                return combinedHistory.map((item, index) => {
                   // Determine background color based on action
                   const bgColorClass =
                     item.action === "REJECTED"
@@ -649,7 +649,7 @@ export default function ReviewEditsPage() {
                           src={item.post_thumbnail}
                           alt={item.post_title}
                           onClick={() =>
-                            handleThumbnailClick(item.post_id, item.post_title)
+                            handleThumbnailClick(item, index)
                           }
                           className="w-24 h-24 flex-shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                           title="Click to view all images"
