@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import api from "../../services/api";
 import EditSection from "./EditSection";
 import { sortThumbnails } from "../../utils/thumbnailSort";
 
@@ -124,6 +125,16 @@ export default function PostLightboxModal({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  // Log full post view when modal opens
+  useEffect(() => {
+    if (isOpen && post?.id) {
+      // Log the full view to backend
+      api.post(`/api/posts/${post.id}/view`).catch(() => {
+        // Silently fail - don't interrupt user experience for logging
+      });
+    }
+  }, [isOpen, post?.id]);
 
   if (!isOpen || !post) return null;
 

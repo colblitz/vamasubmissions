@@ -168,10 +168,50 @@ async def get_post(
 
     logger = logging.getLogger(__name__)
     logger.info(
-        f"[VIEW] {current_user.patreon_username if current_user else 'anonymous'} viewed post {post_id}"
+        f"[EDITVIEW] {current_user.patreon_username if current_user else 'anonymous'} viewed post {post_id}"
     )
 
     return post
+
+
+@router.post("/{post_id}/view")
+async def log_post_view(
+    post_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Log a full/lightbox view of a post.
+    Called by frontend when user opens post in full view modal.
+
+    Args:
+        post_id: Post ID
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    # Verify post exists
+    post = post_service.get_post_by_id(db, post_id)
+    if not post:
+        from fastapi import HTTPException, status
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+
+    # Log full post view
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(
+        f"[VIEW] {current_user.patreon_username if current_user else 'anonymous'} "
+        f"viewed full post {post_id}: '{post.title}'"
+    )
+
+    return {"message": "View logged"}
 
 
 @router.get("/autocomplete/characters", response_model=List[str])
