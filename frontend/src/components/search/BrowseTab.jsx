@@ -20,35 +20,6 @@ export default function BrowseTab({ onSelectItem }) {
     limit: 32, // 8 rows x 4 columns on large screens
   });
 
-  // Fetch browse data when sub-tab, sort, or startsWith changes
-  useEffect(() => {
-    if (activeSubTab === "months" || activeSubTab === "days") {
-      fetchBrowseByDate();
-    } else {
-      fetchBrowseData();
-    }
-  }, [
-    activeSubTab,
-    pagination.page,
-    sortBy,
-    startsWith,
-    fetchBrowseByDate,
-    fetchBrowseData,
-  ]);
-
-  // Fetch count of posts with no items for current tab (only for character/series/tags)
-  useEffect(() => {
-    if (
-      activeSubTab === "characters" ||
-      activeSubTab === "series" ||
-      activeSubTab === "tags"
-    ) {
-      fetchNoItemsCount();
-    } else {
-      setNoItemsCount(0);
-    }
-  }, [activeSubTab, fetchNoItemsCount]);
-
   const fetchBrowseData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -129,6 +100,35 @@ export default function BrowseTab({ onSelectItem }) {
       setLoading(false);
     }
   }, [activeSubTab, pagination.page, pagination.limit]);
+
+  // Fetch browse data when sub-tab, sort, or startsWith changes
+  useEffect(() => {
+    if (activeSubTab === "months" || activeSubTab === "days") {
+      fetchBrowseByDate();
+    } else {
+      fetchBrowseData();
+    }
+  }, [
+    activeSubTab,
+    pagination.page,
+    sortBy,
+    startsWith,
+    fetchBrowseByDate,
+    fetchBrowseData,
+  ]);
+
+  // Fetch count of posts with no items for current tab (only for character/series/tags)
+  useEffect(() => {
+    if (
+      activeSubTab === "characters" ||
+      activeSubTab === "series" ||
+      activeSubTab === "tags"
+    ) {
+      fetchNoItemsCount();
+    } else {
+      setNoItemsCount(0);
+    }
+  }, [activeSubTab, fetchNoItemsCount]);
 
   const handleItemClick = (itemName) => {
     // Call parent callback to switch to search tab with this filter
