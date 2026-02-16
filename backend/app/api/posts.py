@@ -24,6 +24,15 @@ async def search_posts(
     ),
     series: Optional[str] = Query(None, description="Filter by series names (comma-separated)"),
     tags: Optional[str] = Query(None, description="Filter by tags (comma-separated)"),
+    exclude_characters: Optional[str] = Query(
+        None, description="Exclude posts with these character names (comma-separated)"
+    ),
+    exclude_series: Optional[str] = Query(
+        None, description="Exclude posts with these series names (comma-separated)"
+    ),
+    exclude_tags: Optional[str] = Query(
+        None, description="Exclude posts with these tags (comma-separated)"
+    ),
     no_characters: Optional[bool] = Query(
         None, description="Filter for posts without any characters"
     ),
@@ -66,6 +75,13 @@ async def search_posts(
     series_list = [s.strip() for s in series.split(",")] if series else []
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
 
+    # Parse exclude filters
+    exclude_character_list = (
+        [c.strip() for c in exclude_characters.split(",")] if exclude_characters else []
+    )
+    exclude_series_list = [s.strip() for s in exclude_series.split(",")] if exclude_series else []
+    exclude_tag_list = [t.strip() for t in exclude_tags.split(",")] if exclude_tags else []
+
     # Log date-based search
     if date_from or date_to:
         date_range = f"{date_from or 'start'} to {date_to or 'end'}"
@@ -79,6 +95,9 @@ async def search_posts(
         characters=character_list,
         series_list=series_list,
         tags=tag_list,
+        exclude_characters=exclude_character_list,
+        exclude_series=exclude_series_list,
+        exclude_tags=exclude_tag_list,
         no_characters=no_characters,
         no_series=no_series,
         no_tags=no_tags,
@@ -101,6 +120,12 @@ async def search_posts(
         filters.append(f"series={series_list}")
     if tag_list:
         filters.append(f"tags={tag_list}")
+    if exclude_character_list:
+        filters.append(f"exclude_chars={exclude_character_list}")
+    if exclude_series_list:
+        filters.append(f"exclude_series={exclude_series_list}")
+    if exclude_tag_list:
+        filters.append(f"exclude_tags={exclude_tag_list}")
     if no_characters:
         filters.append("no_characters=True")
     if no_series:

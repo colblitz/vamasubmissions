@@ -88,6 +88,9 @@ def search_posts(
     characters: Optional[List[str]] = None,
     series_list: Optional[List[str]] = None,
     tags: Optional[List[str]] = None,
+    exclude_characters: Optional[List[str]] = None,
+    exclude_series: Optional[List[str]] = None,
+    exclude_tags: Optional[List[str]] = None,
     no_characters: Optional[bool] = None,
     no_series: Optional[bool] = None,
     no_tags: Optional[bool] = None,
@@ -109,6 +112,9 @@ def search_posts(
         characters: Filter by character names (must match ALL)
         series_list: Filter by series names (must match ALL)
         tags: Filter by tags (must match ALL)
+        exclude_characters: Exclude posts with these character names (must match ANY to exclude)
+        exclude_series: Exclude posts with these series names (must match ANY to exclude)
+        exclude_tags: Exclude posts with these tags (must match ANY to exclude)
         no_characters: Filter for posts without any characters (characters = '{}' OR characters IS NULL)
         no_series: Filter for posts without any series (series = '{}' OR series IS NULL)
         no_tags: Filter for posts without any tags (tags = '{}' OR tags IS NULL)
@@ -218,6 +224,34 @@ def search_posts(
     if no_tags:
         # Filter for posts without any tags (empty array or NULL)
         q = q.filter(or_(Post.tags == [], Post.tags is None))
+
+    # Exclude filters - posts must NOT contain ANY of the excluded values
+    if exclude_characters:
+        for character in exclude_characters:
+            search_char = f"%{character.lower()}%"
+            q = q.filter(
+                text(
+                    "NOT EXISTS (SELECT 1 FROM unnest(characters) AS c WHERE LOWER(c) LIKE :char)"
+                ).bindparams(char=search_char)
+            )
+
+    if exclude_series:
+        for series_name in exclude_series:
+            search_series = f"%{series_name.lower()}%"
+            q = q.filter(
+                text(
+                    "NOT EXISTS (SELECT 1 FROM unnest(series) AS s WHERE LOWER(s) LIKE :ser)"
+                ).bindparams(ser=search_series)
+            )
+
+    if exclude_tags:
+        for tag in exclude_tags:
+            search_tag = f"%{tag.lower()}%"
+            q = q.filter(
+                text(
+                    "NOT EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE LOWER(t) LIKE :tag)"
+                ).bindparams(tag=search_tag)
+            )
 
     # Date range filtering
     if date_from:

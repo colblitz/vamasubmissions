@@ -15,6 +15,9 @@ export default function SearchPage() {
     characters: [],
     series: [],
     tags: [],
+    excludeCharacters: [],
+    excludeSeries: [],
+    excludeTags: [],
     noCharacters: false,
     noSeries: false,
     noTags: false,
@@ -34,7 +37,7 @@ export default function SearchPage() {
   const [resolvedAliases, setResolvedAliases] = useState({});
   const [latestPostDate, setLatestPostDate] = useState(null);
 
-  // Autocomplete states for filters
+  // Autocomplete states for filters (include and exclude)
   const [characterInput, setCharacterInput] = useState("");
   const [seriesInput, setSeriesInput] = useState("");
   const [tagInput, setTagInput] = useState("");
@@ -42,12 +45,30 @@ export default function SearchPage() {
   const [seriesSuggestions, setSeriesSuggestions] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
 
+  // Autocomplete states for exclude filters
+  const [excludeCharacterInput, setExcludeCharacterInput] = useState("");
+  const [excludeSeriesInput, setExcludeSeriesInput] = useState("");
+  const [excludeTagInput, setExcludeTagInput] = useState("");
+  const [excludeCharacterSuggestions, setExcludeCharacterSuggestions] =
+    useState([]);
+  const [excludeSeriesSuggestions, setExcludeSeriesSuggestions] = useState([]);
+  const [excludeTagSuggestions, setExcludeTagSuggestions] = useState([]);
+
   // Fetch autocomplete suggestions
-  const fetchAutocomplete = async (type, query) => {
+  const fetchAutocomplete = async (type, query, isExclude = false) => {
     if (!query || query.length < 3) {
-      if (type === "characters") setCharacterSuggestions([]);
-      if (type === "series") setSeriesSuggestions([]);
-      if (type === "tags") setTagSuggestions([]);
+      if (type === "characters") {
+        if (isExclude) setExcludeCharacterSuggestions([]);
+        else setCharacterSuggestions([]);
+      }
+      if (type === "series") {
+        if (isExclude) setExcludeSeriesSuggestions([]);
+        else setSeriesSuggestions([]);
+      }
+      if (type === "tags") {
+        if (isExclude) setExcludeTagSuggestions([]);
+        else setTagSuggestions([]);
+      }
       return;
     }
 
@@ -56,9 +77,18 @@ export default function SearchPage() {
         params: { q: query, limit: 100 }, // Substring matching: worst case "a" = 310 matches
       });
 
-      if (type === "characters") setCharacterSuggestions(response.data || []);
-      if (type === "series") setSeriesSuggestions(response.data || []);
-      if (type === "tags") setTagSuggestions(response.data || []);
+      if (type === "characters") {
+        if (isExclude) setExcludeCharacterSuggestions(response.data || []);
+        else setCharacterSuggestions(response.data || []);
+      }
+      if (type === "series") {
+        if (isExclude) setExcludeSeriesSuggestions(response.data || []);
+        else setSeriesSuggestions(response.data || []);
+      }
+      if (type === "tags") {
+        if (isExclude) setExcludeTagSuggestions(response.data || []);
+        else setTagSuggestions(response.data || []);
+      }
     } catch (err) {
       console.error(`Autocomplete error for ${type}:`, err);
     }
@@ -77,6 +107,23 @@ export default function SearchPage() {
 
   const debouncedFetchTags = useMemo(
     () => debounce((query) => fetchAutocomplete("tags", query), 300),
+    [],
+  );
+
+  // Debounced functions for exclude filters
+  const debouncedFetchExcludeCharacters = useMemo(
+    () =>
+      debounce((query) => fetchAutocomplete("characters", query, true), 300),
+    [],
+  );
+
+  const debouncedFetchExcludeSeries = useMemo(
+    () => debounce((query) => fetchAutocomplete("series", query, true), 300),
+    [],
+  );
+
+  const debouncedFetchExcludeTags = useMemo(
+    () => debounce((query) => fetchAutocomplete("tags", query, true), 300),
     [],
   );
 
@@ -120,6 +167,31 @@ export default function SearchPage() {
     }
   }, [tagInput, debouncedFetchTags]);
 
+  // Debounced autocomplete for exclude filters
+  useEffect(() => {
+    if (excludeCharacterInput) {
+      debouncedFetchExcludeCharacters(excludeCharacterInput);
+    } else {
+      setExcludeCharacterSuggestions([]);
+    }
+  }, [excludeCharacterInput, debouncedFetchExcludeCharacters]);
+
+  useEffect(() => {
+    if (excludeSeriesInput) {
+      debouncedFetchExcludeSeries(excludeSeriesInput);
+    } else {
+      setExcludeSeriesSuggestions([]);
+    }
+  }, [excludeSeriesInput, debouncedFetchExcludeSeries]);
+
+  useEffect(() => {
+    if (excludeTagInput) {
+      debouncedFetchExcludeTags(excludeTagInput);
+    } else {
+      setExcludeTagSuggestions([]);
+    }
+  }, [excludeTagInput, debouncedFetchExcludeTags]);
+
   // Search posts
   const handleSearch = useCallback(async () => {
     setLoading(true);
@@ -145,6 +217,15 @@ export default function SearchPage() {
       }
       if (searchParams.tags.length > 0) {
         params.tags = searchParams.tags.join(",");
+      }
+      if (searchParams.excludeCharacters.length > 0) {
+        params.exclude_characters = searchParams.excludeCharacters.join(",");
+      }
+      if (searchParams.excludeSeries.length > 0) {
+        params.exclude_series = searchParams.excludeSeries.join(",");
+      }
+      if (searchParams.excludeTags.length > 0) {
+        params.exclude_tags = searchParams.excludeTags.join(",");
       }
       if (searchParams.noCharacters) {
         params.no_characters = true;
@@ -183,6 +264,9 @@ export default function SearchPage() {
       searchParams.characters.length > 0 ||
       searchParams.series.length > 0 ||
       searchParams.tags.length > 0 ||
+      searchParams.excludeCharacters.length > 0 ||
+      searchParams.excludeSeries.length > 0 ||
+      searchParams.excludeTags.length > 0 ||
       searchParams.noCharacters ||
       searchParams.noSeries ||
       searchParams.noTags ||
@@ -196,6 +280,9 @@ export default function SearchPage() {
     searchParams.characters,
     searchParams.series,
     searchParams.tags,
+    searchParams.excludeCharacters,
+    searchParams.excludeSeries,
+    searchParams.excludeTags,
     searchParams.noCharacters,
     searchParams.noSeries,
     searchParams.noTags,
@@ -215,6 +302,9 @@ export default function SearchPage() {
       characters: [],
       series: [],
       tags: [],
+      excludeCharacters: [],
+      excludeSeries: [],
+      excludeTags: [],
       noCharacters: false,
       noSeries: false,
       noTags: false,
@@ -258,6 +348,11 @@ export default function SearchPage() {
       setSearchParams((prev) => ({
         ...prev,
         characters: [itemName],
+        series: [],
+        tags: [],
+        excludeCharacters: [],
+        excludeSeries: [],
+        excludeTags: [],
         noCharacters: false,
         noSeries: false,
         noTags: false,
@@ -268,7 +363,12 @@ export default function SearchPage() {
     } else if (fieldType === "series") {
       setSearchParams((prev) => ({
         ...prev,
+        characters: [],
         series: [itemName],
+        tags: [],
+        excludeCharacters: [],
+        excludeSeries: [],
+        excludeTags: [],
         noCharacters: false,
         noSeries: false,
         noTags: false,
@@ -279,7 +379,12 @@ export default function SearchPage() {
     } else if (fieldType === "tags") {
       setSearchParams((prev) => ({
         ...prev,
+        characters: [],
+        series: [],
         tags: [itemName],
+        excludeCharacters: [],
+        excludeSeries: [],
+        excludeTags: [],
         noCharacters: false,
         noSeries: false,
         noTags: false,
@@ -292,6 +397,11 @@ export default function SearchPage() {
         ...prev,
         noCharacters: true,
         characters: [],
+        series: [],
+        tags: [],
+        excludeCharacters: [],
+        excludeSeries: [],
+        excludeTags: [],
         noSeries: false,
         noTags: false,
         dateFrom: null,
@@ -302,7 +412,12 @@ export default function SearchPage() {
       setSearchParams((prev) => ({
         ...prev,
         noSeries: true,
+        characters: [],
         series: [],
+        tags: [],
+        excludeCharacters: [],
+        excludeSeries: [],
+        excludeTags: [],
         noCharacters: false,
         noTags: false,
         dateFrom: null,
@@ -313,7 +428,12 @@ export default function SearchPage() {
       setSearchParams((prev) => ({
         ...prev,
         noTags: true,
+        characters: [],
+        series: [],
         tags: [],
+        excludeCharacters: [],
+        excludeSeries: [],
+        excludeTags: [],
         noCharacters: false,
         noSeries: false,
         dateFrom: null,
@@ -342,6 +462,9 @@ export default function SearchPage() {
           characters: [],
           series: [],
           tags: [],
+          excludeCharacters: [],
+          excludeSeries: [],
+          excludeTags: [],
           noCharacters: false,
           noSeries: false,
           noTags: false,
@@ -356,6 +479,9 @@ export default function SearchPage() {
           characters: [],
           series: [],
           tags: [],
+          excludeCharacters: [],
+          excludeSeries: [],
+          excludeTags: [],
           noCharacters: false,
           noSeries: false,
           noTags: false,
@@ -458,6 +584,20 @@ export default function SearchPage() {
               setTagInput,
               tagSuggestions,
               setTagSuggestions,
+            }}
+            excludeAutocomplete={{
+              characterInput: excludeCharacterInput,
+              setCharacterInput: setExcludeCharacterInput,
+              characterSuggestions: excludeCharacterSuggestions,
+              setCharacterSuggestions: setExcludeCharacterSuggestions,
+              seriesInput: excludeSeriesInput,
+              setSeriesInput: setExcludeSeriesInput,
+              seriesSuggestions: excludeSeriesSuggestions,
+              setSeriesSuggestions: setExcludeSeriesSuggestions,
+              tagInput: excludeTagInput,
+              setTagInput: setExcludeTagInput,
+              tagSuggestions: excludeTagSuggestions,
+              setTagSuggestions: setExcludeTagSuggestions,
             }}
           />
         )}
