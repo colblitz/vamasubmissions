@@ -62,7 +62,7 @@ def fetch_latest_post_date(server: str) -> dict:
     try:
         ssh_cmd = [
             "ssh", server,
-            "sudo -u postgres psql -d vamasubmissions -t -c \"SELECT post_id, timestamp FROM posts WHERE status='published' ORDER BY timestamp DESC LIMIT 1;\""
+            "sudo -u postgres psql -d vamasubmissions -t -c \"SELECT post_id, timestamp FROM posts ORDER BY timestamp DESC LIMIT 1;\""
         ]
         
         result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=10)
