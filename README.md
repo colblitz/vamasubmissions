@@ -189,7 +189,7 @@ openssl rand -hex 32
 pytest
 
 # Lint
-cd backend && source venv/bin/activate && ruff check
+cd backend && source venv/bin/activate && ruff check --fix
 
 # Format
 cd backend && source venv/bin/activate && ruff format

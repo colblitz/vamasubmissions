@@ -603,9 +603,7 @@ def search_submissions(
     # Filter by visibility
     if user:
         # Show public submissions OR user's own submissions
-        search_query = search_query.filter(
-            (Submission.is_public) | (Submission.user_id == user.id)
-        )
+        search_query = search_query.filter((Submission.is_public) | (Submission.user_id == user.id))
     else:
         # Only show public submissions
         search_query = search_query.filter(Submission.is_public)

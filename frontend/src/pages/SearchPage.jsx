@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { debounce } from "lodash";
 import api from "../services/api";
 import SearchFilters from "../components/search/SearchFilters";
@@ -121,7 +121,7 @@ export default function SearchPage() {
   }, [tagInput, debouncedFetchTags]);
 
   // Search posts
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -173,7 +173,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
 
   // Auto-search when filters or sort changes
   useEffect(() => {
@@ -192,6 +192,7 @@ export default function SearchPage() {
       handleSearch();
     }
   }, [
+    results.length,
     searchParams.characters,
     searchParams.series,
     searchParams.tags,
@@ -203,6 +204,7 @@ export default function SearchPage() {
     searchParams.sortBy,
     searchParams.sortOrder,
     searchParams.page,
+    handleSearch,
   ]);
 
   // Handle clear search

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { submissionsAPI } from "../services/api";
@@ -11,11 +11,7 @@ export default function SubmissionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
-    loadSubmission();
-  }, [id]);
-
-  const loadSubmission = async () => {
+  const loadSubmission = useCallback(async () => {
     try {
       setLoading(true);
       const response = await submissionsAPI.get(id);
@@ -27,7 +23,11 @@ export default function SubmissionDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    loadSubmission();
+  }, [loadSubmission]);
 
   const handleCancel = async () => {
     if (

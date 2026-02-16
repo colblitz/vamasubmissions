@@ -253,11 +253,12 @@ class GlobalEditService:
                 """)
 
                 db.execute(
-                    replace_query, {
+                    replace_query,
+                    {
                         "value_to_replace": value_to_replace,
                         "action_value": action_value,
-                        "pattern": sql_pattern
-                    }
+                        "pattern": sql_pattern,
+                    },
                 )
 
         elif action == "DELETE":

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { submissionsAPI } from "../services/api";
@@ -23,11 +23,7 @@ export default function SubmissionEditPage() {
 
   const [originalCost, setOriginalCost] = useState(1);
 
-  useEffect(() => {
-    loadSubmission();
-  }, [id]);
-
-  const loadSubmission = async () => {
+  const loadSubmission = useCallback(async () => {
     try {
       setLoading(true);
       const response = await submissionsAPI.get(id);
@@ -63,7 +59,11 @@ export default function SubmissionEditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user.id, navigate]);
+
+  useEffect(() => {
+    loadSubmission();
+  }, [loadSubmission]);
 
   const calculateCost = () => {
     let cost = 1;

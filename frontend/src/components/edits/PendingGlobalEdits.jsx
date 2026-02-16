@@ -131,8 +131,8 @@ export default function PendingGlobalEdits({ globalEdits, onRefresh }) {
                       edit.action === "ADD"
                         ? "bg-green-100 text-green-800"
                         : edit.action === "REPLACE"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-red-100 text-red-800"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-red-100 text-red-800"
                     }`}
                   >
                     {edit.action}

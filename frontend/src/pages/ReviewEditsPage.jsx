@@ -625,11 +625,11 @@ export default function ReviewEditsPage() {
                   return (
                     <div
                       key={`${item.type}-${item.id}`}
-                      className={`${bgColorClass} rounded-lg shadow overflow-hidden flex`}
+                      className={`${bgColorClass} rounded-lg shadow p-4 flex gap-4 items-start`}
                     >
-                      {/* Icon/Thumbnail - Fixed size, no padding */}
+                      {/* Icon/Thumbnail */}
                       {item.type === "global" ? (
-                        <div className="w-24 h-24 flex-shrink-0 bg-purple-100 flex items-center justify-center">
+                        <div className="w-20 h-20 flex-shrink-0 bg-purple-100 rounded flex items-center justify-center">
                           <svg
                             className="w-8 h-8 text-purple-600"
                             fill="none"
@@ -648,14 +648,12 @@ export default function ReviewEditsPage() {
                         <img
                           src={item.post_thumbnail}
                           alt={item.post_title}
-                          onClick={() =>
-                            handleThumbnailClick(item, index)
-                          }
-                          className="w-24 h-24 flex-shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleThumbnailClick(item, index)}
+                          className="w-20 h-20 flex-shrink-0 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                           title="Click to view all images"
                         />
                       ) : (
-                        <div className="w-24 h-24 flex-shrink-0 bg-gray-200 flex items-center justify-center">
+                        <div className="w-20 h-20 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
                           <svg
                             className="w-8 h-8 text-gray-400"
                             fill="none"
@@ -673,7 +671,7 @@ export default function ReviewEditsPage() {
                       )}
 
                       {/* Content */}
-                      <div className="flex-1 min-w-0 p-4">
+                      <div className="flex-1 min-w-0">
                         {item.type === "global" ? (
                           <>
                             <div className="flex items-center gap-2 mb-1">
@@ -758,12 +756,17 @@ export default function ReviewEditsPage() {
                               )}
                               {new Date(item.applied_at).toLocaleDateString()}
                             </p>
+                            {item.action === "REJECTED" && item.reason && (
+                              <p className="text-xs text-red-600 mt-1 italic">
+                                Reason: {item.reason}
+                              </p>
+                            )}
                           </>
                         )}
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-col gap-2 flex-shrink-0 p-4">
+                      <div className="flex flex-col gap-2 flex-shrink-0">
                         {editSuccessMessages[item.id] ? (
                           <span className="text-green-600 font-medium text-sm whitespace-nowrap">
                             {editSuccessMessages[item.id]}

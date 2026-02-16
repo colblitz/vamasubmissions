@@ -114,8 +114,8 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         Suggest Global Edit
       </h2>
       <p className="text-sm text-gray-600 mb-4">
-        Add, replace, or remove values across all posts at once. Supports wildcards for
-        pattern matching (case-insensitive).
+        Add, replace, or remove values across all posts at once. Supports
+        wildcards for pattern matching (case-insensitive).
       </p>
 
       {/* Success Message */}
@@ -236,7 +236,10 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
                 <option value="tags">Tags</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Which field to {action === "ADD" ? "add the value to" : "perform the replacement on"}
+                Which field to{" "}
+                {action === "ADD"
+                  ? "add the value to"
+                  : "perform the replacement on"}
               </p>
             </div>
           )}
@@ -251,7 +254,9 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
                 type="text"
                 value={actionValue}
                 onChange={(e) => setActionValue(e.target.value)}
-                placeholder={action === "ADD" ? "e.g., New Tag" : "e.g., Corrected Name"}
+                placeholder={
+                  action === "ADD" ? "e.g., New Tag" : "e.g., Corrected Name"
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -275,7 +280,11 @@ export default function SuggestGlobalEditForm({ onSuccess }) {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!pattern || ((action === "ADD" || action === "REPLACE") && !actionValue) || loading}
+          disabled={
+            !pattern ||
+            ((action === "ADD" || action === "REPLACE") && !actionValue) ||
+            loading
+          }
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Submitting..." : "Submit Global Edit"}

@@ -1,6 +1,6 @@
 """Post Edit API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.schemas.post_edit import (
     EditHistoryList,
+    EditRejectRequest,
     PostEdit,
     PostEditCreate,
     PostEditList,
@@ -176,6 +177,7 @@ async def approve_edit(
 @router.post("/{edit_id}/reject", response_model=PostEdit)
 async def reject_edit(
     edit_id: int,
+    reject_data: EditRejectRequest = Body(default=None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -184,13 +186,15 @@ async def reject_edit(
 
     Args:
         edit_id: Edit ID to reject
+        reject_data: Optional rejection data including reason
         current_user: Current admin user
         db: Database session
 
     Returns:
         Rejected edit
     """
-    edit = edit_service.reject_edit(db, edit_id, current_user.id, is_admin=True)
+    reason = reject_data.reason if reject_data else None
+    edit = edit_service.reject_edit(db, edit_id, current_user.id, is_admin=True, reason=reason)
 
     # Log rejection
     import logging

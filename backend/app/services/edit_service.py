@@ -235,6 +235,7 @@ def reject_edit(
     edit_id: int,
     user_id: int,
     is_admin: bool = False,
+    reason: Optional[str] = None,
 ) -> PostEdit:
     """
     Reject an edit suggestion (admin only).
@@ -279,6 +280,7 @@ def reject_edit(
         field_name=edit.field_name,
         action="REJECTED",  # Use special action to indicate rejection
         value=edit.value,
+        reason=reason,
         applied_at=datetime.utcnow(),
     )
     db.add(history)
@@ -527,6 +529,7 @@ def get_edit_history(
             field_name=entry.field_name,
             action=entry.action,
             value=entry.value,
+            reason=entry.reason,
             applied_at=entry.applied_at,
             post_title=post.title if post else "Unknown",
             post_thumbnail=post_thumbnail,

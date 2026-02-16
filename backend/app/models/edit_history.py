@@ -20,6 +20,7 @@ class EditHistory(Base):
     field_name = Column(String(50), nullable=False)
     action = Column(String(10), nullable=False)
     value = Column(Text, nullable=False)
+    reason = Column(Text, nullable=True)  # Rejection reason
     applied_at = Column(DateTime, server_default=func.now(), index=True)
 
     # Constraints

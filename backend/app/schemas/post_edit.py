@@ -37,6 +37,12 @@ class PostEditUpdate(BaseModel):
     status: Optional[Literal["pending", "approved", "rejected"]] = None
 
 
+class EditRejectRequest(BaseModel):
+    """Schema for rejecting an edit."""
+
+    reason: Optional[str] = None
+
+
 class PostEdit(PostEditBase):
     """Schema for post edit responses."""
 
@@ -89,6 +95,7 @@ class EditHistoryEntry(BaseModel):
     field_name: str
     action: str
     value: str
+    reason: Optional[str] = None
     applied_at: datetime
     post_title: Optional[str] = None
     post_thumbnail: Optional[str] = None

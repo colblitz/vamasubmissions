@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../services/api";
 
 /**
@@ -27,7 +27,14 @@ export default function BrowseTab({ onSelectItem }) {
     } else {
       fetchBrowseData();
     }
-  }, [activeSubTab, pagination.page, sortBy, startsWith]);
+  }, [
+    activeSubTab,
+    pagination.page,
+    sortBy,
+    startsWith,
+    fetchBrowseByDate,
+    fetchBrowseData,
+  ]);
 
   // Fetch count of posts with no items for current tab (only for character/series/tags)
   useEffect(() => {
@@ -40,9 +47,9 @@ export default function BrowseTab({ onSelectItem }) {
     } else {
       setNoItemsCount(0);
     }
-  }, [activeSubTab]);
+  }, [activeSubTab, fetchNoItemsCount]);
 
-  const fetchBrowseData = async () => {
+  const fetchBrowseData = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -76,9 +83,9 @@ export default function BrowseTab({ onSelectItem }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeSubTab, pagination.page, pagination.limit, sortBy, startsWith]);
 
-  const fetchNoItemsCount = async () => {
+  const fetchNoItemsCount = useCallback(async () => {
     try {
       // Call the no-items-count endpoint for the current field type
       const response = await api.get(
@@ -89,9 +96,9 @@ export default function BrowseTab({ onSelectItem }) {
       console.error("Failed to fetch no items count:", err);
       setNoItemsCount(0);
     }
-  };
+  }, [activeSubTab]);
 
-  const fetchBrowseByDate = async () => {
+  const fetchBrowseByDate = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -121,7 +128,7 @@ export default function BrowseTab({ onSelectItem }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeSubTab, pagination.page, pagination.limit]);
 
   const handleItemClick = (itemName) => {
     // Call parent callback to switch to search tab with this filter

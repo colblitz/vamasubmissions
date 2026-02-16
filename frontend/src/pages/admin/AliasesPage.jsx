@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../services/api";
 
 export default function AliasesPage() {
@@ -32,7 +32,7 @@ export default function AliasesPage() {
   const [error, setError] = useState(null);
 
   // Fetch aliases for the current tab
-  const fetchAliases = async () => {
+  const fetchAliases = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -59,10 +59,10 @@ export default function AliasesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
   // Fetch zero-result suggestions
-  const fetchSuggestions = async () => {
+  const fetchSuggestions = useCallback(async () => {
     setSuggestionsLoading(true);
 
     try {
@@ -76,7 +76,7 @@ export default function AliasesPage() {
     } finally {
       setSuggestionsLoading(false);
     }
-  };
+  }, [activeTab]);
 
   // Fetch canonical value suggestions for autocomplete
   const fetchCanonicalSuggestions = async (query) => {
@@ -250,14 +250,14 @@ export default function AliasesPage() {
   // Load aliases when tab changes
   useEffect(() => {
     fetchAliases();
-  }, [activeTab]);
+  }, [fetchAliases]);
 
   // Load suggestions when suggestions section is opened
   useEffect(() => {
     if (showSuggestions) {
       fetchSuggestions();
     }
-  }, [showSuggestions, activeTab]);
+  }, [showSuggestions, fetchSuggestions]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../services/api";
 import EditSection from "./EditSection";
 import { sortThumbnails } from "../../utils/thumbnailSort";
@@ -38,7 +38,7 @@ export default function PostLightboxModal({
   const [thumbnailGridRef, setThumbnailGridRef] = useState(null);
 
   // Handle navigation with cross-page support
-  const handleNavigatePrevious = async () => {
+  const handleNavigatePrevious = useCallback(async () => {
     if (currentIndex > 0) {
       // Navigate within current page
       onNavigate(currentIndex - 1);
@@ -50,9 +50,9 @@ export default function PostLightboxModal({
       // This will be handled by the parent component
       setIsLoadingPage(false);
     }
-  };
+  }, [currentIndex, currentPage, onNavigate, onPageChange]);
 
-  const handleNavigateNext = async () => {
+  const handleNavigateNext = useCallback(async () => {
     if (currentIndex < allPosts.length - 1) {
       // Navigate within current page
       onNavigate(currentIndex + 1);
@@ -67,7 +67,15 @@ export default function PostLightboxModal({
         setIsLoadingPage(false);
       }
     }
-  };
+  }, [
+    currentIndex,
+    allPosts.length,
+    onNavigate,
+    onPageChange,
+    totalResults,
+    pageSize,
+    currentPage,
+  ]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { submissionsAPI } from "../services/api";
 
@@ -41,7 +41,7 @@ export default function DashboardPageV2() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, handleSearch]);
 
   const loadSubmissions = async () => {
     try {
@@ -173,7 +173,7 @@ export default function DashboardPageV2() {
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     try {
       setSearching(true);
       const response = await submissionsAPI.search(searchQuery);
@@ -183,7 +183,7 @@ export default function DashboardPageV2() {
     } finally {
       setSearching(false);
     }
-  };
+  }, [searchQuery]);
 
   const startEdit = (submission) => {
     setEditingId(submission.id);
