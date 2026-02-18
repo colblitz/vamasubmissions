@@ -87,7 +87,10 @@ async def get_leaderboard(
     top_suggesters = (
         db.query(UserModel.patreon_username, func.count(EditHistory.id).label("count"))
         .join(EditHistory, UserModel.id == EditHistory.suggester_id)
-        .filter(EditHistory.approver_id.isnot(None))  # Only count approved edits
+        .filter(
+            EditHistory.approver_id.isnot(None),  # Edit was processed by an admin
+            EditHistory.action != "REJECTED"  # Edit was approved (not rejected)
+        )
         .group_by(UserModel.id, UserModel.patreon_username)
         .order_by(func.count(EditHistory.id).desc())
         .limit(limit)
