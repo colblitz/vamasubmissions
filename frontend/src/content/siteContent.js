@@ -179,21 +179,21 @@ export const siteContent = {
     // Leaderboard section
     leaderboard: {
       topContributors: {
-        heading: "Top Contributors (Edits Suggested)",
+        heading: "Top Contributors (Edits Made)",
         emptyState: "No edit suggestions yet. Be the first!",
         editLabel: "edit",
         editsLabel: "edits",
       },
       topReviewers: {
-        heading: "Top Reviewers (Edits Approved)",
+        heading: "Top Reviewers (Edits Reviewed)",
         emptyState: "No edit approvals yet. Start reviewing!",
         approvalLabel: "approval",
         approvalsLabel: "approvals",
       },
       stats: {
         heading: "Community Stats",
-        totalSuggested: "Total Edits Suggested",
-        totalApproved: "Total Edits Approved",
+        totalSuggested: "Total Edits Made",
+        totalApproved: "Total Edits Reviewed",
       },
     },
   },
