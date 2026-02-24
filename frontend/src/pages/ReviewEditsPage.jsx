@@ -9,6 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 export default function ReviewEditsPage() {
   const { user, isAdmin } = useAuth();
   const [pendingEdits, setPendingEdits] = useState([]);
+  const [pendingEditsTotal, setPendingEditsTotal] = useState(0);
   const [globalEdits, setGlobalEdits] = useState([]);
   const [history, setHistory] = useState([]);
   const [globalHistory, setGlobalHistory] = useState([]);
@@ -42,6 +43,7 @@ export default function ReviewEditsPage() {
     try {
       const response = await api.get("/api/edits/pending");
       setPendingEdits(response.data.edits);
+      setPendingEditsTotal(response.data.total);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load pending edits");
     } finally {
@@ -333,7 +335,7 @@ export default function ReviewEditsPage() {
               : "text-gray-600 hover:text-gray-800"
           }`}
         >
-          Pending ({pendingEdits?.length || 0})
+          Pending ({pendingEdits?.length || 0}/{pendingEditsTotal || 0})
         </button>
         <button
           onClick={() => setActiveTab("global")}
