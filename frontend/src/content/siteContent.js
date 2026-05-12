@@ -199,6 +199,21 @@ export const siteContent = {
   },
 
   // ============================================================================
+  // FOOTER DONATION LINKS
+  // ============================================================================
+  donate: {
+    tagline: "Like this tool? Help cover server costs!",
+    kofi: {
+      label: "♥ Donate via Ko-fi",
+      url: "https://ko-fi.com/colblitz",
+    },
+    paypal: {
+      label: "PayPal.me",
+      url: "https://paypal.me/colblitz",
+    },
+  },
+
+  // ============================================================================
   // COMMUNITY REQUESTS PAGE
   // ============================================================================
   communityRequests: {
