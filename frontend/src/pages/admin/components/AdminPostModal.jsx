@@ -35,6 +35,10 @@ export default function AdminPostModal({
   const [modalSuccess, setModalSuccess] = useState(null);
   const [, setPublishing] = useState(false);
 
+  // AI tag suggestions
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiSuggestionsLoading, setAiSuggestionsLoading] = useState(false);
+
   // Input states for inline editing
   const [characterInput, setCharacterInput] = useState("");
   const [seriesInput, setSeriesInput] = useState("");
@@ -143,6 +147,31 @@ export default function AdminPostModal({
     }, 500);
     return () => clearTimeout(timer);
   }, [tagInput]);
+
+  // Fetch AI tag suggestions whenever the modal opens or the post changes
+  useEffect(() => {
+    if (!isOpen || !post) {
+      setAiSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    setAiSuggestionsLoading(true);
+    api
+      .get(`/api/ai-tags/${post.id}/suggestions`)
+      .then((res) => {
+        if (!cancelled) setAiSuggestions(res.data || []);
+      })
+      .catch(() => {
+        // Non-fatal: suggestions panel simply stays hidden
+        if (!cancelled) setAiSuggestions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setAiSuggestionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, post?.id]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -354,6 +383,42 @@ export default function AdminPostModal({
     }
   };
 
+  // Accept an AI tag suggestion
+  const handleAcceptAiSuggestion = async (suggestion) => {
+    try {
+      const res = await api.post(
+        `/api/ai-tags/${post.id}/suggestions/${suggestion.id}/accept`,
+      );
+      // Optimistically update the tag list with what the server confirmed
+      if (res.data?.post_tags) {
+        onTagsChange(res.data.post_tags);
+      } else if (!tags.includes(suggestion.tag)) {
+        onTagsChange([...tags, suggestion.tag]);
+      }
+      setAiSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
+    } catch (err) {
+      setModalError(
+        err.response?.data?.detail || "Failed to accept AI suggestion",
+      );
+      setTimeout(() => setModalError(null), 3000);
+    }
+  };
+
+  // Reject an AI tag suggestion
+  const handleRejectAiSuggestion = async (suggestion) => {
+    try {
+      await api.post(
+        `/api/ai-tags/${post.id}/suggestions/${suggestion.id}/reject`,
+      );
+      setAiSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
+    } catch (err) {
+      setModalError(
+        err.response?.data?.detail || "Failed to reject AI suggestion",
+      );
+      setTimeout(() => setModalError(null), 3000);
+    }
+  };
+
   if (!isOpen || !post) return null;
 
   const modalContent = (
@@ -523,6 +588,75 @@ export default function AdminPostModal({
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* AI Tag Suggestions Panel */}
+            {(aiSuggestionsLoading || aiSuggestions.length > 0) && (
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-6">
+                <h3 className="text-sm font-semibold text-amber-800 mb-2">
+                  AI Tag Suggestions
+                </h3>
+                {aiSuggestionsLoading ? (
+                  <p className="text-xs text-amber-700">Loading suggestions…</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {aiSuggestions.map((suggestion) => (
+                      <span
+                        key={suggestion.id}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 bg-white border border-dashed border-amber-400 rounded text-xs text-amber-900"
+                      >
+                        <span className="font-medium">{suggestion.tag}</span>
+                        <span className="text-amber-600">
+                          {Math.round(suggestion.confidence * 100)}%
+                        </span>
+                        <span className="text-amber-400">
+                          [{suggestion.source.replace("_", " ")}]
+                        </span>
+                        {/* Accept */}
+                        <button
+                          onClick={() => handleAcceptAiSuggestion(suggestion)}
+                          className="ml-0.5 p-0.5 rounded text-green-700 hover:bg-green-100 transition-colors"
+                          title={`Accept: add "${suggestion.tag}"`}
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </button>
+                        {/* Reject */}
+                        <button
+                          onClick={() => handleRejectAiSuggestion(suggestion)}
+                          className="p-0.5 rounded text-red-500 hover:bg-red-100 transition-colors"
+                          title={`Reject: ignore "${suggestion.tag}"`}
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

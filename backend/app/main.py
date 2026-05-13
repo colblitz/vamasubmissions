@@ -13,6 +13,7 @@ from slowapi.util import get_remote_address
 
 from app.api import (
     admin,
+    ai_tags,
     aliases,
     auth,
     community_requests,
@@ -107,6 +108,7 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 
 # Phase 1: Community Features
 app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
+app.include_router(ai_tags.router, prefix="/api/ai-tags", tags=["AI Tags"])
 app.include_router(community_requests.router, prefix="/api/requests", tags=["Community Requests"])
 app.include_router(edits.router, prefix="/api/edits", tags=["Post Edits"])
 app.include_router(global_edits.router, tags=["Global Edits"])

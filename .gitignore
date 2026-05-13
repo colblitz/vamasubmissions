@@ -11,6 +11,7 @@ __pycache__/
 *.so
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
@@ -157,6 +158,13 @@ htmlcov/
 *.bak
 *.tmp
 backups/
+
+# ----------------
+# AI Pipeline Outputs
+# ----------------
+# Generated suggestion files (large, regenerated from DB)
+scripts/suggestions.json
+clip_validation_full.txt
 
 # ----------------
 # Project-Specific
