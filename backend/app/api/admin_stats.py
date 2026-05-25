@@ -22,7 +22,7 @@ _LOG_DIR = os.path.join(
 )
 
 
-@router.get("/stats")
+@router.get("/site-stats")
 async def get_stats(
     period: Literal["day", "week", "month", "all"] = Query(
         "all", description="Time window: day, week, month, or all"

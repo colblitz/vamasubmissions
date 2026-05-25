@@ -28,7 +28,7 @@ export default function StatsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/admin/stats", { params: { period } });
+      const response = await api.get("/api/admin/site-stats", { params: { period } });
       const data = response.data;
       // Normalise: guarantee all array fields exist so renders never crash
       setStats({
