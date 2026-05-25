@@ -29,7 +29,19 @@ export default function StatsPage() {
     setError(null);
     try {
       const response = await api.get("/api/admin/stats", { params: { period } });
-      setStats(response.data);
+      const data = response.data;
+      // Normalise: guarantee all array fields exist so renders never crash
+      setStats({
+        period: data.period ?? period,
+        unique_visitors_by_login: data.unique_visitors_by_login ?? 0,
+        unique_visitors_by_search: data.unique_visitors_by_search ?? 0,
+        visitor_names_by_login: data.visitor_names_by_login ?? [],
+        visitor_names_by_search: data.visitor_names_by_search ?? [],
+        searches_per_user: data.searches_per_user ?? [],
+        most_popular_chars: data.most_popular_chars ?? [],
+        most_popular_series: data.most_popular_series ?? [],
+        most_popular_tags: data.most_popular_tags ?? [],
+      });
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load stats");
     } finally {
