@@ -107,6 +107,16 @@ export default function Header() {
                       >
                         Manage Aliases
                       </Link>
+                      <Link
+                        to="/admin/stats"
+                        className={`hover:text-yellow-400 transition-colors px-4 py-3 min-h-[44px] flex items-center ${
+                          location.pathname === "/admin/stats"
+                            ? "text-yellow-400 bg-gray-700 rounded"
+                            : ""
+                        }`}
+                      >
+                        Stats
+                      </Link>
                     </>
                   )}
                 </div>
@@ -261,6 +271,17 @@ export default function Header() {
                             onClick={closeMobileMenu}
                           >
                             Manage Aliases
+                          </Link>
+                          <Link
+                            to="/admin/stats"
+                            className={`px-6 py-3 hover:bg-gray-700 hover:text-yellow-400 transition-colors min-h-[44px] flex items-center ${
+                              location.pathname === "/admin/stats"
+                                ? "bg-gray-700 text-yellow-400 border-l-4 border-yellow-400"
+                                : ""
+                            }`}
+                            onClick={closeMobileMenu}
+                          >
+                            Stats
                           </Link>
                         </>
                       )}

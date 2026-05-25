@@ -15,6 +15,7 @@ from app.api.admin_patreon import router as patreon_router
 
 # Import sub-routers
 from app.api.admin_posts import router as posts_router
+from app.api.admin_stats import router as stats_router
 
 # Create main admin router
 router = APIRouter()
@@ -33,4 +34,9 @@ router.include_router(
 router.include_router(
     legacy_router,
     tags=["admin-legacy"],
+)
+
+router.include_router(
+    stats_router,
+    tags=["admin-stats"],
 )
