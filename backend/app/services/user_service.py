@@ -50,7 +50,7 @@ def create_user(
     # Determine role
     role = "patron"
     if patreon_id == settings.admin_patreon_id:
-        role = "admin"
+        role = "owner"
 
     # Create user
     user = User(
@@ -204,16 +204,16 @@ async def get_current_admin_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """
-    Get current user and verify they are an admin.
+    Get current user and verify they are an admin or owner.
 
     Args:
         current_user: Current authenticated user
 
     Returns:
-        Current admin user
+        Current admin/owner user
 
     Raises:
-        HTTPException: If user is not an admin
+        HTTPException: If user is not an admin or owner
     """
     if not current_user.is_admin:
         raise HTTPException(
@@ -223,11 +223,34 @@ async def get_current_admin_user(
     return current_user
 
 
+async def get_current_owner_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Get current user and verify they are the site owner.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        Current owner user
+
+    Raises:
+        HTTPException: If user is not the site owner
+    """
+    if not current_user.is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the site owner can access this resource",
+        )
+    return current_user
+
+
 async def get_current_creator_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """
-    Get current user and verify they are the creator.
+    Get current user and verify they are the Patreon creator.
 
     Args:
         current_user: Current authenticated user
@@ -236,11 +259,11 @@ async def get_current_creator_user(
         Current creator user
 
     Raises:
-        HTTPException: If user is not the creator
+        HTTPException: If user is not the Patreon creator
     """
     if not current_user.is_creator:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the creator can access this resource",
+            detail="Only the Patreon creator can access this resource",
         )
     return current_user

@@ -1,8 +1,8 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
-export default function ProtectedRoute({ children, requireAdmin = false }) {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+export default function ProtectedRoute({ children, requireAdmin = false, requireOwner = false }) {
+  const { isAuthenticated, isAdmin, isOwner, loading } = useAuth();
 
   if (loading) {
     return (
@@ -20,6 +20,10 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (requireAdmin && !isAdmin()) {
+    return <Navigate to="/search" replace />;
+  }
+
+  if (requireOwner && !isOwner()) {
     return <Navigate to="/search" replace />;
   }
 

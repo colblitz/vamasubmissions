@@ -17,7 +17,7 @@ class User(Base):
     tier_id = Column(String(50), nullable=True)
     campaign_id = Column(String(50), nullable=True)
     patron_status = Column(String(50), nullable=True)
-    role = Column(String(50), nullable=False, default="patron")  # patron, creator, admin
+    role = Column(String(50), nullable=False, default="patron")  # patron, creator, admin, owner
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     last_login = Column(DateTime)
@@ -38,10 +38,15 @@ class User(Base):
 
     @property
     def is_admin(self) -> bool:
-        """Check if user is an admin."""
-        return self.role in ("admin", "creator")
+        """Check if user is an admin (includes owner)."""
+        return self.role in ("admin", "creator", "owner")
 
     @property
     def is_creator(self) -> bool:
-        """Check if user is the creator."""
+        """Check if user is the Patreon creator."""
         return self.role == "creator"
+
+    @property
+    def is_owner(self) -> bool:
+        """Check if user is the site owner."""
+        return self.role == "owner"

@@ -115,11 +115,15 @@ export function AuthProvider({ children }) {
   };
 
   const isAdmin = () => {
-    return user?.role === "admin" || user?.role === "creator";
+    return user?.role === "admin" || user?.role === "creator" || user?.role === "owner";
   };
 
   const isCreator = () => {
     return user?.role === "creator";
+  };
+
+  const isOwner = () => {
+    return user?.role === "owner";
   };
 
   const value = {
@@ -131,6 +135,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     isAdmin,
     isCreator,
+    isOwner,
     isMockAuth,
   };
 

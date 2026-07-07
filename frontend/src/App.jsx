@@ -109,7 +109,7 @@ function App() {
             <Route
               path="/admin/stats"
               element={
-                <ProtectedRoute requireAdmin>
+                <ProtectedRoute requireOwner>
                   <StatsPage />
                 </ProtectedRoute>
               }

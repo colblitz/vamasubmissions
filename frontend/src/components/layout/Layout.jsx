@@ -1,11 +1,45 @@
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
 import Header from "./Header";
 import { siteContent } from "../../content/siteContent";
+
+function HiringBanner() {
+  const [dismissed, setDismissed] = useState(
+    () => sessionStorage.getItem("hiringBannerDismissed") === "true"
+  );
+
+  if (dismissed) return null;
+
+  const handleDismiss = () => {
+    sessionStorage.setItem("hiringBannerDismissed", "true");
+    setDismissed(true);
+  };
+
+  return (
+    <div className="bg-amber-500 text-amber-950">
+      <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
+        <p className="text-sm font-medium">
+          <span className="font-bold">Help wanted:</span> I'm looking for someone to take over with post importing since I won't have as much time going forward. If you're interested in helping out, please reach out to colblitz on Discord!
+        </p>
+        <button
+          onClick={handleDismiss}
+          className="shrink-0 hover:bg-amber-600/30 rounded p-1 transition-colors"
+          aria-label="Dismiss banner"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Layout() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
+      <HiringBanner />
       <main className="container mx-auto px-4 py-8">
         <Outlet />
       </main>

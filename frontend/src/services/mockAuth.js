@@ -90,6 +90,20 @@ const MOCK_USERS = {
     created_at: new Date().toISOString(),
     last_login: new Date().toISOString(),
   },
+  owner: {
+    id: 7,
+    patreon_id: "mock_owner",
+    patreon_username: "SiteOwner",
+    email: "owner@example.com",
+    tier: 4,
+    credits: 8,
+    max_credits: 8,
+    credits_per_month: 4,
+    role: "owner",
+    can_submit_multiple: true,
+    created_at: new Date().toISOString(),
+    last_login: new Date().toISOString(),
+  },
 };
 
 // Generate a mock JWT token

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.user import User
-from app.services.user_service import get_current_admin_user
+from app.services.user_service import get_current_owner_user
 from app.utils.log_parser import parse_stats
 
 router = APIRouter()
@@ -27,7 +27,7 @@ async def get_stats(
     period: Literal["day", "week", "month", "all"] = Query(
         "all", description="Time window: day, week, month, or all"
     ),
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(get_current_owner_user),
     db: Session = Depends(get_db),
 ):
     """
